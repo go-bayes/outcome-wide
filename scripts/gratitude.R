@@ -4,10 +4,13 @@ source(here::here("scripts", "funs.R"))
 
 # read libraries in
 source(here::here("scripts", "libs.R"))
+library("dplyr")
+library("tidyr")
 
+# note env
 
 # read data: NZAVS waves 2018, 2019, 2020
-df <- readRDS(here::here("data_raw", "ow_df.RDS"))
+df <- readRDS(here::here("data_raw", "df.rds"))
 
 #check data
 skimr::skim(df)
@@ -90,7 +93,17 @@ gdf <-
     lost_job,
     began_relationship,
     Alcohol.Intensity,
-    Alcohol.Frequency
+    Alcohol.Frequency,
+    SexualSatisfaction,
+    POWERDEPENDENCE,
+    Your.Future.Security,
+    Your.Personal.Relationships,
+    Your.Health,
+    Standard.Living,
+    #Env.SacWilling,
+    #Env.SacMade,
+    Env.ClimateChgCause,
+    Env.ClimateChgReal #,
   ) %>%
   dplyr::mutate(org2019 =  ifelse(Wave == 2019 & YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
@@ -167,7 +180,17 @@ gdf <-
       SUPPORT,
       CharityDonate_log,
       Volunteers,
-      GRATITUDE
+      GRATITUDE,
+      SexualSatisfaction,
+      POWERDEPENDENCE,
+      Your.Future.Security,
+      Your.Personal.Relationships,
+      Your.Health,
+      Standard.Living,
+      #Env.SacWilling,
+      #Env.SacMade,
+      Env.ClimateChgCause,
+      Env.ClimateChgReal
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"

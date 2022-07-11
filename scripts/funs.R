@@ -1,6 +1,5 @@
 # functions.R
 library("here")
-library("tidyverse")
 library("fs")
 
 # set paths for pushing files (off of github)
