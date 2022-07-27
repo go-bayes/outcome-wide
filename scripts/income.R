@@ -1,35 +1,31 @@
 # income.R
 
-# Target trial 2
-## Working with MICE objects
-
 ## MICE MODEL
-library("dplyr")
-library("here")
-library("skimr")
-library("tidyr")
-library("Amelia")
-library("ggplot2")
-library("purrr")
-library("patchwork")
-library("kableExtra")
-library("parameters")
-library("mice")
-library("ggokabeito")   # color palette
-library("brms") # bayesian estimation
-library("ggpubr")
-library("cmdstanr")
-rstan_options(auto_write = TRUE) # bayesian estimation
-options(mc.cores = parallel::detectCores ()) # use all course
-theme_set(theme_pubclean()) # nice theme
-# theme_set(theme_classic())
+# library("dplyr")
+# library("here")
+# library("skimr")
+# library("tidyr")
+# library("Amelia")
+# library("ggplot2")
+# library("purrr")
+# library("patchwork")
+# library("kableExtra")
+# library("parameters")
+# library("mice")
+# library("ggokabeito")   # color palette
+# library("brms") # bayesian estimation
+# library("ggpubr")
+# library("cmdstanr")
+# rstan_options(auto_write = TRUE) # bayesian estimation
+# options(mc.cores = parallel::detectCores ()) # use all course
+# theme_set(theme_pubclean()) # nice theme
+# # theme_set(theme_classic())
 
 
 # read data
 df <- readRDS(here::here("data_raw", "df.Rds"))
 
-
-# pedro's gratitude study
+# SWB.SoC01.T10	I feel a sense of community with others in my local neighbourhood.
 # read files
 source(here::here("scripts", "funs.R"))
 
@@ -39,59 +35,109 @@ library("dplyr")
 library("tidyr")
 
 
-#check data
-skimr::skim(df)
-
 # order vars
-df$GenCohort <- ordered(df$GenCohort, levels = c("Gen_Silent: born< 1946", "Gen Boomers: born >= 1946 & b.< 1965",
-                                                 " GenX: born >=1961 & b.< 1981","GenZ: born >= 1996 "))
+df$GenCohort <-
+  ordered(
+    df$GenCohort,
+    levels = c(
+      "Gen_Silent: born< 1946",
+      "Gen Boomers: born >= 1946 & b.< 1965",
+      " GenX: born >=1961 & b.< 1981",
+      "GenZ: born >= 1996 "
+    )
+  )
 
-# view
-df %>%   # not there
-  dplyr::filter(Wave == 2020) %>%
-  summarise(Respect.Self) #fully missing
+
+# # view
+# df %>%   # not there
+#   dplyr::filter(Wave == 2020) %>%
+#   summarise(Respect.Self) #fully missing
 
 
-# select variables
-i_df <-
-  df %>%
-  dplyr::filter(
-    (Wave == 2018  & YearMeasured  == 1 & Employed == 1) |
-      (Wave == 2019  &  YearMeasured  == 1 & Employed == 1 ) |  (Wave == 2020 )
-  )  %>% # Eligibility criteria
+# table for participant N
+tabinc_df <- df %>%
+  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
+                  (Wave == 2019  &
+                     YearMeasured  == 1) |
+                  (Wave == 2020))  %>% # Eligibility criteria
+  dplyr::filter(Id != 9630) %>% # problematic
+  group_by(Id) %>%
+  dplyr::mutate(org2019 = ifelse(Wave == 2019 &
+                                   YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+  dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
+  dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
+  dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
+                                    YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+  dplyr::mutate(hold18 = mean(org2018, na.rm = TRUE)) %>%  # Hack
+  dplyr::filter(hold18 > 0) %>% # hack to enable repeat of baseline
+  ungroup() %>%
+  dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
+  droplevels() %>%
+  arrange(Id, Wave) %>%
+  dplyr::group_by(Id) %>%   # get all people who were in that wave unless they died
+  dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
+                                    YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+  dplyr::mutate(hold18 = mean(org2018, na.rm = TRUE)) %>%  # Hack
+  dplyr::filter(hold18 > 0) %>% # hack to enable repeat of baseline
+  ungroup() %>%
+  data.frame() %>%
+  arrange(Id, Wave)
+
+# check n # 34782
+table1::table1(~ Household.INC | Wave , data = tabinc_df, overall = FALSE)
+# check N of ids
+length(unique(tabinc_df$Id)) # 34782
+
+
+## select vars
+i_df <- tabinc_df %>%
+  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
+                  (Wave == 2019  &
+                     YearMeasured  == 1) |
+                  (Wave == 2020))  %>% # Eligibility criteria
   dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
     YearMeasured,
     Wave,
-    GendAll,
     EthCat,
     Age,
-    Edu,
-    NZdep,
-    Employed,
-    Urban,
-    Household.INC,
-    Parent,
-    Partner,
-    HomeOwner,
-    Pol.Orient,
+    GendAll,
+    Male,
+    NZSEI18,
     CONSCIENTIOUSNESS,
     OPENNESS,
     HONESTY_HUMILITY,
     EXTRAVERSION,
     NEUROTICISM,
     AGREEABLENESS,
-    Religious,
+    Edu,
+    NZdep,
+    Employed,
+    HomeOwner,
+    Pol.Orient,
+    Urban,
+    Household.INC,
+    Parent,
+    Partner,
+    Relid,
     Religion.Church,
     Believe.Spirit,
     Believe.God,
+    SWB.SoC01,
+    EmotionRegulation1,
+    EmotionRegulation2,
+    EmotionRegulation3,
+    Bodysat,
+    VENGEFUL.RUMIN,
+    retired,
+    semiretired,
     # BornNZ, nor working
     KESSLER6sum,
     HLTH.Fatigue,
     Rumination,
     Smoker,
-    ChildrenNum,
+    #   ChildrenNum,
     NWI,
     BELONG,
     SUPPORT,
@@ -119,25 +165,34 @@ i_df <-
     Alcohol.Intensity,
     HLTH.BMI,
     Smoker,
+    ChildrenNum,
     # GenCohort,
     # Euro,
     # partnerlost_job, rare
-    lost_job,
-    began_relationship,
+    #lost_job,
+    #began_relationship,
     Alcohol.Intensity,
     Alcohol.Frequency,
     SexualSatisfaction,
     POWERDEPENDENCE,
-    Your.Future.Security,
-    Your.Personal.Relationships,
-    Your.Health,
-    Standard.Living,
+    # Your.Future.Security,
+    #  Your.Personal.Relationships,
+    # Your.Health,
+    # Standard.Living,
     #Env.SacWilling,
     #Env.SacMade,
-    Env.ClimateChgCause,
-    Env.ClimateChgReal #,
+    PERFECTIONISM ,
+    PermeabilityIndividual,
+    ImpermeabilityGroup
+    # Emp.JobSecure,
+    #  Env.ClimateChgCause,
+    # Env.ClimateChgReal #,
   ) %>%
-  dplyr::mutate(org2019 =  ifelse(Wave == 2019 & YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+  dplyr::rename(community = SWB.SoC01) %>%
+  dplyr::mutate(Edu = as.numeric(Edu)) %>%
+  group_by(Id) %>%
+  dplyr::mutate(org2019 =  ifelse(Wave == 2019 &
+                                    YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
   dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
   dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
@@ -147,7 +202,7 @@ i_df <-
   # dplyr::filter(YearMeasured != -1) %>% # remove people who passed away
   ungroup() %>%
   dplyr::filter(YearMeasured  != -1) %>%
-  droplevels()%>%
+  droplevels() %>%
   arrange(Id, Wave) %>%
   dplyr::group_by(Id) %>%   # get all people who were in that wave unless they died
   dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
@@ -157,32 +212,29 @@ i_df <-
   ungroup() %>%
   dplyr::mutate(across(!c(Id, EthCat, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
-  dplyr::mutate(Edu = as.numeric(Edu),
-                Volunteers = if_else(HoursCharity == 1, 1, 0),
-                Depressed = (as.numeric(cut(
-                  KESSLER6sum,
-                  breaks = c(-Inf, 13, Inf),
-                  labels = c("0", "1"),
-                  right = FALSE))-1),
-                # Church = cut(
-                #   Religion.Church,
-                #   breaks = c(-Inf,0,1,2,3,4,Inf),
-                #   labels = c("Never","1xMonth","2xMonth","3xMonth","weekly",">weekly"),
-                #   right = FALSE),
-                EthCat = factor(EthCat, labels = c("Euro","Maori","Pacific","Asian")),
-                not_euro = as.numeric(if_else(EthCat =="Euro",0,1)),
-                Church = ifelse(Religion.Church >8, 8, Religion.Church),
-                Exercise_log = log(Hours.Exercise + 1 ),
-                income_log = log(Household.INC + 1),
-                CharityDonate_log = log(CharityDonate + 1),
-                Alcohol.Intensity_log = log(Alcohol.Intensity +1))%>%
+  dplyr::mutate(
+    Edu = as.numeric(Edu),
+    Volunteers = if_else(HoursCharity == 1, 1, 0),
+    Depressed = (as.numeric(
+      cut(
+        KESSLER6sum,
+        breaks = c(-Inf, 13, Inf),
+        labels = c("0", "1"),
+        right = FALSE
+      )
+    ) - 1),
+    EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    Euro = as.numeric(if_else(EthCat == "Euro", 1, 0)),
+    Male = ifelse(GendAll == 1, 1, 0),
+    Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+    income_log = log(Household.INC + 1),
+  ) %>%
   arrange(Id, Wave)  %>%
- # dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
+  dplyr::mutate(income_log_lead1 = lead(income_log, n = 1)) %>%
+  dplyr::mutate(retired_lead1 = lead(retired, n = 1)) %>%
+  dplyr::mutate(semiretired_lead1 = lead(semiretired, n = 1)) %>%
+  #dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
-  # KESSLER6sum_log = log(KESSLER6sum + 1),
-  # HLTH.BMI_z = as.numeric(scale(HLTH.BMI)),
-  # Age_z = as.numeric(scale(Age)),
-  # Hours.Work_z = as.numeric(scale(Hours.Work)))%>%  # Proportional change
   dplyr::mutate(across(
     c(
       income_log,
@@ -190,74 +242,85 @@ i_df <-
       KESSLER6sum,
       HLTH.Fatigue,
       Rumination,
+      community,
       SFHEALTH,
       LIFEMEANING,
       LIFESAT,
       PWI,
+      #  not_euro,
       SELF.ESTEEM,
       SELF.CONTROL,
       Respect.Self,
-      Emp.WorkLifeBalance,
       Alcohol.Frequency,
-      Alcohol.Intensity_log,
       Hours.Exercise,
-      Exercise_log,
       HLTH.BMI,
       Smoker,
       ChildrenNum,
       NWI,
       BELONG,
       SUPPORT,
-      CharityDonate_log,
       Volunteers,
       GRATITUDE,
       SexualSatisfaction,
       POWERDEPENDENCE,
-      Your.Future.Security,
-      Your.Personal.Relationships,
-      Your.Health,
-      Standard.Living,
       #Env.SacWilling,
       #Env.SacMade,
-      Env.ClimateChgCause,
-      Env.ClimateChgReal
+      #  Env.ClimateChgCause,
+      #  Env.ClimateChgReal,
+      CharityDonate,
+      Alcohol.Intensity,
+      PERFECTIONISM,
+      Bodysat,
+      VENGEFUL.RUMIN,
+      community,
+      HONESTY_HUMILITY,
+      EmotionRegulation1,
+      EmotionRegulation2,
+      EmotionRegulation3,
+      Emp.WorkLifeBalance
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
   )) %>% # make leads
-  dplyr::mutate(income_log_lead1 = lead(income_log, n = 1)) %>%
   dplyr::filter(Wave == 2018) %>%
-  dplyr::filter(!is.na(income_log),    # needed for the intervention
-                !is.na(income_log_lead1)) %>%  #needed for the intervention
-  # dplyr::filter(!is.na(GRATITUDE),    # needed for the intervention
-  #               !is.na(GRATITUDE_lead1)) %>%  #needed for the intervention
-  dplyr::select(-c(Religion.Church,
-                   EthCat,
-                   Respect.Self_lead2,
-                   CharityDonate,
-                   Household.INC,
-                   Alcohol.Intensity,
-                   org2018,
-                   hold18,
-                   Emp.WorkLifeBalance,
-                   YearMeasured,
-                   Hours.Exercise,
-                   Employed,
-                   Hours.Exercise_lead2,org2019,hold19))%>%
+ dplyr::filter(retired != 1) %>%
+ dplyr::filter(retired_lead1 != 1) %>%  #needed for the intervention
+  dplyr::filter(semiretired != 1) %>%
+  dplyr::filter(semiretired_lead1 != 1) %>%  #needed for the intervention
+  #  dplyr::filter(!is.na(Church)) %>%
+  #  dplyr::filter(!is.na(Church_lead1)) %>%  #needed for the intervention
+  dplyr::select(
+    -c(
+      Religion.Church,
+      EthCat,
+      HoursCharity,
+      Respect.Self_lead2,
+      Household.INC,
+      org2018,
+      #  not_euro,
+      #  not_euro_lead2,
+      hold18,
+      Euro,
+      Emp.WorkLifeBalance,
+      YearMeasured,
+      org2019,
+      hold19,
+      retired,
+      retired_lead1,
+      semiretired,
+      semiretired_lead1
+    )
+  ) %>%
   #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing
-  arrange(Id,Wave) %>%
+  arrange(Id, Wave) %>%
   data.frame() %>%
-  mutate(across( where(is.double), as.numeric))
+  mutate(across(where(is.double), as.numeric)) %>%
+  arrange(Id)
 
-# check N of ids
-length(unique(i_df$Id)) # 34917
+table1::table1( ~ income_log + income_log_lead1, data = i_df)
 
-# Exercise = cut(
-#   Hours.Exercise,
-#   breaks = c(-Inf,0,2.5,7,Inf),
-#   labels = c("Never","0-upto-2.5hrs","2.5-upto-7hrs",">7hrs"),
-#   right = FALSE),
 
+length(unique(i_df$Id)) # 31280
 
 # inspect data
 skim(i_df)
@@ -267,19 +330,9 @@ i_df %>%
   summarise(across(Id, n_distinct))
 
 
-
-# consider removing
-i_df%>%
-  dplyr::filter(Id == 9630)
-
 # glimse
 i_df%>%
   summarise(across(c(PWI_lead2, LIFESAT_lead2, LIFEMEANING_lead2), ~mean(.x, na.rm=TRUE), ~sd(.x, na.rm=TRUE), n_distinct()))
-
-
-# cases
-length(unique(i_df$Id))
-
 
 #check
 skimr::skim(i_df)
@@ -324,109 +377,83 @@ table1::table1(
     Respect.Self +
     #Emp.WorkLifeBalance +
     Alcohol.Frequency +
-    Alcohol.Intensity_log +
-    Exercise_log +
+    Alcohol.Intensity+
+    Hours.Exercise +
     HLTH.BMI +
     Smoker +
-    ChildrenNum +
     NWI +
+    ChildrenNum +
     BELONG +
     SUPPORT +
-    CharityDonate_log +
+    CharityDonate+
     Volunteers +
     SexualSatisfaction+
     POWERDEPENDENCE +
-    Your.Future.Security +
-    Your.Personal.Relationships +
-    Your.Health +
-    Standard.Living +
+  PERFECTIONISM +
+  Bodysat +
+  VENGEFUL.RUMIN +
+  community +
+  HONESTY_HUMILITY +
+  EmotionRegulation1 +
+  EmotionRegulation2 +
+  EmotionRegulation3,# +
+ # Emp.WorkLifeBalance,
+    # +
+   # Your.Future.Security +
+   # Your.Personal.Relationships +
+   # Your.Health +
+   # Standard.Living,
   #Env.SacWilling,
   #Env.SacMade,
-  Env.ClimateChgCause +
-  Env.ClimateChgReal,
   data = i_df
 )
 
 
 # missingness in 2020  1/3 of the data are missing
 
-table1::table1(
-  ~ income_log_lead2 +
-    Depressed_lead2 +
-    KESSLER6sum_lead2 +
-    HLTH.Fatigue_lead2 +
-    Rumination_lead2 +
-    SFHEALTH_lead2  +
-    LIFEMEANING_lead2 +
-    LIFESAT_lead2 +
-    PWI_lead2 +
-    SELF.ESTEEM_lead2 +
-    SELF.CONTROL_lead2 +
-    #Respect.Self_lead2 +
-    Emp.WorkLifeBalance_lead2 +
-    Alcohol.Frequency_lead2 +
-    Alcohol.Intensity_log_lead2 +
-    Exercise_log_lead2 +
-    HLTH.BMI_lead2 +
-    Smoker_lead2 +
-    ChildrenNum_lead2 +
-    NWI_lead2 +
-    BELONG_lead2 +
-    SUPPORT_lead2 +
-    CharityDonate_log_lead2 +
-    Volunteers_lead2 +
-    SexualSatisfaction_lead2 +
-    POWERDEPENDENCE_lead2 +
-    Your.Future.Security_lead2 +
-    Your.Personal.Relationships_lead2 +
-    Your.Health_lead2 +
-    Standard.Living_lead2 +
-    #Env.SacWilling,
-    #Env.SacMade,
-    Env.ClimateChgCause_lead2 +
-    Env.ClimateChgReal_lead2,
-  data = i_df
-)
-
 # I do not have enough power or control over important parts of my life.
 
+skimr::skim(i_df)
 
 # mice model  -------------------------------------------------------------
 library(mice)
-g_mice <- i_df %>%
+inc_mice <- i_df %>%
   dplyr::select(-c( Wave, Id,))
 # Visualise missing
 library(naniar)
-naniar::gg_miss_var(g_mice)
+naniar::gg_miss_var(inc_mice)
 
-vis_miss(g_mice,
+vis_miss(inc_mice,
          warn_large_data = FALSE)
 
 # any colinear vars?
-mice:::find.collinear(g_mice)
+mice:::find.collinear(inc_mice)
 
 #for_mice$inc_prop <-
 #  for_mice$income_log / (for_mice$income_log_lead1 - 1)
-ini <- mice(g_mice, m = 1, maxit = 0)
+
+
+ini <- mice(inc_mice, m = 1, maxit = 0)
 ini
 meth <- ini$meth
-meth
-# #meth["inc_prop"] <- "~ I(income_log/(income_log_lead1 - 1))"
-# pred <- ini$pred
-
+#meth
+#meth["inc_prop"] <- "~ I(income_log/(income_log_lead1 - 1))"
+pred <- ini$pred
+pred
 
 # impute
-out_idf <- mice::mice(g_mice,
-                  #meth = "rfcont",
-                  #pred = pred,
-                  seed = 0, m = 10)
+out_idf <- mice::mice(inc_mice,
+                  meth = meth,
+                  pred = pred,
+                  seed = 0,
+                  m = 10)
 
 # save
 saveh(out_idf, "out_idf")
 
 # read
 out_idf <- readh("out_idf")
-warnings()
+
 
 outlist2 <- row.names(out_idf)[out_idf$outflux < 0.5]
 length(outlist2)
@@ -700,11 +727,25 @@ saveRDS(out2, here::here("mods", "out2"))
 out2 <- readRDS(here::here("mods", "out2"))
 
 
-# urban vs rural
-#xyplot(out2, attrition ~ LIFESAT_lead1_z,pch=18,cex=1)
 
-# Try full model
-#devtools::install_github('IQSS/Zelig')
+dch <- ipw::ipwpoint(
+  exposure = ch_s,
+  family = "gaussian",
+  numerator = ~ 1,
+  denominator = ~ age_s + edu_s + male_2 + ses_s + country,
+  trunc = 0.01,
+  data = as.data.frame(d4)
+)
+
+d1p <- d4 %>%
+  mutate(ipwCH = dch$weights.trunc)
+
+
+
+
+
+
+
 
 
 # k6 ----------------------------------------------------------------------

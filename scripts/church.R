@@ -1,6 +1,11 @@
-# read data
-df <- readRDS(here::here("data_raw", "df.Rds"))
+#https://pubmed.ncbi.nlm.nih.gov/18190618/
 
+# read data
+df <- readRDS(here::here("data_raw", "df.rds"))
+
+df$Your.Health
+df$Earthquake.Anxiety
+# SWB.SoC01.T10	I feel a sense of community with others in my local neighbourhood.
 # read files
 source(here::here("scripts", "funs.R"))
 
@@ -9,10 +14,11 @@ source(here::here("scripts", "libs.R"))
 library("dplyr")
 library("tidyr")
 
+df$EarthQuake.
+# SWB.SoC01.T10  # I feel a sense of community with others in my local neighbourhood.
 
 #check data
 skimr::skim(df)
-
 # order vars
 df$GenCohort <-
   ordered(
@@ -25,6 +31,7 @@ df$GenCohort <-
     )
   )
 
+
 # view
 df %>%   # not there
   dplyr::filter(Wave == 2020) %>%
@@ -32,6 +39,12 @@ df %>%   # not there
 
 table(df$Alcohol.Intensity)
 
+hist(c_df$PERFECTIONISM, breaks = 200)
+
+twe <- round(c_df$PERFECTIONISM, 2)
+hist(twe,  breaks = 200)
+
+df$SWB.SoC01
 # select variables
 c_df <- df %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
@@ -68,6 +81,10 @@ c_df <- df %>%
     Religion.Church,
     Believe.Spirit,
     Believe.God,
+    SWB.SoC01,
+    EmotionRegulation,
+    Bodysat,
+    VENGEFUL.RUMIN,
     # BornNZ, nor working
     KESSLER6sum,
     HLTH.Fatigue,
@@ -117,9 +134,11 @@ c_df <- df %>%
     #Env.SacWilling,
     #Env.SacMade,
     PERFECTIONISM,
+   # Emp.JobSecure,
     Env.ClimateChgCause,
     Env.ClimateChgReal #,
   ) %>%
+  dplyr::rename(community =SWB.SoC01) %>%
   dplyr::mutate(org2019 =  ifelse(Wave == 2019 &
                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
@@ -175,6 +194,7 @@ c_df <- df %>%
       KESSLER6sum,
       HLTH.Fatigue,
       Rumination,
+      community,
       SFHEALTH,
       LIFEMEANING,
       LIFESAT,
@@ -210,6 +230,11 @@ c_df <- df %>%
       CharityDonate,
       Alcohol.Intensity,
       PERFECTIONISM,
+      Bodysat,
+      VENGEFUL.RUMIN,
+      community,
+      HONESTY_HUMILITY,
+      EmotionRegulation
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
@@ -247,6 +272,7 @@ c_df <- df %>%
 # check N of ids
 length(unique(c_df$Id)) # 33189
 
+
 # Exercise = cut(
 #   Hours.Exercise,
 #   breaks = c(-Inf,0,2.5,7,Inf),
@@ -256,13 +282,21 @@ length(unique(c_df$Id)) # 33189
 c_df %>%
   select(Church, Church_lead1) %>%
   summarise(across(everything(), c(mean = mean, sd = sd)))
+c_df$Volunteers
+c_df %>%
+  count(Volunteers)
 
 # inspect data
 skim(c_df)
 
+c_df
 c_df %>%
   group_by(Wave) %>%
   summarise(across(Id, n_distinct))
+
+hist(c_df$Volunteers)
+
+
 
 # consider removing
 c_df %>%
@@ -336,7 +370,10 @@ table1::table1(
     #Env.SacWilling,
     #Env.SacMade,
     Env.ClimateChgCause +
-    Env.ClimateChgReal,
+    Env.ClimateChgReal +
+    bodysat_lead2 +
+    community_lead2 +
+    EmotionRegulation_lead2,
   data = c_df
 )
 
@@ -390,6 +427,16 @@ str(c_df)
 
 
 # facets ------------------------------------------------------------------
+perfectwide <-  df %>%
+  dplyr::filter(YearMeasured == 1 %in% c(Wave ==2018,  ) %>%
+  dplyr::filter(!is.na(PERFECTIONISM)) %>%
+  dplyr::select(Id, Religion.Church, Wave) %>%
+  group_by(Id) %>% filter(n() > 9) %>%
+  filter(n() != 0) %>%
+  ungroup(Id) %>%
+  spread(Wave, Religion.Church)
+
+
 library(lcsm)
 Relidwide <-  df %>%
   dplyr::filter(YearMeasured == 1) %>%
@@ -614,8 +661,8 @@ head(out_cdf$loggedEvents, 10)
 #stripplot(out)
 #densityplot(out) # too much time
 #plot(out)
-
-
+c_df(alcohol_bin)
+table(long2$Alcohol.Frequency)
 # data warangling
 long <- mice::complete(out_cdf, "long", inc = TRUE)
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
@@ -639,12 +686,18 @@ long2 <- long %>%
   dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity+1))%>%
   dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
   dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0) )) %>%
+  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0) )) %>%
+  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0) )) %>%
   dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0) )) %>%
   dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0)+1 )) %>%
   dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise+1))%>%
+  dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0) )) %>%
+  dplyr::mutate(alcohol_bin2 = if_else( Alcohol.Frequency > 3, 1, 0))%>%
+  dplyr::mutate(alcohol_bin = if_else( Alcohol.Frequency > 2, 1, 0))%>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z))# Respect for Self is fully missing
 
+LIFESAT_lead2
 HLTH.Fatigue_lead2_z
 # long$Rumination_lead2ord <- with(long, round(Rumination_lead2, digits = 0))
 # long$Rumination_lead2ord <- with(long, Rumination_lead2ord + 1)
@@ -657,6 +710,8 @@ table(long2$Rumination_lead2ord)
 table(long2$LIFEMEANING_lead2ord)
 str(long2$SUPPORT_lead2ord)
 hist(long2$HLTH.Fatigue_lead2ord)
+hist(long2$community_lead2)
+str(long2$alcohol_bin2)
 
 
 hist(long2$Hours.Exercise_lead2)
@@ -713,6 +768,8 @@ c_df$Alcohol.Intensity_log
 
 # need to increase memory
 options(future.globals.maxSize = 8000 * 1024^2)
+
+
 
 m1_church_k6_nb <- brm_multiple(
   as.integer(KESSLER6sum_lead2) ~
@@ -777,6 +834,23 @@ m1_church_k6_nb <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+# evalues
+
+# get sd of outcome
+sd(long2$KESSLER6sum_lead2, na.rm=TRUE)
+
+model_parameters(m1_church_k6_nb, digits = 3)
+exp(-0.007 )
+bayestestR::mcse(m1_church_k6_nb)
+
+exp(1.513) -  exp(1.513  -0.007 )
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( 0.03167134 , se =  0.0003481307, sd = 3.892859, delta = 4, true = 0), 3)
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( -0.01162 , se = 0.0007623439, sd = 1, delta = 4, true = 0), 3)
+
 ## posterior predictive checks
 pp_check(m1_church_k6_nb)
 
@@ -805,7 +879,7 @@ plot_smooth_m1
 # tidy graph
 m1_plot <-
   plot_smooth_m1[[1]] + # scale_x_continuous(limits = c(-5,5)) +
-#   scale_y_continuous(limits = c(0,5)) +
+ #  scale_y_continuous(limits = c(0,12)) +
   # geom_hline(
   #   yintercept = 5,
   #   linetype = "dashed",
@@ -889,8 +963,33 @@ m1_church_k6 <- brm_multiple(
 ## posterior predictive checks
 pp_check(m1_church_k6)
 
+
+# evalues
+model_parameters(m1_church_k6, digits = 5)
+bayestestR::mcse(m1_church_k6_nb)
+
+
+
+bayestestR::mcse(m16a_church_alcohol_intensity)
+round( EValue::evalues.OLS( -0.01061 , se =  0.0003910821, sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(m16a_church_alcohol_intensity)
+round( EValue::evalues.OLS( -0.01162 , se = 0.0007623439, sd = 1, delta = 4, true = 0), 3)
+
+
 #table
 lazerhawk::brms_SummaryTable(m1_church_k6, panderize = F)
+
+
+out <- model_parameters(m1_church_k6, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+
+round( EValue::evalues.OLS( 0.01, se = 0.00481, sd = 1, delta = 4, true = 0), 3)
 
 # another table
 m1_bayes_table <-
@@ -902,35 +1001,43 @@ plot(m1_bayes_table)
 plot_smooth_m1 <-
   plot(
     conditional_effects(
-      m1_church_nb,
+      m1_church_k6,
       "Church_lead1",
       ndraws = 500,
       spaghetti = T
     ),
     points = F,
     alpha = .01,
-    point_args = list(alpha = .005, width = .1)
+    point_args = list(alpha = .1, width = 1, height = 1)
   )
 
+plot_smooth_m1
 # tidy graph
-m1_plot_nb <-
-  plot_smooth_m1_nb[[1]] + # scale_x_continuous(limits = c(-5,5)) +
-  # scale_y_continuous(limits = c(0,24)) +
-  # geom_hline(
-  #   yintercept = 5,
-  #   linetype = "dashed",
-  #   color = "red",
-  #   size = .5
-  # ) +
-  labs(title = "Kessler 6 Distress (negative binomial regression)",
+m1_church_k6_zoom <-
+  plot_smooth_m1[[1]] + # scale_x_continuous(limits = c(-5,5)) +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Psychological Distress",
        # subtitle = "Loss shows greater distress",
-       y = "Kessler6 distress (0-24)",
-       x = "Monthly Church Frequency") #+ scale_colour_okabe_ito(alpha=.5)
+       y = "Psychological Distress (sd)",
+       x = "Monthly Church Frequency")
 
-m1_plot_nb
+m1_church_k6_zoom
+
+ggsave(
+  m1_church_k6_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m1_church_k6_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
 # depressed ---------------------------------------------------------------
+
 m1_ab_church_depressed  <- brm_multiple(
   Depressed_lead2 ~
     Church_lead1 +
@@ -1202,6 +1309,16 @@ m2_church_lifemeaning <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m2_church_lifemeaning, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+
+round( EValue::evalues.OLS( 0.03, se = 0.00448, sd = 1, delta = 4, true = 0), 3)
+
 ## posterior predictive checks
 pp_check(m2_church_lifemeaning)
 
@@ -1315,14 +1432,68 @@ plot(
 # point_args = list(alpha = .005, width = .1))
 library(ggokabeito)
 # tidy graph
-m2_plot <-  plot_smooth_m2[[1]]  +
+m2_plot_life_meaning <-  plot_smooth_m2[[1]]  +
 #  scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Life Meaning",
        # subtitle = "Loss shows greater distress",
        y = "Life Meaning (1-7)",
        x = "Monthly Church Frequency")
 
-m2_plot
+m2_plot_life_meaning
+
+ggsave(
+  m2_plot_life_meaning,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m2_plot_life_meaning.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+
+
+
+plot_smooth_m2z <-
+  plot(
+    conditional_effects(
+      m2_church_lifemeaning,
+      "Church_lead1",
+      ndraws = 500,
+      spaghetti = T
+    ),
+    points = F,
+    alpha = .01,
+    point_args = list(alpha = .1, width = 1, height = 1)
+  )
+
+
+m2_plot_life_meaning_zoom  <-  plot_smooth_m2z[[1]]  +
+    scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Life Meaning",
+       # subtitle = "Loss shows greater distress",
+       y = "Life Meaning (sd)",
+       x = "Monthly Church Frequency")
+
+m2_plot_life_meaning_zoom
+
+ggsave(
+  m2_plot_life_meaning_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m2_plot_life_meaning_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 
 
 # health-fatigue ----------------------------------------------------------
@@ -1457,21 +1628,33 @@ m3a_church_fatigue <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+options(scipen=999)
+
+out <- model_parameters(m3a_church_fatigue, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+# evalue
+bayestestR::mcse(m3a_church_fatigue)
+round( EValue::evalues.OLS( -0.00927, se = 0.0006137954 , sd = 1, delta = 4, true = 0), 3)
 
 ## posterior predictive checks
 pp_check(m3a_church_fatigue)
 
 #table
-lazerhawk::brms_SummaryTable(m3_church_fatigue, panderize = F)
+lazerhawk::brms_SummaryTable(m3a_church_fatigue, panderize = F)
 
 # another table
 m1_bayes_table <-
-  parameters::model_parameters(m3_church_fatigue)
+  parameters::model_parameters(m3a_church_fatigue)
 m1_bayes_table
 plot(m1_bayes_table)
 
 # graph
-plot_smooth_m3 <-
+plot_smooth_m3a <-
   plot(conditional_effects(
     m3a_church_fatigue,
     "Church_lead1",
@@ -1486,8 +1669,8 @@ plot_smooth_m3 <-
 # point_args = list(alpha = .005, width = .1))
 
 # tidy graph
-m3_plot <-
-  plot_smooth_m3[[1]] + # scale_x_continuous(limits = c(-5,5)) +
+m3a_plot_fatigue  <-
+  plot_smooth_m3a[[1]] + # scale_x_continuous(limits = c(-5,5)) +
 #  scale_y_continuous(limits = c(-.5, .5)) +
   # geom_hline(
   #   yintercept = 5,
@@ -1500,9 +1683,60 @@ m3_plot <-
        y = "Fatigue (sd)",
        x = "Monthly Church Frequency") #+ scale_colour_okabe_ito(alpha=.5)
 
-m3_plot
+m3a_plot_fatigue
+
+ggsave(
+  m3a_plot_fatigue,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m3a_plot_fatigue.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
+# fatigue zoom
+plot_smooth_m3z <-
+  plot(conditional_effects(
+    m3_church_fatigue,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T ),
+    points = F,
+    point_args = list(alpha = .1,  width = 1, height = 1)
+  )
+
+
+
+m3_plot_fatigue_zoom  <-
+  plot_smooth_m3z[[1]] + # scale_x_continuous(limits = c(-5,5)) +
+    scale_y_continuous(limits = c(-.5, .5)) +
+  # geom_hline(
+  #   yintercept = 5,
+  #   linetype = "dashed",
+  #   color = "red",
+  #   size = .5
+  # ) +
+  labs(title = "Fatigue",
+       # subtitle = "Loss shows greater distress",
+       y = "Fatigue (sd)",
+       x = "Monthly Church Frequency") #+ scale_colour_okabe_ito(alpha=.5)
+
+m3_plot_fatigue_zoom
+ggsave(
+  m3_plot_fatigue_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m3_plot_fatigue_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 # depressed ---------------------------------------------------------------
 m1_ab_church_depressed  <- brm_multiple(
@@ -1710,6 +1944,7 @@ m_test <- with(
 
 # LIFESAT_z ---------------------------------------------------------------
 
+rm(m4_church_lifsat)
 m4_church_lifsat  <- brms::brm_multiple(
   LIFESAT_lead2_z ~
     Church_lead1 +
@@ -1772,11 +2007,89 @@ m4_church_lifsat  <- brms::brm_multiple(
   file = here::here("mods", "m4_church_lifsat.rds"),
   set_prior('normal(0, 1)', class = 'b')
 )
-m4_church_lifsat <-
-  readRDS(here::here("mods", "m4_church_lifsat.rds"))
-m4_church_lifsat
+
+m4a_church_lifsat  <- brms::brm_multiple(
+  LIFESAT_lead2 ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m4a_church_lifsat"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+
+
 ## posterior predictive checks
 pp_check(m4_church_lifsat)
+
+
+out <- model_parameters(m4_church_lifsat, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+
+bayestestR::mcse(m4_church_lifsat, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS( 0.00176, se = 0.0005392286 , sd = 1, delta = 4, true = 0), 3)
+
 
 #table
 lazerhawk::brms_SummaryTable(m4_church_lifsat, panderize = F)
@@ -1796,17 +2109,32 @@ plot_smooth_m4 <-
     spaghetti = T),
     points = F,
     alpha = .01,
-    point_args = list(alpha = .005, width = .1)
+    point_args = list(alpha = .1, width = 11, height = 1)
   )
 
-m4_plot <-  plot_smooth_m4[[1]]  +
+m4_plot_lifesat_zoom <-  plot_smooth_m4[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Life Satisfaction",
        # subtitle = "Loss shows greater distress",
        y = "Life Satisfaction (sd)",
        x = "Monthly Church Frequency")
 
-m4_plot
+m4_plot_lifesat_zoom
+
+
+ggsave(
+  m4_plot_lifesat_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m4_plot_lifesat_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 
 # rumination --------------------------------------------------------------
 
@@ -1875,6 +2203,20 @@ m5_church_rumination <- brms::brm_multiple(
 
 ## posterior predictive checks
 pp_check(m5_church_rumination)
+
+
+out <- model_parameters(m5_church_rumination, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m5_church_rumination, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( 0.00035, se = 0.0005818565 , sd = 1, delta = 4, true = 0), 3)
+
+
+
 
 
 
@@ -1968,19 +2310,64 @@ plot_smooth_m5 <-
       point_args = list(alpha = .005, width = .2)
   )
 
-# points = T,
-# alpha = .01,
-# point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
-m5_plot <-  plot_smooth_m5[[1]]  +
+m5_plot_rumination <-  plot_smooth_m5[[1]]  +
+ # scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Rumination",
+       # subtitle = "Loss shows greater distress",
+       y = "Rumination (sd)",
+       x = "Monthly Church Frequency")
+
+m5_plot_rumination
+
+
+ggsave(
+  m5_plot_rumination,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m5_plot_rumination.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+plot_smooth_m5z <-
+  plot(
+    conditional_effects(
+      m5_church_rumination,
+      "Church_lead1",
+      ndraws = 500,
+      spaghetti = T),
+    points = F,
+    alpha = .01,
+    point_args = list(alpha = .1, width = 1, height = 1)
+  )
+
+m5_plot_rumination_zoom  <-  plot_smooth_m5z[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Rumination",
        # subtitle = "Loss shows greater distress",
        y = "Rumination (sd)",
        x = "Monthly Church Frequency")
 
-m5_plot
+
+m5_plot_rumination_zoom
+
+ggsave(
+  m5_plot_rumination_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m5_plot_rumination_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 
 # SexualSatisfaction_z ----------------------------------------------------
 
@@ -2047,6 +2434,19 @@ m6_church_sexual_satisfaction  <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+
+out <- model_parameters(m6_church_sexual_satisfaction, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m6_church_sexual_satisfaction, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS(  0.00716 , se =  0.0006764102 , sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
 ## posterior predictive checks
 pp_check(m6_church_sexual_satisfaction)
 
@@ -2066,24 +2466,33 @@ plot_smooth_m6 <-
       m6_church_sexual_satisfaction,
       "Church_lead1",
       ndraws = 500,
-      spaghetti = T,
+      spaghetti = T),
       points = F,
       alpha = .01,
-      point_args = list(alpha = .005, width = .1)
-    ))
-# points = T,
-# alpha = .01,
-# point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
-m6_plot <-  plot_smooth_m6[[1]]  +
+      point_args = list(alpha = .1, width = 1, height  = 1)
+    )
+
+m6_plot_sex_sat_zoom <-  plot_smooth_m6[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Sexual Satisfaction",
        # subtitle = "Loss shows greater distress",
        y = "Sexual Satisfaction (sd)",
        x = "Monthly Church Frequency")
 
-m6_plot
+m6_plot_sex_sat_zoom
+
+
+ggsave(
+  m6_plot_sex_sat_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m6_plot_sex_sat_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
 # POWERDEPENDENCE_z -------------------------------------------------------
@@ -2151,6 +2560,18 @@ m7_church_powerindependence <- brms::brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m7_church_powerindependence, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse()
+round( EValue::evalues.OLS(   -0.00437 , se =   0.00525  , sd = 1, delta = 4, true = 0), 3)
+
+
+
 ## posterior predictive checks
 pp_check(m7_church_powerindependence)
 
@@ -2170,24 +2591,33 @@ plot_smooth_m7 <-
       m7_church_powerindependence,
       "Church_lead1",
       ndraws = 500,
-      spaghetti = T,
+      spaghetti = T),
       points = F,
       alpha = .01,
-      point_args = list(alpha = .005, width = .1)
-    ))
-# points = T,
-# alpha = .01,
-# point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
-m7_plot <-  plot_smooth_m7[[1]]  +
+      point_args = list(alpha = .1, width = 1, height = 1)
+    )
+
+m7_plot_power_dependence_zoom  <-  plot_smooth_m7[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Power Dependence",
        # subtitle = "Loss shows greater distress",
        y = "Power Dependence (sd)",
        x = "Monthly Church Frequency")
 
-m7_plot
+m7_plot_power_dependence_zoom
+
+
+ggsave(
+  m7_plot_power_dependence_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m7_plot_power_dependence_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
 # I do not have enough power or control over important parts of my life.
@@ -2259,6 +2689,19 @@ m8_church_belong <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m8_church_belong, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m8_church_belong, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS(    0.01454  , se =    0.0004217407   , sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+
 ## posterior predictive checks
 pp_check(m8_church_belong)
 
@@ -2277,24 +2720,35 @@ plot_smooth_m8 <-
     m8_church_belong,
     "Church_lead1",
     ndraws = 500,
-    spaghetti = T,
+    spaghetti = T),
     points = F,
     alpha = .01,
-    point_args = list(alpha = .005, width = .1)
-  ))
-# points = T,
-# alpha = .01,
-# point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
-m8_plot <-  plot_smooth_m8[[1]]  +
-  scale_y_continuous(limits = c(-.25, .25)) +
+    point_args = list(alpha = .1, width = 1, height = 1)
+  )
+
+plot_smooth_m8
+
+m8_plot_social_belonging_zoom <-  plot_smooth_m8[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Social Belonging",
        # subtitle = "Loss shows greater distress",
        y = "Social Belonging (sd)",
        x = "Monthly Church Frequency")
 
-m8_plot
+m8_plot_social_belonging_zoom
+
+ggsave(
+  m8_plot_social_belonging_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m8_plot_social_belonging_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
 
 
 # SUPPORT_z ---------------------------------------------------------------
@@ -2366,6 +2820,21 @@ m9_church_support <- brm_multiple(
 
 ## posterior predictive checks
 pp_check(m9_church_support)
+out <- model_parameters(m9_church_support, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse()
+bayestestR::mcse(m9_church_support, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS( 0.01807  , se = 0.000497844, sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
 
 #Bad
 m9a_church_support <- brm_multiple(
@@ -2453,26 +2922,33 @@ plot_smooth_m9 <-
     "Church_lead1",
     ndraws = 500,
     spaghetti = T),
-    points = T,
+    points = F,
     alpha = .01,
-    point_args = list(alpha = .005, width = .1)
+    point_args = list(alpha = .005, width = 1)
   )
 
 plot_smooth_m9
-# points = T,
-# alpha = .01,
-# point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
-m9_plot <-  plot_smooth_m9[[1]]  +
-  scale_y_continuous(limits = c(-.25, .25)) +
+
+m9_plot_social_support_zoom <-  plot_smooth_m9[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Social Support",
        # subtitle = "Loss shows greater distress",
        y = "Social Support (sd)",
        x = "Monthly Church Frequency")
 
-m9_plot
+m9_plot_social_support_zoom
 
+ggsave(
+  m9_plot_social_support_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m9_plot_social_support_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
 
@@ -2542,6 +3018,19 @@ m10_church_pwi <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m10_church_pwi, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( 0.01103, se = 0.0004899693, sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(m10_church_pwi, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
 ## posterior predictive checks
 pp_check(m10_church_pwi)
 
@@ -2570,14 +3059,28 @@ plot_smooth_m10 <-
 # point_args = list(alpha = .005, width = .1))
 library(ggokabeito)
 # tidy graph
-m10_plot <-  plot_smooth_m10[[1]]  +
-  scale_y_continuous(limits = c(-.25, .25)) +
+m10_plot_pwi_zoom  <-  plot_smooth_m10[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Personal Wellbeing Index",
        # subtitle = "Loss shows greater distress",
        y = "Personal Wellbeing Index (sd)",
        x = "Monthly Church Frequency")
+m10_plot_pwi_zoom
 
-m10_plot
+
+ggsave(
+  m10_plot_pwi_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m10_plot_pwi_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 
 # SFHEALTH_lead2_z --------------------------------------------------------------
 
@@ -2645,6 +3148,20 @@ m11_church_sfhealth <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m11_church_sfhealth, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( -0.00101 , se = 0.00036103, sd = 1, delta = 4, true = 0), 3)
+bayestestR::mcse(m11_church_sfhealth, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+
+
 ## posterior predictive checks
 pp_check(m11_church_sfhealth)
 
@@ -2670,14 +3187,26 @@ plot_smooth_m11 <-
 # point_args = list(alpha = .005, width = .1))
 library(ggokabeito)
 # tidy graph
-m11_plot <-  plot_smooth_m11[[1]]  +
+m11_plot_short_health_zoom  <-  plot_smooth_m11[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Short Form Health",
        # subtitle = "Loss shows greater distress",
        y = "Short Form Health (sd)",
        x = "Monthly Church Frequency")
 
-m11_plot
+
+
+ggsave(
+  m11_plot_short_health_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m11_plot_short_health_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 # SELF.ESTEEM_lead2_z -----------------------------------------------------------
 
@@ -2744,6 +3273,21 @@ m12_church_selfesteem <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+out <- model_parameters(m12_church_selfesteem, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+
+out
+
+bayestestR::mcse()
+bayestestR::mcse(m12_church_selfesteem, parameters = "b_Church_lead1")
+
+
+round( EValue::evalues.OLS( 0.01266, se = 0.0004959718, sd = 1, delta = 4, true = 0), 3)
+
+
 ## posterior predictive checks
 pp_check(m12_church_selfesteem)
 
@@ -2769,17 +3313,28 @@ plot_smooth_m12 <-
 # points = T,
 # alpha = .01,
 # point_args = list(alpha = .005, width = .1))
-library(ggokabeito)
-# tidy graph
 
-m12_plot <-  plot_smooth_m12[[1]]  +
+
+m12_plot_self_esteem_zoom  <-  plot_smooth_m12[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Self Esteem",
        # subtitle = "Loss shows greater distress",
        y = "Self Esteem (sd)",
        x = "Monthly Church Frequency")
 
-m12_plot
+m12_plot_self_esteem_zoom
+ggsave(
+  m12_plot_self_esteem_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m12_plot_self_esteem_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
 
 # Emp.WorkLifeBalance_lead2_z ---------------------------------------------------------------
 
@@ -2849,6 +3404,19 @@ m13_church_worklifebalance <-
     set_prior('normal(0, 1)', class = 'b')
   )
 
+out <- model_parameters(m13_church_worklifebalance, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( 0.01368, se = 0.0006152114, sd = 1, delta = 4, true = 0), 3)
+bayestestR::mcse(m13_church_worklifebalance, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
 ## posterior predictive checks
 pp_check(m13_church_worklifebalance)
 
@@ -2877,18 +3445,29 @@ plot_smooth_m13 <-
 library(ggokabeito)
 # tidy graph
 
-m13_plot <-  plot_smooth_m13[[1]]  +
+m13_plot_workife_balance_zoom  <-  plot_smooth_m13[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Work/life Balance",
        # subtitle = "Loss shows greater distress",
        y = "Work/Life Balance(sd)",
        x = "Monthly Church Frequency")
 
-m13_plot
+m13_plot_workife_balance_zoom
+ggsave(
+  m13_plot_workife_balance_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m13_plot_workife_balance_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 # Volunteers_lead2 --------------------------------------------------------------
 
 m14_church_volunteers <- brm_multiple(
-  Volunteers_lead2 | trials(1) ~
+  Volunteers_lead2 ~ #| trials(1) ~
     Church_lead1 +
     Church +
     AGREEABLENESS_z +
@@ -2939,24 +3518,82 @@ m14_church_volunteers <- brm_multiple(
     SUPPORT_z +#
     Urban_z +
     Volunteers_z,
-  family = binomial(),
+  family = "poisson",#binomial("identity"),
   #bernoulli(link = "cloglog")
   data = out2_ch,
   seed = 1234,
   warmup = 1000,
   iter = 2000,
+  init = 0,
   chains = 4,
   backend = "cmdstanr",
   file = here::here("mods", "m14_church_volunteers.rds"),
   set_prior('normal(0, 1)', class = 'b')
 )
 
+bayestestR::mcse()
+summary(m14_church_volunteers)
+
+
 lp <-
   posterior_linpred(
-    m14_church_volunteers,
+    m14c_church_volunteers,
     newdata = data.frame(
       n = 1,
-      Church_lead1 = c(4, 0),
+      Church_lead1 = c(0, 4),
+      Church  = 0,
+      AGREEABLENESS_z = 0,
+      CONSCIENTIOUSNESS_z = 0,
+      EXTRAVERSION_z  = 0,
+      HONESTY_HUMILITY_z = 0,
+      NEUROTICISM_z = 0,
+      OPENNESS_z = 0,
+      Age_z = 0,
+      Alcohol.Frequency_z = 0,
+      Alcohol.Intensity_log_z = 0,
+      Bodysat_z = 0,
+      Believe.God_z = 0,
+      Believe.Spirit_z = 0,
+      BELONG_z = 0,
+      CharityDonate_log_z = 0,
+      ChildrenNum_z = 0,
+      community = 0,
+      Edu_z = 0,
+      Employed_z = 0,
+      EmotionRegulation_z = 0,
+      Euro_z = 0,
+      GRATITUDE_z = 0,
+      HomeOwner_z = 0,
+      Hours.Exercise_log_z = 0,
+      Hours.Work_z = 0,
+      HLTH.BMI_z  = 0,
+      HLTH.Fatigue_z = 0,
+      income_log_z = 0,
+      KESSLER6sum_z = 0,
+      LIFEMEANING_z = 0,
+      LIFESAT_z = 0,
+      lost_job_z = 0,
+      Male_z = 0,
+      NZdep_z = 0,
+      NWI_z = 0,
+      Parent_z = 0,
+      Partner_z = 0,
+      PERFECTIONISM_z = 0,
+      Pol.Orient_z = 0,
+      POWERDEPENDENCE_z = 0, #
+      PWI_z = 0,
+      Relid_z = 0,
+      Respect.Self_z = 0, #
+      Rumination_z = 0, #
+      SELF.CONTROL_z = 0, #
+      SELF.ESTEEM_z = 0,#
+      SexualSatisfaction_z = 0,#
+      SFHEALTH_z = 0,#
+      Smoker_z = 0,#
+      SUPPORT_z = 0,
+      Urban_z = 0,
+      VENGEFUL.RUMIN = 0,
+      Volunteers_z= 0,
       transform = TRUE,
       re_formula = NA
     )
@@ -2990,14 +3627,13 @@ plot_smooth_m14 <-
 library(ggokabeito)
 # tidy graph
 
-m14_plot <-  plot_smooth_m14[[1]]  +
-  scale_y_continuous(limits = c(-.5, .5)) +
+m14_plot_volunteers_zoom <-  plot_smooth_m14[[1]]  +
+#  scale_y_continuous(limits = c(0, 1)) +
   labs(title = "Volunteerse",
        # subtitle = "Loss shows greater distress",
        y = "Volunteers",
        x = "Volunteerse")
-
-m14_plot
+m14_plot_volunteers_zoom
 
 ###  version
 m14a_church_volunteers <- brm_multiple(
@@ -3132,9 +3768,77 @@ m14c_church_volunteers <- brm_multiple(
 )
 
 
+m14d_church_volunteers <- brm_multiple(
+  Volunteers_lead2 ~ #| trials(1) ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = "poisson",#binomial("identity"),
+  #bernoulli(link = "cloglog")
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init = 0,
+  chains = 4,
+  backend = "cmdstanr",
+ file = here::here("mods", "m14d_church_volunteers.rds"),
+  set_prior('normal(0,1)', class = 'b')
+)
+
+exp(-3.44 )
+
+m14d_church_volunteers
 lp <-
   posterior_linpred(
-    m14_church_volunteers,
+    m14c_church_volunteers,
     newdata = data.frame(
       n = 1,
       Church_lead1 = c(0, 4),
@@ -3195,10 +3899,34 @@ lp <-
       Alcohol.Frequency_z = 0,
       Alcohol.Intensity_log = 0,
       transform = TRUE,
-      re_formula = NA
-    )
+      re_formula = NA )
   )
+
+posterior_summary(pp[, 1] / pp[, 2])
 posterior_summary(lp[, 1] / lp[, 2])
+
+
+
+out <- model_parameters(m14c_church_volunteers, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse()
+bayestestR::mcse(m14d_church_volunteers, parameters = "b_Church_lead1")
+
+round( EValue::evalues.RR(1.088792, lo =  1.085763, hi = 1.091821, true = 1), 3)
+
+1.088792-  0.003029236
+1.088792 + 0.003029236
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( 0.01368, se = 0.01368, sd = 1, delta = 4, true = 0), 3)
+
+
+
 lp <-
   posterior_linpred(
     m14c_church_volunteers,
@@ -3265,14 +3993,34 @@ lp <-
       re_formula = NA
     )
   )
-posterior_summary(lp[, 1] / lp[, 2])
+round(posterior_summary(lp[, 1] / lp[, 2]),3)
+
+out <- model_parameters(m14c_church_volunteers, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+
+out
+exp(0.06929)
+
+bayestestR::mcse()
+round( EValue::evalues.RR(1.096529, lo =  1.059341, hi = 1.133717, true = 1), 3)
+
+1.096529-  0.0371876
+1.096529+  0.0371876
+
+round( EValue::evalues.OLS( 0.01368, se = 0.01368, sd = 1, delta = 4, true = 0), 3)
 
 ## posterior predictive checks
 pp_check(m14_church_volunteers)
 pp_check(m14c_church_volunteers)
 
+pp_check(m14d_church_volunteers)
+
+
 #table
-lazerhawk::brms_SummaryTable(m14c_church_volunteers, panderize = F)
+lazerhawk::brms_SummaryTable(m14d_church_volunteers, panderize = F)
 
 # another table
 m1_bayes_table <-
@@ -3284,7 +4032,7 @@ plot(m1_bayes_table)
 plot_smooth_m14 <-
   plot(
     conditional_effects(
-      m14c_church_volunteers,
+      m14d_church_volunteers,
       "Church_lead1",
       ndraws = 500,
       spaghetti = T
@@ -3296,14 +4044,26 @@ plot_smooth_m14 <-
 library(ggokabeito)
 # tidy graph
 
-m14_plot <-  plot_smooth_m14[[1]]  +
-  scale_y_continuous(limits = c(-.5, .5)) +
-  labs(title = "Volunteerse",
+m14_plot_volunteers_zoom <-  plot_smooth_m14[[1]]  +
+scale_y_continuous(limits = c(0, .1)) +
+  labs(title = "Volunteers",
        # subtitle = "Loss shows greater distress",
        y = "Volunteers",
-       x = "Volunteerse")
+       x = "Monthly Church Frequency")
+m14_plot_volunteers_zoom
 
-m14_plot
+
+ggsave(
+  m14_plot_volunteers_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m14_plot_volunteers_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 # Charity.Donate_logz -----------------------------------------------
 
@@ -3370,6 +4130,21 @@ m15_church_charity <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+bayestestR::mcse()
+out <- model_parameters(m15_church_charity, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+bayestestR::mcse()
+bayestestR::mcse(m15_church_charity, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS( .04583, se = 0.0005863215, sd = 1, delta = 4, true = 0), 3)
+bayestestR::mcse(m15_church_charity, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
 
 
 m15a_church_charity <- brm_multiple(
@@ -3435,6 +4210,24 @@ m15a_church_charity <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+m15_church_charity
+out <- model_parameters(m15_church_charity, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+
+out
+round( EValue::evalues.OLS( 0.04583, se = 0.0005863215, sd = 1, delta = 4, true = 0), 3)
+
+bayestestR::mcse(m15_church_charity, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+bayestestR::mcse(m15_church_charity, parameters = "b_Church_lead1")
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+round( EValue::evalues.OLS( .04583, se = 0.00544, sd = 1, delta = 4, true = 0), 3)
+
 ## posterior predictive checks
 pp_check(m15a_church_charity) # not a good fit
 
@@ -3455,7 +4248,7 @@ plogis(-1.67 + 0.01 -0.92 -(0.05*4))
 # graph
 plot_smooth_m15 <-
   plot(conditional_effects(
-    m15a_church_charity,
+    m15_church_charity,
     "Church_lead1",
     ndraws = 500,
     spaghetti = T
@@ -3466,71 +4259,87 @@ plot_smooth_m15 <-
 library(ggokabeito)
 # tidy graph
 
-m15_plot <-  plot_smooth_m15[[1]]  +
+m15_plot_charity_zoom  <-  plot_smooth_m15[[1]]  +
  # scale_y_continuous(limits = c(0, 1000)) +
   labs(title = "Charitable Donations",
        # subtitle = "Loss shows greater distress",
        y = "Charitable Donations (dollars)",
        x = "Monthly Church Frequency")
 
-m15_plot
+m15_plot_charity_zoom
+
+ggsave(
+  m15_plot_charity_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m15_plot_charity_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 #  Alcohol.Intensity_logz -------------------------------------------------
 
 m16_church_alcohol_intensity <-
   brm_multiple(
-   bf(Alcohol.Intensity_lead2   ~
-      Church_lead1 +
-      Church +
-      AGREEABLENESS_z +
-      CONSCIENTIOUSNESS_z +
-      EXTRAVERSION_z  +
-      HONESTY_HUMILITY_z +
-      NEUROTICISM_z +
-      OPENNESS_z +
-      Age_z +
-      Alcohol.Frequency_z + #
-      Alcohol.Intensity_log_z + #
-      Believe.God_z +
-      Believe.Spirit_z +
-      BELONG_z + #
-      CharityDonate_log_z + #
-      ChildrenNum_z +
-      Edu_z +
-      Employed_z +
-      Euro_z +
-      GRATITUDE_z +
-      HomeOwner_z +
-      Hours.Exercise_log_z +
-      Hours.Work_z +
-      HLTH.BMI_z  + #
-      HLTH.Fatigue_z + #
-      income_log_z +
-      KESSLER6sum_z + #
-      LIFEMEANING_z + #
-      LIFESAT_z + #
-      lost_job_z +
-      Male_z +
-      NZdep_z +
-      NWI_z +
-      Parent_z +
-      Partner_z +
-      PERFECTIONISM_z +
-      Pol.Orient_z +
-      POWERDEPENDENCE_z + #
-      PWI_z +
-      Relid_z +
-      Respect.Self_z + #
-      Rumination_z + #
-      SELF.CONTROL_z + #
-      SELF.ESTEEM_z + #
-      SexualSatisfaction_z +#
-      SFHEALTH_z +#
-      Smoker_z +#
-      SUPPORT_z +#
-      Urban_z +
-      Volunteers_z, zi ~ Church_lead1 + Church + Alcohol.Intensity_log_z),
-    family = "zero_inflated_negbinomial",
+   bf(Alcohol.Intensity_lead2_z   ~
+        Church_lead1 +
+        Church +
+        AGREEABLENESS_z +
+        CONSCIENTIOUSNESS_z +
+        EXTRAVERSION_z  +
+        HONESTY_HUMILITY_z +
+        NEUROTICISM_z +
+        OPENNESS_z +
+        Age_z +
+        Alcohol.Frequency_z + #
+        Alcohol.Intensity_log_z + #
+        Bodysat_z +
+        Believe.God_z +
+        Believe.Spirit_z +
+        BELONG_z + #
+        CharityDonate_log_z + #
+        ChildrenNum_z +
+        community +
+        Edu_z +
+        Employed_z +
+        EmotionRegulation_z +
+        Euro_z +
+        GRATITUDE_z +
+        HomeOwner_z +
+        Hours.Exercise_log_z +
+        Hours.Work_z +
+        HLTH.BMI_z  + #
+        HLTH.Fatigue_z + #
+        income_log_z +
+        KESSLER6sum_z + #
+        LIFEMEANING_z + #
+        LIFESAT_z + #
+        lost_job_z +
+        Male_z +
+        NZdep_z +
+        NWI_z +
+        Parent_z +
+        Partner_z +
+        PERFECTIONISM_z +
+        Pol.Orient_z +
+        POWERDEPENDENCE_z + #
+        PWI_z +
+        Relid_z +
+        Respect.Self_z + #
+        Rumination_z + #
+        SELF.CONTROL_z + #
+        SELF.ESTEEM_z + #
+        SexualSatisfaction_z +#
+        SFHEALTH_z +#
+        Smoker_z +#
+        SUPPORT_z +#
+        Urban_z +
+        VENGEFUL.RUMIN +
+        Volunteers_z),
+    family = "gaussian",
     data = out2_ch,
     seed = 1234,
     warmup = 1000,
@@ -3540,6 +4349,7 @@ m16_church_alcohol_intensity <-
     file = here::here("mods", "m16_church_alcohol_intensity.rds"),
     set_prior('normal(0, 1)', class = 'b')
   )
+
 
 
 m16a_church_alcohol_intensity <-
@@ -3606,11 +4416,28 @@ m16a_church_alcohol_intensity <-
     set_prior('normal(0, 1)', class = 'b')
   )
 
+sd(long2$Alcohol.Intensity_lead2, na.rm=TRUE)
+
 
 ## posterior predictive checks
-pp_check(m16_church_alcohol_intensity)
+pp_check(m16a_church_alcohol_intensity)
+out <- model_parameters(m16a_church_alcohol_intensity, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
 
-youla
+
+# EVALUES
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+bayestestR::mcse(m16_church_alcohol_intensity)
+bayestestR::mcse(m16a_church_alcohol_intensity, parameters = "b_Church_lead1")
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS(  -0.01162 , se = 0.0007623439, sd = 1, delta = 4, true = 0), 3)
+
 #table
 lazerhawk::brms_SummaryTable(m16_church_alcohol_intensity, panderize = F)
 
@@ -3622,10 +4449,10 @@ m1_bayes_table
 plot(m1_bayes_table)
 
 # graph
-plot_smooth_m16 <-
+plot_smooth_m16a <-
   plot(
     conditional_effects(
-      m16_church_alcohol_intensity,
+      m16a_church_alcohol_intensity,
       "Church_lead1",
       ndraws = 500,
       spaghetti = T
@@ -3637,7 +4464,7 @@ plot_smooth_m16 <-
 library(ggokabeito)
 # tidy graph
 
-m16_plot <-  plot_smooth_m16[[1]]  +
+m16_plot_alcohol_intensity_zoom <-  plot_smooth_m16a[[1]]  +
  # scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Alcohol Intensity",
        # subtitle = "Loss shows greater distress",
@@ -3645,8 +4472,17 @@ m16_plot <-  plot_smooth_m16[[1]]  +
        x = "Monthly Church Frequency")
 
 
-plogis(.51)
-
+ggsave(
+  m16_plot_alcohol_intensity_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m16_plot_alcohol_intensity_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 # Alcohol.Frequency_lead2_z , ---------------------------------------------------
 
 m17_church_alcohol_frequency <-
@@ -3713,6 +4549,291 @@ m17_church_alcohol_frequency <-
     set_prior('normal(0, 1)', class = 'b')
   )
 
+
+m17b_church_alcohol_frequency <-
+  brm_multiple(
+    alcohol_bin  ~
+      Church_lead1 +
+      Church +
+      AGREEABLENESS_z +
+      CONSCIENTIOUSNESS_z +
+      EXTRAVERSION_z  +
+      HONESTY_HUMILITY_z +
+      NEUROTICISM_z +
+      OPENNESS_z +
+      Age_z +
+      Alcohol.Frequency_z + #
+      Alcohol.Intensity_log_z + #
+      Believe.God_z +
+      Believe.Spirit_z +
+      BELONG_z + #
+      CharityDonate_log_z + #
+      ChildrenNum_z +
+      Edu_z +
+      Employed_z +
+      Euro_z +
+      GRATITUDE_z +
+      HomeOwner_z +
+      Hours.Exercise_log_z +
+      Hours.Work_z +
+      HLTH.BMI_z  + #
+      HLTH.Fatigue_z + #
+      income_log_z +
+      KESSLER6sum_z + #
+      LIFEMEANING_z + #
+      LIFESAT_z + #
+      lost_job_z +
+      Male_z +
+      NZdep_z +
+      NWI_z +
+      Parent_z +
+      Partner_z +
+      PERFECTIONISM_z +
+      Pol.Orient_z +
+      POWERDEPENDENCE_z + #
+      PWI_z +
+      Relid_z +
+      Respect.Self_z + #
+      Rumination_z + #
+      SELF.CONTROL_z + #
+      SELF.ESTEEM_z + #
+      SexualSatisfaction_z +#
+      SFHEALTH_z +#
+      Smoker_z +#
+      SUPPORT_z +#
+      Urban_z +
+      Volunteers_z,
+    family = binomial(link = "identity"),
+    data = out2_ch,
+    seed = 1234,
+    warmup = 1000,
+    iter = 2000,
+    init = 0,
+    chains = 4,
+    backend = "cmdstanr",
+    file = here::here("mods", "m17b_church_alcohol_frequency.rds"),
+    set_prior('normal(0, 1)', class = 'b')
+  )
+
+
+lp <-
+  posterior_linpred(
+    m17b_church_alcohol_frequency,
+    newdata = data.frame(
+      n = 1,
+      Church_lead1 = c(0, 4),
+      Church  = 0,
+      AGREEABLENESS_z = 0,
+      CONSCIENTIOUSNESS_z = 0,
+      EXTRAVERSION_z  = 0,
+      HONESTY_HUMILITY_z = 0,
+      NEUROTICISM_z = 0,
+      OPENNESS_z = 0,
+      Age_z = 0,
+      Alcohol.Frequency_z = 0,
+      Alcohol.Intensity_log_z = 0,
+      Bodysat_z = 0,
+      Believe.God_z = 0,
+      Believe.Spirit_z = 0,
+      BELONG_z = 0,
+      CharityDonate_log_z = 0,
+      ChildrenNum_z = 0,
+      community = 0,
+      Edu_z = 0,
+      Employed_z = 0,
+      EmotionRegulation_z = 0,
+      Euro_z = 0,
+      GRATITUDE_z = 0,
+      HomeOwner_z = 0,
+      Hours.Exercise_log_z = 0,
+      Hours.Work_z = 0,
+      HLTH.BMI_z  = 0,
+      HLTH.Fatigue_z = 0,
+      income_log_z = 0,
+      KESSLER6sum_z = 0,
+      LIFEMEANING_z = 0,
+      LIFESAT_z = 0,
+      lost_job_z = 0,
+      Male_z = 0,
+      NZdep_z = 0,
+      NWI_z = 0,
+      Parent_z = 0,
+      Partner_z = 0,
+      PERFECTIONISM_z = 0,
+      Pol.Orient_z = 0,
+      POWERDEPENDENCE_z = 0, #
+      PWI_z = 0,
+      Relid_z = 0,
+      Respect.Self_z = 0, #
+      Rumination_z = 0, #
+      SELF.CONTROL_z = 0, #
+      SELF.ESTEEM_z = 0,#
+      SexualSatisfaction_z = 0,#
+      SFHEALTH_z = 0,#
+      Smoker_z = 0,#
+      SUPPORT_z = 0,
+      Urban_z = 0,
+      VENGEFUL.RUMIN = 0,
+      Volunteers_z= 0,
+      transform = TRUE,
+      re_formula = NA
+    )
+  )
+posterior_summary(lp[, 1] / lp[, 2])
+
+m17c_church_alcohol_frequency <-
+  brm_multiple(
+    alcohol_bin2   ~
+      Church_lead1 +
+      Church +
+      AGREEABLENESS_z +
+      CONSCIENTIOUSNESS_z +
+      EXTRAVERSION_z  +
+      HONESTY_HUMILITY_z +
+      NEUROTICISM_z +
+      OPENNESS_z +
+      Age_z +
+      Alcohol.Frequency_z + #
+      Alcohol.Intensity_log_z + #
+      Bodysat_z +
+      Believe.God_z +
+      Believe.Spirit_z +
+      BELONG_z + #
+      CharityDonate_log_z + #
+      ChildrenNum_z +
+      community +
+      Edu_z +
+      Employed_z +
+      EmotionRegulation_z +
+      Euro_z +
+      GRATITUDE_z +
+      HomeOwner_z +
+      Hours.Exercise_log_z +
+      Hours.Work_z +
+      HLTH.BMI_z  + #
+      HLTH.Fatigue_z + #
+      income_log_z +
+      KESSLER6sum_z + #
+      LIFEMEANING_z + #
+      LIFESAT_z + #
+      lost_job_z +
+      Male_z +
+      NZdep_z +
+      NWI_z +
+      Parent_z +
+      Partner_z +
+      PERFECTIONISM_z +
+      Pol.Orient_z +
+      POWERDEPENDENCE_z + #
+      PWI_z +
+      Relid_z +
+      Respect.Self_z + #
+      Rumination_z + #
+      SELF.CONTROL_z + #
+      SELF.ESTEEM_z + #
+      SexualSatisfaction_z +#
+      SFHEALTH_z +#
+      Smoker_z +#
+      SUPPORT_z +#
+      Urban_z +
+      VENGEFUL.RUMIN +
+      Volunteers_z,
+    family = bernoulli(link = "cloglog"),
+    data = out2_ch,
+    seed = 1234,
+    warmup = 1000,
+    init = 0,
+    iter = 2000,
+    chains = 4,
+    backend = "cmdstanr",
+    file = here::here("mods", "m17c_church_alcohol_frequency.rds"),
+    set_prior('normal(0, 1)', class = 'b')
+  )
+
+
+lp <-
+  posterior_linpred(
+    m17c_church_alcohol_frequency,
+    newdata = data.frame(
+      n = 1,
+      Church_lead1 = c(0, 4),
+      Church  = 0,
+      AGREEABLENESS_z = 0,
+        CONSCIENTIOUSNESS_z = 0,
+        EXTRAVERSION_z  = 0,
+        HONESTY_HUMILITY_z = 0,
+        NEUROTICISM_z = 0,
+        OPENNESS_z = 0,
+        Age_z = 0,
+        Alcohol.Frequency_z = 0,
+        Alcohol.Intensity_log_z = 0,
+        Bodysat_z = 0,
+        Believe.God_z = 0,
+        Believe.Spirit_z = 0,
+        BELONG_z = 0,
+        CharityDonate_log_z = 0,
+        ChildrenNum_z = 0,
+        community = 0,
+        Edu_z = 0,
+        Employed_z = 0,
+        EmotionRegulation_z = 0,
+        Euro_z = 0,
+        GRATITUDE_z = 0,
+        HomeOwner_z = 0,
+        Hours.Exercise_log_z = 0,
+        Hours.Work_z = 0,
+        HLTH.BMI_z  = 0,
+        HLTH.Fatigue_z = 0,
+        income_log_z = 0,
+        KESSLER6sum_z = 0,
+        LIFEMEANING_z = 0,
+        LIFESAT_z = 0,
+        lost_job_z = 0,
+        Male_z = 0,
+        NZdep_z = 0,
+        NWI_z = 0,
+        Parent_z = 0,
+        Partner_z = 0,
+        PERFECTIONISM_z = 0,
+        Pol.Orient_z = 0,
+        POWERDEPENDENCE_z = 0, #
+        PWI_z = 0,
+        Relid_z = 0,
+        Respect.Self_z = 0, #
+        Rumination_z = 0, #
+        SELF.CONTROL_z = 0, #
+        SELF.ESTEEM_z = 0,#
+        SexualSatisfaction_z = 0,#
+        SFHEALTH_z = 0,#
+        Smoker_z = 0,#
+        SUPPORT_z = 0,
+        Urban_z = 0,
+        VENGEFUL.RUMIN = 0,
+        Volunteers_z= 0,
+      transform = TRUE,
+      re_formula = NA
+    )
+  )
+
+posterior_summary(lp[, 1] / lp[, 2])
+
+
+
+out <- model_parameters(m17_church_alcohol_frequency, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse()
+bayestestR::mcse(m17_church_alcohol_frequency, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS(  -0.01162 , se = 0.0003216629, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
 ## posterior predictive checks
 pp_check(m17_church_alcohol_frequency)
 
@@ -3729,7 +4850,7 @@ plot(m1_bayes_table)
 plot_smooth_m17 <-
   plot(
     conditional_effects(
-      m17_church_alcohol_frequency,
+      m17c_church_alcohol_frequency,
       "Church_lead1",
       ndraws = 500,
       spaghetti = T
@@ -3741,14 +4862,26 @@ plot_smooth_m17 <-
 library(ggokabeito)
 # tidy graph
 
-m17_plot <-  plot_smooth_m17[[1]]  +
+m17_plot_alcohol_freq_zoom  <-  plot_smooth_m17[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Alcohol Frequency",
        # subtitle = "Loss shows greater distress",
        y = "Alcohol Frequency (sd)",
        x = "Monthly Church Frequency")
 
-m17_plot
+
+ggsave(
+  m17_plot_alcohol_freq_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m17_plot_alcohol_freq_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
 # Smoker_bz ---------------------------------------------------------------
 
 m18_church_smoker <- brm_multiple(
@@ -3817,7 +4950,7 @@ m18_church_smoker <- brm_multiple(
 
 lp <-
   posterior_linpred(
-    m18_church_smoker,
+    m14_church_volunteers,
     newdata = data.frame(
       n = 1,
       Church_lead1 = c(0, 4),
@@ -3881,9 +5014,287 @@ lp <-
       re_formula = NA
     )
   )
-posterior_summary(lp[, 1] / lp[, 2])
+round( posterior_summary(lp[, 2] / lp[, 1]), 3)
 
 posterior_summary(lp[, 1] / lp[, 2])
+
+
+bayestestR::mcse(m18_church_smoker, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS(  -0.01162 , se = 0.0003216629, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+## posterior predictive checks
+pp_check(m17_church_alcohol_frequency)
+
+#table
+lazerhawk::brms_SummaryTable(, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m18_church_smoker, dispersion = TRUE, centrality = "mean",
+                               test = "pd",
+                               digits = 5,
+                               diagnostic =  NULL,
+                               rope_range = NULL) %>%
+  slice(2)
+m1_bayes_table
+plot(m1_bayes_table)
+
+### Test Frequentist
+
+library(sandwich) #
+library(lmtest)
+library(ggthemes)
+
+log2prob <- function(log...){
+  return(exp(log...))
+}
+
+
+smoker_church <- with(out2_ch, glm(Smoker_lead2   ~
+                   Church_lead1 +
+                   Church +
+                   AGREEABLENESS_z +
+                   CONSCIENTIOUSNESS_z +
+                   EXTRAVERSION_z  +
+                   HONESTY_HUMILITY_z +
+                   NEUROTICISM_z +
+                   OPENNESS_z +
+                   Age_z +
+                   Alcohol.Frequency_z + #
+                   Alcohol.Intensity_log_z + #
+                   Believe.God_z +
+                   Believe.Spirit_z +
+                   BELONG_z + #
+                   CharityDonate_log_z + #
+                   ChildrenNum_z +
+                   Edu_z +
+                   Employed_z +
+                   Euro_z +
+                   GRATITUDE_z +
+                   HomeOwner_z +
+                   Hours.Exercise_log_z +
+                   Hours.Work_z +
+                   HLTH.BMI_z  + #
+                   HLTH.Fatigue_z + #
+                   income_log_z +
+                   KESSLER6sum_z + #
+                   LIFEMEANING_z + #
+                   LIFESAT_z + #
+                   lost_job_z +
+                   Male_z +
+                   NZdep_z +
+                   NWI_z +
+                   Parent_z +
+                   Partner_z +
+                   PERFECTIONISM_z +
+                   Pol.Orient_z +
+                   POWERDEPENDENCE_z + #
+                   PWI_z +
+                   Relid_z +
+                   Respect.Self_z + #
+                   Rumination_z + #
+                   SELF.CONTROL_z + #
+                   SELF.ESTEEM_z + #
+                   SexualSatisfaction_z +#
+                   SFHEALTH_z +#
+                   Smoker_z +#
+                   SUPPORT_z +#
+                   Urban_z +
+                   Volunteers_z, family = poisson(link = log))
+)
+
+
+
+volunteers_church <- with(out2_ch, glm(Volunteers_lead2   ~
+                                     Church_lead1 +
+                                     Church +
+                                     AGREEABLENESS_z +
+                                     CONSCIENTIOUSNESS_z +
+                                     EXTRAVERSION_z  +
+                                     HONESTY_HUMILITY_z +
+                                     NEUROTICISM_z +
+                                     OPENNESS_z +
+                                     Age_z +
+                                     Alcohol.Frequency_z + #
+                                     Alcohol.Intensity_log_z + #
+                                     Believe.God_z +
+                                     Believe.Spirit_z +
+                                     BELONG_z + #
+                                     CharityDonate_log_z + #
+                                     ChildrenNum_z +
+                                     Edu_z +
+                                     Employed_z +
+                                     Euro_z +
+                                     GRATITUDE_z +
+                                     HomeOwner_z +
+                                     Hours.Exercise_log_z +
+                                     Hours.Work_z +
+                                     HLTH.BMI_z  + #
+                                     HLTH.Fatigue_z + #
+                                     income_log_z +
+                                     KESSLER6sum_z + #
+                                     LIFEMEANING_z + #
+                                     LIFESAT_z + #
+                                     lost_job_z +
+                                     Male_z +
+                                     NZdep_z +
+                                     NWI_z +
+                                     Parent_z +
+                                     Partner_z +
+                                     PERFECTIONISM_z +
+                                     Pol.Orient_z +
+                                     POWERDEPENDENCE_z + #
+                                     PWI_z +
+                                     Relid_z +
+                                     Respect.Self_z + #
+                                     Rumination_z + #
+                                     SELF.CONTROL_z + #
+                                     SELF.ESTEEM_z + #
+                                     SexualSatisfaction_z +#
+                                     SFHEALTH_z +#
+                                     Smoker_z +#
+                                     SUPPORT_z +#
+                                     Urban_z +
+                                     Volunteers_z, family = poisson())
+)
+
+
+library(miceadds)
+# won't work
+summary(church_smoker)
+
+# won't work
+(smy <- coeftest(smoker_church, vcovHC(smoker_church, type="HC0")))
+
+(irr <- exp(coef(spirit)))
+rse <- sqrt(diag(vcovHC(spirit, type="HC0")))
+irr*rse
+
+
+(smy <- coeftest(spirit, vcovHC(spirit, type="HC0")))
+(irr <- exp(coef(spirit)))
+rse <- sqrt(diag(vcovHC(spirit, type="HC0")))
+irr*rse
+
+(smy <- coeftest(god, vcovHC(god, type="HC0")))
+(irr <- exp(coef(god)))
+rse <- sqrt(diag(vcovHC(god, type="HC0")))
+irr*rse
+
+
+
+newdata = data.frame(
+  n = 1,
+  Church_lead1 = c(0, 4),
+  Church  = 0,
+  KESSLER6sum_z = 0,
+  Age_z = 0,
+  Hours.Work_z = 0,
+  Male_z = 0,
+  ChildrenNum_z = 0,
+  Edu_z = 0,
+  Employed_z = 0,
+  Exercise_log_z = 0,
+  Euro_z = 0,
+  HomeOwner_z = 0,
+  income_log_z = 0,
+  Pol.Orient_z = 0,
+  Urban_z = 0,
+  NZdep_z = 0,
+  Parent_z = 0,
+  Partner_z = 0,
+  Smoker_z = 0,
+  HLTH.BMI_z  = 0,
+  lost_job_z = 0,
+  Alcohol.Intensity_log_z = 0,
+  CharityDonate_log_z = 0,
+  PERFECTIONISM_z = 0,
+  Volunteers_z = 0,
+  Hours.Exercise_log_z = 0,
+  began_relationship_z = 0,
+  CONSCIENTIOUSNESS_z = 0,
+  OPENNESS_z = 0,
+  HONESTY_HUMILITY_z = 0,
+  EXTRAVERSION_z = 0,
+  NEUROTICISM_z = 0,
+  AGREEABLENESS_z = 0,
+  Relid_z = 0,
+  Believe.Spirit_z = 0,
+  Believe.God_z = 0,
+  HLTH.Fatigue_z = 0,
+  Rumination_z = 0,
+  SexualSatisfaction_z = 0,
+  POWERDEPENDENCE_z = 0,
+  Standard.Living_z = 0,
+  NWI_z = 0,
+  BELONG_z = 0,
+  SUPPORT_z = 0,
+  GRATITUDE_z = 0,
+  LIFEMEANING_z = 0,
+  LIFESAT_z = 0,
+  PWI_z = 0,
+  NWI_z = 0,
+  SFHEALTH_z = 0,
+  SELF.CONTROL_z = 0,
+  SFHEALTH_z = 0,
+  SELF.ESTEEM_z = 0,
+  Respect.Self_z = 0,
+  SELF.CONTROL_z = 0,
+  Alcohol.Frequency_z = 0,
+  Alcohol.Intensity_log = 0,
+  transform = TRUE,
+  re_formula = NA
+)
+?predict
+# obtain predictions Q and prediction variance U
+predm <- lapply(getfit(volunteers_church), predict, newdata = newdata, type = "response", se.fit = TRUE)
+predm
+Q <- sapply(predm, `[[`, "fit")
+U <- sapply(predm, `[[`, "se.fit")^2
+#dfcom <- predm[[1]]$df
+dfcom =  33188
+
+
+# pool predictions
+pred <- matrix(NA, nrow = nrow(Q), ncol = 3,
+               dimnames = list(NULL, c("fit", "se.fit", "df")))
+for(i in 1:nrow(Q)) {
+  pi <- pool.scalar(Q[i, ], U[i, ], n = dfcom + 1)
+  pred[i, 1] <- pi[["qbar"]]
+  pred[i, 2] <- sqrt(pi[["t"]])
+  pred[i, 3] <- pi[["df"]]
+}
+pred
+
+pred[2,1]/pred[1,1]
+
+rel_plot <- plot(pred) + scale_y_continuous(limits = c(0,1)) +
+  labs(title = "Probability of having a religious identification: 2010/11 (n = 4441) v 2020/21 (n=38,551)",
+       subtitle = "New Zealand Attitudes and Values Study" )
+rel_plot
+
+ggsave(
+  rel_plot,
+  path = here::here(here::here("figs")),
+  width = 8,
+  height = 4.5,
+  units = "in",
+  filename = "rel_plot.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1000
+)
+
+
+
+
+bayestestR::mcse()
+
+bayestestR::mcse(, parameters = "b_Church_lead1")
 
 ## posterior predictive checks
 pp_check(m18_church_smoker)
@@ -3893,8 +5304,8 @@ lazerhawk::brms_SummaryTable(m18_church_smoker, panderize = F)
 
 # another table
 m1_bayes_table <-
-  parameters::model_parameters(m18_church_smoker)
-m1_bayes_table
+  parameters::model_parameters(m18_church_smoker,digits = 3, test = "pd")
+m1_bayes_table %>% slice(2)
 plot(m1_bayes_table)
 
 # graph
@@ -3911,14 +5322,28 @@ plot_smooth_m18 <-
 library(ggokabeito)
 # tidy graph
 
-m18_plot <-  plot_smooth_m18[[1]]  +
-  scale_y_continuous(limits = c(0, .1)) +
+m18_plot_smoker_zoom <-  plot_smooth_m18[[1]]  +
+  scale_y_continuous(limits = c(0, .3)) +
   labs(title = "Smoker",
        # subtitle = "Loss shows greater distress",
        y = "Smoker (sd)",
        x = "Monthly Church Frequency")
 
-m18_plot
+m18_plot_smoker_zoom
+
+ggsave(
+  m18_plot_smoker_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m18_plot_smoker_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 # HLTH.BMI_lead2_z ---------------------------------------------------------
 
 m19_church_bmi <- brm_multiple(
@@ -3988,6 +5413,20 @@ m19_church_bmi <- brm_multiple(
 ## posterior predictive checks
 pp_check(m19_church_bmi)
 
+
+out <- model_parameters(m19_church_bmi, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m19_church_bmi, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( -0.01844 , se = .00387, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
 #table
 lazerhawk::brms_SummaryTable(m19_church_bmi, panderize = F)
 
@@ -4011,15 +5450,140 @@ plot_smooth_m19 <-
 library(ggokabeito)
 # tidy graph
 
-m19_plot <-  plot_smooth_m19[[1]]  +
+m19_plot_bmi_zoom  <-  plot_smooth_m19[[1]]  +
   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "BMI",
        # subtitle = "Loss shows greater distress",
        y = "BMI (sd)",
        x = "Monthly Church Frequency")
 
-m19_plot
+m19_plot_bmi_zoom
 
+
+ggsave(
+  m19_plot_bmi_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m19_plot_bmi_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+m19a_church_bmi <- brm_multiple(
+  HLTH.BMI_lead2   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  chains = 4,
+  init= 0,
+  backend = "cmdstanr",
+  file = here::here("mods", "m19a_church_bmi.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m19a_church_bmi)
+
+#table
+lazerhawk::brms_SummaryTable(m19a_church_bmi, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m19a_church_bmi)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m19a <-
+  plot(conditional_effects(
+    m19a_church_bmi,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m19a_raw  <-  plot_smooth_m19a[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "BMI",
+       # subtitle = "Loss shows greater distress",
+       y = "BMI (sd)",
+       x = "Monthly Church Frequency")
+
+
+
+ggsave(
+  plot_smooth_m19a_raw,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m19a_raw.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
 # Hours.Exercise_log_lead2z -----------------------------------------------
@@ -4087,6 +5651,71 @@ m20_church_exercise <- brm_multiple(
 )
 mean(long2$Hours.Exercise_lead2, na.rm=T)
 
+
+
+## posterior predictive checks
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+out <- model_parameters(m20_church_exercise, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse()
+round( EValue::evalues.OLS( -0.01844 , se = .00387, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+
+#table
+lazerhawk::brms_SummaryTable(m20_church_exercise, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m20_church_exercise)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m20 <-
+  plot(conditional_effects(
+    m20_church_exercise,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m20_exercise_zoom  <-  plot_smooth_m20[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Weekly Exercise",
+       # subtitle = "Loss shows greater distress",
+       y = "Excercise (sd)",
+       x = "Monthly Church Frequency")
+
+
+
+ggsave(
+  plot_smooth_m20_exercise_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m20_exercise_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
 #Hours spent … exercising/physical activity
 m20a_church_exercise <- brm_multiple(
   as.integer(Hours.Exercise_lead2)   ~
@@ -4151,6 +5780,13 @@ m20a_church_exercise <- brm_multiple(
   set_prior('normal(0, 1)', class = 'b')
 )
 
+
+out <- model_parameters(m20a_church_exercise, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
 ## posterior predictive checks
 pp_check(m20a_church_exercise)
 m20a_church_exercise
@@ -4178,17 +5814,28 @@ plot_smooth_m20 <-
 library(ggokabeito)
 # tidy graph
 
-m20_plot <-  plot_smooth_m20[[1]]  +
+m20_plot_exercise_raw  <-  plot_smooth_m20[[1]]  +
  # scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "Exercise",
        # subtitle = "Loss shows greater distress",
        y = "Exercise (weekly hours)",
        x = "Monthly Church Frequency")
 
-m20_plot
+m20_plot_exercise_raw
+
+ggsave(
+  m20_plot_exercise_raw,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m20_plot_exercise_raw.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
 
 
-#
 
 
 # NWI ---------------------------------------------------------------------
@@ -4261,6 +5908,21 @@ m21_church_nwi <- brm_multiple(
 pp_check(m21_church_nwi)
 m21_church_nwi
 
+out <- model_parameters(m21_church_nwi, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m21_church_nwi, parameters = "b_Church_lead1")
+
+
+round( EValue::evalues.OLS( -0.00119 , se = 0.0009525218, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
 #table
 lazerhawk::brms_SummaryTable(m21_church_nwi, panderize = F)
 
@@ -4284,14 +5946,1326 @@ plot_smooth_m21 <-
 library(ggokabeito)
 # tidy graph
 
-m21_plot <-  plot_smooth_m21[[1]]  +
-  # scale_y_continuous(limits = c(-.5, .5)) +
+m21_plot_nwi_zoom  <-  plot_smooth_m21[[1]]  +
+   scale_y_continuous(limits = c(-.5, .5)) +
   labs(title = "National Well-Being Index",
        # subtitle = "Loss shows greater distress",
        y = "NWI (sd)",
        x = "Monthly Church Frequency")
 
-m21_plot
+m21_plot_nwi_zoom
+
+ggsave(
+  m21_plot_nwi_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m21_plot_nwi_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+
+# gratitude ---------------------------------------------------------------
+
+m22_church_gratitude <- brm_multiple(
+  GRATITUDE_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m22_church_gratitude.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m22_church_gratitude)
+m22_church_gratitude
+
+
+out <- model_parameters(m22_church_gratitude, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m22_church_gratitude, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( 0.01334 , se = 0.0005786493, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+#table
+lazerhawk::brms_SummaryTable(m22_church_gratitude, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m22_church_gratitude)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m22 <-
+  plot(conditional_effects(
+    m22_church_gratitude,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+m22_plot_church_gratitude_zoom <-  plot_smooth_m21[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Gratitude",
+       # subtitle = "Loss shows greater distress",
+       y = "Gratitude (sd)",
+       x = "Monthly Church Frequency")
+
+m22_plot_church_gratitude_zoom
+
+ggsave(
+  m22_plot_church_gratitude_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m22_plot_church_gratitude_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+# perfectionism -----------------------------------------------------------
+
+m23_church_perfect <- brm_multiple(
+  PERFECTIONISM_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m23_church_perfect.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m23_church_perfect)
+m23_church_perfect
+
+
+# evalue
+out <- model_parameters(m23_church_perfect, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m23_church_perfect, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( -0.00763, se = 0.0006445498, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+#table
+lazerhawk::brms_SummaryTable(m23_church_perfect, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m23_church_perfect)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m23_church_perfect <-
+  plot(conditional_effects(
+    m23_church_perfect,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m23_church_perfect_zoom <-  plot_smooth_m23_church_perfect[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Perfectionism",
+       # subtitle = "Loss shows greater distress",
+       y = "Perfectionism (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m23_church_perfect_zoom
+
+ggsave(
+  plot_smooth_m23_church_perfect_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m23_church_perfect_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+m23a_church_perfect <- brm_multiple(
+  PERFECTIONISM_lead2ord   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    Edu_z +
+    Employed_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    Volunteers_z,
+  family = cumulative("probit"),
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m23a_church_perfect.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+bayestestR::mcse()
+## posterior predictive checks better
+pp_check(m23a_church_perfect)
+m23a_church_perfect
+
+#table
+lazerhawk::brms_SummaryTable(m23a_church_perfect, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m23a_church_perfect)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m23a_church_perfect <-
+  plot(conditional_effects(
+    m23a_church_perfect,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ),
+  points = F,
+  alpha = .01,
+  point_args = list(alpha = .005, width = .1)
+  )
+
+plot_smooth_m23a_church_perfect_zoom <-  plot_smooth_m23a_church_perfect[[1]]  +
+  scale_y_continuous(limits = c(2.75, 3.25)) +
+  labs(title = "Perfectionism",
+       # subtitle = "Loss shows greater distress",
+       y = "Perfectionism (ordinal)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m23a_church_perfect_zoom
+
+ggsave(
+  plot_smooth_m23a_church_perfect_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m23a_church_perfect_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+
+
+# bodysat  ----------------------------------------------------------------
+
+
+m24_bodysat <- brm_multiple(
+  Bodysat_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m24_bodysat.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m24_bodysat)
+m24_bodysat
+bayestestR::mcse(, parameters = "b_Church_lead1")
+
+# evalue
+out <- model_parameters(m24_bodysat, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse(m24_bodysat, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( 0.00338, se = 0.0005249269, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+
+
+
+
+#table
+lazerhawk::brms_SummaryTable(m24_bodysat, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m24_bodysat)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m24_bodysat <-
+  plot(conditional_effects(
+    m24_bodysat,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m24_bodysat_zoom <-  plot_smooth_m24_bodysat[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Body Satisfaction",
+       # subtitle = "Loss shows greater distress",
+       y = "Body Satisfaction (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m24_bodysat_zoom
+
+ggsave(
+  plot_smooth_m24_bodysat_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m24_bodysat_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+# vengful rumination -------------------------------------------------------
+m25_VENGEFUL.RUMIN <- brm_multiple(
+  VENGEFUL.RUMIN_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m25_VENGEFUL.RUMIN.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m25_VENGEFUL.RUMIN)
+m25_VENGEFUL.RUMIN
+
+# evalue
+out <- model_parameters(m25_VENGEFUL.RUMIN, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse(m25_VENGEFUL.RUMIN, parameters = "b_Church_lead1")
+
+round( EValue::evalues.OLS( -0.02100 , se = 0.0005090755, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+
+#table
+lazerhawk::brms_SummaryTable(m25_VENGEFUL.RUMIN, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m25_VENGEFUL.RUMIN)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m25_VENGEFUL.RUMIN <-
+  plot(conditional_effects(
+    m25_VENGEFUL.RUMIN,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m25_VENGEFUL.RUMIN_zoom <-  plot_smooth_m25_VENGEFUL.RUMIN[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Vengeful Rumination (Forgiveness)",
+       # subtitle = "Loss shows greater distress",
+       y = "Forgiveness (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m25_VENGEFUL.RUMIN_zoom
+
+ggsave(
+  plot_smooth_m25_VENGEFUL.RUMIN_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m25_VENGEFUL.RUMIN_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+m25a_VENGEFUL.RUMIN <- brm_multiple(
+  VENGEFUL.RUMIN_lead2ord   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m25a_VENGEFUL.RUMIN.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m25a_VENGEFUL.RUMIN)
+m25a_VENGEFUL.RUMIN
+
+#table
+lazerhawk::brms_SummaryTable(m25a_VENGEFUL.RUMIN, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m25a_VENGEFUL.RUMIN)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m25a_VENGEFUL.RUMIN <-
+  plot(conditional_effects(
+    m25_VENGEFUL.RUMIN,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ),
+  points = T,
+  alpha = .01,
+  point_args = list(alpha = .005, width = .1))
+
+# tidy graph
+
+plot_smooth_m25a_VENGEFUL.RUMIN_zoom <-  plot_smooth_m25_VENGEFUL.RUMIN[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Vengeful Rumination (Forgiveness)",
+       # subtitle = "Loss shows greater distress",
+       y = "Forgiveness (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m25a_VENGEFUL.RUMIN_zoom
+
+ggsave(
+  plot_smooth_m25a_VENGEFUL.RUMIN_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m25a_VENGEFUL.RUMIN_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+# community ---------------------------------------------------------------
+
+
+m26_community <- brm_multiple(
+  community_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m26_community.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m26_community)
+m26_community
+
+out <- model_parameters(m26_community, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+
+bayestestR::mcse(m26_community, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS(  0.00456 , se = 0.0005668716, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+
+#table
+lazerhawk::brms_SummaryTable(m26_community, panderize = F)
+
+m1_bayes_table <-
+  parameters::model_parameters(m26_community)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m26_community <-
+  plot(conditional_effects(
+    m26_community,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m26_community_zoom <-  plot_smooth_m26_community[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Community Sensibility",
+       # subtitle = "Loss shows greater distress",
+       y = "Community Sensibility (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m26_community_zoom
+
+ggsave(
+  plot_smooth_m26_community_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m26_community_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+
+# honesty -----------------------------------------------------------------
+
+m27_honesty <- brm_multiple(
+  HONESTY_HUMILITY_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m27_honesty.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m27_honesty)
+m27_honesty
+
+# evalue
+out <- model_parameters(m27_honesty, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m27_honesty, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( 0.00795 , se = 0.0003892801, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+
+#table
+lazerhawk::brms_SummaryTable(m27_honesty, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m27_honesty)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m27_honesty <-
+  plot(conditional_effects(
+    m27_honesty,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m27_honesty_zoom <-  plot_smooth_m27_honesty[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Honesty Humility",
+       # subtitle = "Loss shows greater distress",
+       y = "Honesty Humility (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m27_honesty_zoom
+
+ggsave(
+  plot_smooth_m27_honesty_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_m27_honesty_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+
+# emotion regulation ------------------------------------------------------
+
+m28_EmotionRegulation <- brm_multiple(
+  EmotionRegulation_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z,
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m28_EmotionRegulation.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+## posterior predictive checks
+pp_check(m28_EmotionRegulation)
+m28_EmotionRegulation
+
+# evalue
+out <- model_parameters(m28_EmotionRegulation, dispersion = TRUE, centrality = "mean",
+                        test = "pd",
+                        digits = 5,
+                        diagnostic =  NULL,
+                        rope_range = NULL)%>% slice(2)
+out
+
+bayestestR::mcse(m28_EmotionRegulation, parameters = "b_Church_lead1")
+round( EValue::evalues.OLS( 0.00457 , se = 0.0001293658, sd = 1, delta = 4, true = 0), 3)
+
+round( EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
+
+
+#table
+lazerhawk::brms_SummaryTable(m28_EmotionRegulation, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m28_EmotionRegulation)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m28_EmotionRegulation <-
+  plot(conditional_effects(
+    m26_community,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+plot_smooth_m28_EmotionRegulation_zoom <-  plot_smooth_m28_EmotionRegulation[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Emotional Regulation",
+       # subtitle = "Loss shows greater distress",
+       y = "Emotional Regulation (sd)",
+       x = "Monthly Church Frequency")
+
+plot_smooth_m28_EmotionRegulation_zoom
+
+ggsave(
+  plot_smooth_m28_EmotionRegulation_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_smooth_plot_smooth_m28_EmotionRegulation_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
+
+
+# Your Health -------------------------------------------------------------
+
+
+# emotion regulation ------------------------------------------------------
+
+m29_yourhealth <- brm_multiple(
+  Your.Health_lead2_z   ~
+    Church_lead1 +
+    Church +
+    AGREEABLENESS_z +
+    CONSCIENTIOUSNESS_z +
+    EXTRAVERSION_z  +
+    HONESTY_HUMILITY_z +
+    NEUROTICISM_z +
+    OPENNESS_z +
+    Age_z +
+    Alcohol.Frequency_z + #
+    Alcohol.Intensity_log_z + #
+    Bodysat_z +
+    Believe.God_z +
+    Believe.Spirit_z +
+    BELONG_z + #
+    CharityDonate_log_z + #
+    ChildrenNum_z +
+    community +
+    Edu_z +
+    Employed_z +
+    EmotionRegulation_z +
+    Euro_z +
+    GRATITUDE_z +
+    HomeOwner_z +
+    Hours.Exercise_log_z +
+    Hours.Work_z +
+    HLTH.BMI_z  + #
+    HLTH.Fatigue_z + #
+    income_log_z +
+    KESSLER6sum_z + #
+    LIFEMEANING_z + #
+    LIFESAT_z + #
+    lost_job_z +
+    Male_z +
+    NZdep_z +
+    NWI_z +
+    Parent_z +
+    Partner_z +
+    PERFECTIONISM_z +
+    Pol.Orient_z +
+    POWERDEPENDENCE_z + #
+    PWI_z +
+    Relid_z +
+    Respect.Self_z + #
+    Rumination_z + #
+    SELF.CONTROL_z + #
+    SELF.ESTEEM_z + #
+    SexualSatisfaction_z +#
+    SFHEALTH_z +#
+    Smoker_z +#
+    SUPPORT_z +#
+    Urban_z +
+    VENGEFUL.RUMIN +
+    Volunteers_z +
+  family = "gaussian",
+  data = out2_ch,
+  seed = 1234,
+  warmup = 1000,
+  iter = 2000,
+  init =0,
+  chains = 4,
+  backend = "cmdstanr",
+  file = here::here("mods", "m29_yourhealth.rds"),
+  set_prior('normal(0, 1)', class = 'b')
+)
+
+
+bayestestR::mcse(, parameters = "b_Church_lead1")
+## posterior predictive checks
+pp_check(m29_yourhealth)
+m29_yourhealth
+
+#table
+lazerhawk::brms_SummaryTable(m29_yourhealth, panderize = F)
+
+# another table
+m1_bayes_table <-
+  parameters::model_parameters(m29_yourhealth)
+m1_bayes_table
+plot(m1_bayes_table)
+
+# graph
+plot_smooth_m29_yourhealth <-
+  plot(conditional_effects(
+    m29_yourhealth,
+    "Church_lead1",
+    ndraws = 500,
+    spaghetti = T
+  ))
+# points = T,
+# alpha = .01,
+# point_args = list(alpha = .005, width = .1))
+library(ggokabeito)
+# tidy graph
+
+m29_yourhealth_zoom <-  plot_smooth_m29_yourhealth[[1]]  +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  labs(title = "Your Health",
+       # subtitle = "Loss shows greater distress",
+       y = "Your Health (sd)",
+       x = "Monthly Church Frequency")
+
+m29_yourhealth_zoom
+
+ggsave(
+  m29_yourhealth_zoom,
+  path = here::here(here::here("figs", "figs_church")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "m29_yourhealth_zoom.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 400
+)
+
 
 
 
