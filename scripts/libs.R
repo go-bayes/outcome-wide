@@ -17,6 +17,11 @@ library("ggokabeito")   # color palette
 library("brms") # bayesian estimation
 library("rstan")
 library("ggpubr")
+library("MatchThem")
+library("mice")
+library("cobalt")
+library("WeightIt")
+library("optmatch")
 library("cmdstanr")
 rstan_options(auto_write = TRUE) # bayesian estimation
 options(mc.cores = parallel::detectCores ()) # use all course
