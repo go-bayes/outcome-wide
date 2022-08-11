@@ -54,6 +54,7 @@ c_df <- df %>%
                      YearMeasured  == 1) |
                   (Wave == 2020))  %>% # Eligibility criteria
   dplyr::filter(Id != 9630) %>% # problematic
+  droplevels() %>%
   select(
     Id,
     YearMeasured,
@@ -139,6 +140,8 @@ c_df <- df %>%
     Env.ClimateChgReal #,
   ) %>%
   dplyr::rename(community =SWB.SoC01) %>%
+  arrange(Id, Wave) |>
+  group_by(Id) |>
   dplyr::mutate(org2019 =  ifelse(Wave == 2019 &
                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0

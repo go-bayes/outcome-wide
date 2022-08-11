@@ -22,15 +22,15 @@ library("tidyr")
 
 # order vars
 df$GenCohort <-
-  ordered(
-    df$GenCohort,
-    levels = c(
-      "Gen_Silent: born< 1946",
-      "Gen Boomers: born >= 1946 & b.< 1965",
-      " GenX: born >=1961 & b.< 1981",
-      "GenZ: born >= 1996 "
-    )
-  )
+  # ordered(
+  #   df$GenCohort,
+  #   levels = c(
+  #     "Gen_Silent: born< 1946",
+  #     "Gen Boomers: born >= 1946 & b.< 1965",
+  #     " GenX: born >=1961 & b.< 1981",
+  #     "GenZ: born >= 1996 "
+  #   )
+  # )
 # # view
 # df |>    # not there
 #   dplyr::filter(Wave == 2020) |>
@@ -478,7 +478,7 @@ hist(long$Standard.Living)
 hist(long$Your.Future.Security)
 hist(long$Your.Future.Security)
 hist(long$Your.Health)
-hist(long$HLTH.SleepHours)
+table(long$HLTH.SleepHours)
 long2$Hours.Exercise_lead2
 # create variables in z score
 
