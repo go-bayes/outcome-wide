@@ -4,10 +4,22 @@ library("fs")
 library("stdReg")
 library("ggplot2")
 library("mice")
+#library("gghighlight")
+library("conflicted")
+conflict_prefer("pool", "mice")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("cbind", "base")
 
-# set paths for pushing files (off of github)
+# set paths for pushing files (off of github)  ## for jb only
 push_mods <- fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
 push_figs <- fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+
+
+# bella and amy just create foldes in your directory that are called:
+# push_mods
+# push_figs
+
 
 
 ## function for saving
@@ -68,6 +80,7 @@ pool_stglm <- function(models, df, m, x, X) {
   outp
 }
 
+
 # base R plot for mice pool_stglm outputs  (above)
 plot_stglm <- function(out, ylim, main, xlab, ylab) {
   plot(
@@ -91,12 +104,47 @@ plot_stglm <- function(out, ylim, main, xlab, ylab) {
   lines(out$row, out$li, col = "red", lty = 2)
   lines(out$row, out$ui, col = "red", lty = 2)
 }
+
+
+# make red dot
+# plot(x, x, col=ifelse(x==3, "red", "black"),
+#      pch=ifelse(x==3, 19, 1), cex=ifelse(x==3, 2, 1))
+
+
+#
+# # point
+# plot_stglm <- function(out, ylim, main, xlab, ylab) {
+#   plot(
+#     out$row,
+#     out$est,
+#     type = "l",
+#     ylim = ylim,
+#     main = main,
+#     xlab = xlab,
+#     ylab = ylab,
+#     col.main = "black",
+#     #sub="My Sub-title", col.sub="black",
+#     col.lab = "black",
+#     cex.lab = 0.75
+#   )
+#   polygon(c(x, rev(x)),
+#           c(out$li, rev(out$ui)),
+#           col = "grey75",
+#           border = FALSE)
+#   lines(out$row, out$est, lwd = 1)
+#   lines(out$row, out$li, col = "red", lty = 2)
+#   lines(out$row, out$ui, col = "red", lty = 2)
+# }
 # function for ggplot
 
-ggplot_stglm <- function(out, ylim, main, xlab, ylab) {
+# function for ggplot
+
+ggplot_stglm <- function(out, ylim, main, xlab, ylab, c) {
   require(ggplot2)
   ggplot2::ggplot(out, aes(x = row, y = est)) + geom_point() + geom_pointrange(aes(ymin =  li, ymax = ui))  +
-    scale_y_continuous(limits = ylim) + labs(
+    scale_y_continuous(limits = ylim) +
+   # gghighlight::gghighlight(est == c, keep_scales = TRUE) +
+    labs(
       title = main,
       subtitle = "Marginal predictions by g-computation",
       x = xlab,

@@ -1,21 +1,31 @@
-# Bella hours work
+# Short-Form Subjective Health Scale (General Health Perception Subscale)
+# In general, would you say your health is...
+# I seem to get sick a little easier than other people.
+# I expect my health to get worse.
+
+
+# Notes
+# Church might have subgroups -- boundary of everyone not nec useful
+# Contrast cases missing -- all have dunbar's number
+#
+
+# Does congregation size cause changes in well-being
 # set science digits
 options(scipen=999)
 
 ### ELIGIBILITY CRITERIA
-# 2018/ 2019 - Hours Working Reported
+# Religious
 # Not retired baseline?
 # Not semi retired baseline?
 # Employed at baseline and Employed in 2019?
 # income above poverty
 
 # read data
-df <- readRDS(here::here("data_raw", "df.Rds"))
+dat <- readRDS(here::here("data_raw", "df.Rds"))
 
-
-# df %>%
-#   filter(Wave == 2020 &  YearMeasured == 1) %>%
-#   n_distinct("Id")
+df %>%
+  filter(Wave == 2016 &  YearMeasured == 1) %>%
+  n_distinct("Id")
 
 # read libraries in
 source(here::here("scripts", "libs.R"))
@@ -24,48 +34,49 @@ source(here::here("scripts", "funs.R"))
 
 
 # table for participant N
-tab_in <- df %>%
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
-  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
-                  (Wave == 2019  &
-                     YearMeasured  == 1) |
-                  (Wave == 2020))  %>% # Eligibility criteria
-  dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
-  # dplyr::filter(Id != 9630) %>% # problematic for income
-  group_by(Id) %>%
-  dplyr::mutate(org2019 = ifelse(Wave == 2019 &
-                                   YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
-  dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
-  dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
-  dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
+ dc <- dat %>%
+   arrange(Id,Wave) %>%
+  dplyr::mutate(Religion.CongregationSize = ifelse(Religion.Church == 0, 0,  Religion.CongregationSize) ) |> #handle missingness
+   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
+   dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
+   dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
+                   (Wave == 2017  & YearMeasured  == 1) |
+                   (Wave == 2018 & YearMeasured != -1))  %>% # Eligibility criteria
+   # dplyr::filter(Id != 9630) %>% # problematic for income
+   group_by(Id) %>%
+   dplyr::mutate(org2 = ifelse(Wave == 2017 &
                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
-  dplyr::mutate(hold18 = mean(org2018, na.rm = TRUE)) %>%  # Hack
-  dplyr::filter(hold18 > 0) %>% # hack to enable repeat of baseline
-  ungroup() %>%
-  droplevels() %>%
-  arrange(Id, Wave)
-# check n # 34782
-table1::table1(~ Household.INC | Wave , data = tab_in, overall = FALSE)
+   dplyr::mutate(hold2 = mean(org2, na.rm = TRUE)) %>%  # Hack0
+   dplyr::filter(hold2 > 0) %>% # hack to enable repeat of baseline in 201
+   dplyr::mutate(org1 =  ifelse(Wave == 2016 &
+                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+   dplyr::mutate(hold1 = mean(org1, na.rm = TRUE)) %>%  # Hack
+   dplyr::filter(hold1 > 0) %>% # hack to enable repeat of baseline
+   ungroup() %>%
+   droplevels() %>%
+   arrange(Id, Wave)
 
-length(unique(tab_in$Id)) # 34783
+ length(unique(dc$Id)) #15786
+ # check n
+
+# check n
+table1::table1(~ Religion.CongregationSize | Wave , data = dc, overall = FALSE)
+
+
+table(dc$hold2)
+
 
 # increasing rate
-dff%>%
+dat%>%
   group_by(Wave) %>%
   summarise(mean(HLTH.Disability, na.rm = TRUE))
 
 # Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
+table1::table1(~Religion.CongregationSize | Wave, data = dc)
 
 
-## select vars
-df_wk <- tab_in %>%
-  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
-                  (Wave == 2019  &
-                     YearMeasured  == 1) |
-                  (Wave == 2020))  %>% # Eligibility criteria
-  dplyr::filter(Id != 9630) %>% # problematic
+dcc <- dc |>
   select(
     Id,
     YearMeasured,
@@ -74,70 +85,70 @@ df_wk <- tab_in %>%
     Euro,
     Age,
     Male,
-    NZSEI13,
+    NZSEI06,
     CONSCIENTIOUSNESS,
     OPENNESS,
     HONESTY_HUMILITY,
     EXTRAVERSION,
     NEUROTICISM,
     AGREEABLENESS,
+    SDO,
+    RWA,
     Edu,
-    NZdep,
+    Religion.Prayer2,
+    Religion.Scripture2,
+    #   NZdep,
     Employed,
-    HomeOwner,
+    #  HomeOwner,
     Pol.Orient,
     Urban,
     Household.INC,
     Parent,
     Relid,
+    Religious,
     Religion.Church,
     Believe.Spirit,
     Believe.God,
     Spiritual.Identification,
     SWB.SoC01,
-    EmotionRegulation1,
-    EmotionRegulation2,
-    EmotionRegulation3,
-    Bodysat,
-    VENGEFUL.RUMIN,
-    retired,
-    semiretired,
+    # EmotionRegulation1,
+    # EmotionRegulation2,
+    # EmotionRegulation3,
+    # VENGEFUL.RUMIN,
+    #  retired,
+    #  semiretired,
     BornNZ,
     KESSLER6sum,
     HLTH.Fatigue,
-    Rumination,
-    Smoker,
-    ChildrenNum,
+    # Rumination,
+    #  Smoker,
+    #  ChildrenNum,
     NWI,
     BELONG,
     SUPPORT,
     CharityDonate,
     HoursCharity,
-    GRATITUDE,
+    # GRATITUDE,
     # Volunteers,
     Hours.Work,
     HLTH.SleepHours,
     HLTH.Disability,
     Hours.Exercise,
-    LIFEMEANING,
+    # LIFEMEANING,
     LIFESAT,
-    # PWI,  ##  we use the individual
+    PWI,
+    # ##  we use the individual
     NWI,
     SFHEALTH,
-    SELF.CONTROL,
-    SFHEALTH,
-    SELF.ESTEEM,
     Respect.Self,
     #  GenCohort,
     SELF.ESTEEM,
     SELF.CONTROL,
     #  Respect.Self,
-    Emp.WorkLifeBalance,
-    Alcohol.Frequency,
-    Alcohol.Intensity,
+    #  Emp.WorkLifeBalance,
     HLTH.BMI,
     Smoker,
-    ChildrenNum,
+    # ChildrenNum,
     # GenCohort,
     # Euro,
     # partnerlost_job, rare
@@ -145,18 +156,19 @@ df_wk <- tab_in %>%
     #began_relationship,
     Alcohol.Intensity,
     Alcohol.Frequency,
-    SexualSatisfaction,
-    POWERDEPENDENCE1,
-    POWERDEPENDENCE2,
-    Your.Future.Security,
-    Your.Personal.Relationships,
-    Your.Health,
-    Standard.Living,
+    Religion.CongregationSize
+    # SexualSatisfaction,
+    #  POWERDEPENDENCE1,
+    # POWERDEPENDENCE2,
+    # Your.Future.Security,
+    # Your.Personal.Relationships,
+    # Your.Health,
+    # Standard.Living,
     #Env.SacWilling,
     #Env.SacMade,
-    PERFECTIONISM,
-    PermeabilityIndividual,
-    ImpermeabilityGroup
+    # PERFECTIONISM,
+    # PermeabilityIndividual,
+    # ImpermeabilityGroup
     # Emp.JobSecure,
     # Env.ClimateChgCause,
     # Env.ClimateChgReal #,
@@ -165,6 +177,8 @@ df_wk <- tab_in %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
+  rename(Religion.Prayer = Religion.Prayer2) |>
+  rename(Religion.Scripture = Religion.Scripture2) %>%
   dplyr::mutate(
     Edu = as.numeric(Edu),
     Volunteers = if_else(HoursCharity == 1, 1, 0),
@@ -178,270 +192,253 @@ df_wk <- tab_in %>%
     # ) - 1),
     # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     Church = ifelse(Religion.Church > 8, 8, Religion.Church),
-    income_log = log(Household.INC + 1),
+    income_log = log(Household.INC + 1)
   ) %>%
-  arrange(Id, Wave)  %>% #
-  dplyr::mutate(income_log_lead1 = lead(income_log, n = 1)) %>%
-  dplyr::mutate(Hours.Work_lead1 = lead(Hours.Work, n = 1)) %>%
-  dplyr::mutate(HLTH.Disability_lead1 = lead(Hours.Work, n = 1)) %>%
+  arrange(Id, Wave)  %>% #support
+  dplyr::mutate(Religion.CongregationSize_lead1 = lead(Religion.CongregationSize, n = 1)) %>%
+  dplyr::mutate(SUPPORT_lead1 = lead(SUPPORT, n = 1)) %>%
   # dplyr::mutate(Standard.Living_lead1 = lead(Standard.Living, n = 1)) %>%
-  dplyr::mutate(retired_lead1 = lead(retired, n = 1)) %>%
-  dplyr::mutate(semiretired_lead1 = lead(semiretired, n = 1)) %>%
   #dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%  Your.Future.Security
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
     c(
       KESSLER6sum,
       HLTH.Fatigue,
-      Rumination,
+      # Rumination,
       community,
       SFHEALTH,
-      LIFEMEANING,
+      #  LIFEMEANING,
       LIFESAT,
       #  PWI,
       Hours.Work,
-      SELF.ESTEEM,
-      SELF.CONTROL,
+      # SELF.ESTEEM,
       Respect.Self,
-      Alcohol.Frequency,
-      HLTH.SleepHours,
-      Hours.Exercise,
+      # Alcohol.Frequency,
+      #  HLTH.SleepHours,
       HLTH.BMI,
-      HLTH.Disability,
+      # HLTH.Disability,
       Smoker,
       # ChildrenNum,
       NWI,
       BELONG,
       SUPPORT,
       Volunteers,
-      GRATITUDE,
-      SexualSatisfaction,
-      POWERDEPENDENCE1,
-      POWERDEPENDENCE2,
+      # GRATITUDE,
+      #  SexualSatisfaction,
+      #  POWERDEPENDENCE1,
+      #  POWERDEPENDENCE2,
       CharityDonate,
-      Alcohol.Intensity,
-      PERFECTIONISM,
-      Bodysat,
-      VENGEFUL.RUMIN,
+      #  Alcohol.Intensity,
+      #  PERFECTIONISM,
+      #  VENGEFUL.RUMIN,
+      Religion.Prayer,
+      Religion.Scripture,
+      Church,
       community,
+      Relid,
       HONESTY_HUMILITY,
-      EmotionRegulation1,
-      EmotionRegulation2,
-      EmotionRegulation3,
-      Emp.WorkLifeBalance,
-      PermeabilityIndividual,
-      ImpermeabilityGroup,
-      Your.Future.Security,
-      Your.Personal.Relationships,
-      Your.Health,
-      Standard.Living,
-      PermeabilityIndividual,
-      ImpermeabilityGroup,
-      NZSEI13
+      #   EmotionRegulation1,
+      #   EmotionRegulation2,
+      #  EmotionRegulation3,
+      #  Emp.WorkLifeBalance,
+      #  PermeabilityIndividual,
+      #  ImpermeabilityGroup,
+      PWI,
+      #  Your.Future.Security,
+      #  Your.Personal.Relationships,
+      #   Your.Health,
+      #   Standard.Living,
+      #   PermeabilityIndividual,
+      #   ImpermeabilityGroup,
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
   )) %>% # make leads
-  dplyr::filter(Wave == 2018) %>%
- # dplyr::filter(retired != 1) %>%
- # dplyr::filter(retired_lead1 != 1) %>%  #needed for the intervention
+  dplyr::filter(Wave == 2016) %>%
+  dplyr::filter(!is.na(Religion.CongregationSize)) %>%
+  dplyr::filter(!is.na(Religion.CongregationSize_lead1)) %>%
+  dplyr::filter(Relid >0) %>%
+  # dplyr::filter(retired != 1) %>%
+  # dplyr::filter(retired_lead1 != 1) %>%  #needed for the intervention
   # dplyr::filter(semiretired != 1) %>%
   #dplyr::filter(semiretired_lead1 != 1) %>%
   #dplyr::filter(!is.na(income_log_lead1) )%>%  #   ABOUT
   #dplyr::filter(!is.na(income_log) )%>% #  THINK ABOUT
-  dplyr::filter(Household.INC >= 30975) %>% # min income
+  # dplyr::filter(Household.INC >= 30975) %>% # min income
   # dplyr::filter(income_log_lead1 > income_log) %>%
-  dplyr::filter(!is.na(Hours.Work)) %>%
-  dplyr::filter(!is.na(Hours.Work_lead1)) %>%
   #dplyr::filter(!is.na(Standard.Living) )%>%
   # dplyr::filter(!is.na(Standard.Living_lead1) )%>%
   #  dplyr::filter(semiretired_lead1 != 1) %>%  #needed for the intervention
-  dplyr::select(-c(
-      Religion.Church,
-      # EthCat,
-      HoursCharity,
-      Respect.Self_lead2,
-      Household.INC,
-      #  org2018,
-      #  not_euro,
-      #  not_euro_lead2,
-      # hold18,
-      #   Euro,
-      Emp.WorkLifeBalance,
-      YearMeasured,
-      HLTH.Disability_lead1,
-      # org2019,
-      # hold19,
-     # retired,
-      retired_lead1,
-     # semiretired,
-      semiretired_lead1
-    )
-  ) %>%
-  #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
-  arrange(Id, Wave) %>%
-  data.frame() %>%
-  mutate(across(where(is.double), as.numeric)) %>%
+dplyr::select(
+  -c(
+    Religion.Church,
+    # EthCat,
+    HoursCharity,
+    Respect.Self_lead2,
+    Household.INC,
+    #  org2018,
+    #  not_euro,
+    #  not_euro_lead2,
+    # hold18,
+    #   Euro,
+    #  Emp.WorkLifeBalance,
+    YearMeasured,
+    # HLTH.Disability_lead1,
+    # org2019,
+    # hold19,
+    # retired,
+
+    #  retired_lead1,
+    # semiretired,
+    #  semiretired_lead1
+  )
+) %>%
+  mutate(across(where(is.double), as.numeric)) |> data.frame() %>%
   arrange(Id)
 
-
 # Filtering retirement -- consistency and positivity assumptions
+1 - 3407/(5964 + 3407)
 
 # number of ids
-N <- length(unique(df_wk$Id))
-N  # 28676
+N <- length(unique(dcc$Id))
+N  # 3407
 
+table(!is.na(dcc$Religion.CongregationSize))
 # inspect data
-skim(df_wk)
+skim(dcc)
 
 
 # save function
-saveh(df_wk, "df_wk")
 
 # read if needed
-df_wk<- readh("df_wk")
 
 
 # mice model  -------------------------------------------------------------
 library(mice)
 
-mice_wk <- df_wk %>%
+mice_cc <- dcc %>%
   dplyr::select(-c( Wave, Id))  # won't otherwise run
 
 library(naniar)
-naniar::gg_miss_var(mice_wk)
-vis_miss(mice_wk,
+naniar::gg_miss_var(mice_cc)
+vis_miss(mice_cc,
          warn_large_data = FALSE)
 
 # any colinear vars?
-mice:::find.collinear(mice_wk)
+mice:::find.collinear(mice_cc)
 
 # impute
-wk_mice <- mice::mice(mice_wk,  seed = 0, m = 10)
+mice_cc <- mice::mice(mice_cc,  seed = 0, m = 10)
 
 # save
-saveh(wk_mice, "wk_mice")
+saveh(mice_cc, "mice_cc")
+
 
 # read
-wk_mice <- readh("wk_mice")
+mice_cc <- readh("mice_cc")
 
-# checks
-outlist2 <-
-  row.names(wk_mice)[wk_mice$outflux < 0.5]
-length(outlist2)
-
-# checks
-head(wk_mice$loggedEvents, 10)
-
-# data warangling
 # we create two completed data sets -- the one without the missing data will be useful for
 # determing causal contrasts -- which we'll describe below.
 
-w_f <- mice::complete(wk_mice, "long", inc = F)
-w_l <- mice::complete(wk_mice, "long", inc = TRUE)
+cc_f <- mice::complete(mice_cc, "long", inc = F)
+cc_l <- mice::complete(mice_cc, "long", inc = TRUE)
 
 
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
-skimr::skim(w_l)
+skimr::skim(cc_l)
 
 # create variables in z score
-w_l2 <- w_l %>%
+cc_l <- cc_l %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0)))%>%
-  dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0))%>%
   dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0))%>%
-  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0))%>%
-  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1))%>%
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0))%>%
   dplyr::mutate(CharityDonate = round(CharityDonate, 0))%>%
   dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0))%>%
   dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2+1))%>%
-  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2+1))%>%
-  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2+1))%>%
   dplyr::mutate(CharityDonate_log = log(CharityDonate+1))%>%
-  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity+1))%>%
-  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
   dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0) )) %>%
-  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0) )) %>%
-  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0) )) %>%
-  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0) )) %>%
-  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(Your.Personal.Relationships_lead2, digits = 0) +1)) %>%
-  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0) )) %>%
-  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0)+1 )) %>%
   dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise+1))%>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0)+1))%>%
   dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0) )) %>%
   dplyr::mutate(alcohol_bin2 = if_else( Alcohol.Frequency > 3, 1, 0))%>%
   dplyr::mutate(alcohol_bin = if_else( Alcohol.Frequency > 2, 1, 0))%>%
   dplyr::mutate(Hours.Work_10 =  Hours.Work/10)%>%
-  dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
-  dplyr::mutate(NZSEI13_10 =  NZSEI13/10)%>%
-  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2/10))%>%
+  dplyr::mutate(Religion.Prayer_log =  log(Religion.Prayer+1))%>%
+  dplyr::mutate(Religion.Prayer_lead2_log =  log(Religion.Prayer_lead2 +1))%>%
+  dplyr::mutate(Religion.Scripture_log =  log(Religion.Scripture+1))%>%
+  dplyr::mutate(Religion.Scripture_lead2_log =  log(Religion.Scripture_lead2+1))%>%
+  dplyr::mutate(Religion.CongregationSize_log=  log(Religion.CongregationSize + 1))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_log=  log(Religion.CongregationSize_lead1 + 1))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_100=  Religion.CongregationSize_lead1/100)%>%
+  dplyr::mutate(Religion.CongregationSize_dunbar1=  if_else(Religion.CongregationSize== 0, 0,
+                                                            if_else(Religion.CongregationSize > 0 &
+                                                                      Religion.CongregationSize< 151, 1, 2)))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_dunbar1=  if_else(Religion.CongregationSize_lead1 == 0, 0,
+                                                                  if_else(Religion.CongregationSize_lead1 > 0 &
+                                                                            Religion.CongregationSize_lead1 < 151, 1, 2)))%>%
+  dplyr::mutate(NZSEI06_10 =  NZSEI06/10)%>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z))%>%
   dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
 
-hist(w_l2$Hours.Work_lead1_sqrt_z)
-
 
 # for models wihout looping (not advised)
-
-w_f2 <- w_f %>%
+cc_f <- cc_f %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0)))%>%
-  dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0))%>%
   dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0))%>%
-  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0))%>%
-  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1))%>%
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0))%>%
   dplyr::mutate(CharityDonate = round(CharityDonate, 0))%>%
   dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0))%>%
   dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2+1))%>%
-  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2+1))%>%
-  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2+1))%>%
   dplyr::mutate(CharityDonate_log = log(CharityDonate+1))%>%
-  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity+1))%>%
-  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
   dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0) )) %>%
-  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0) )) %>%
-  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0) )) %>%
-  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0) )) %>%
-  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(Your.Personal.Relationships_lead2, digits = 0) +1)) %>%
-  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0) )) %>%
-  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0)+1 )) %>%
   dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise+1))%>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0)+1))%>%
   dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0) )) %>%
   dplyr::mutate(alcohol_bin2 = if_else( Alcohol.Frequency > 3, 1, 0))%>%
   dplyr::mutate(alcohol_bin = if_else( Alcohol.Frequency > 2, 1, 0))%>%
-  dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
-  dplyr::mutate(NZSEI13_10 =  NZSEI13/10)%>%
-  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2/10))%>%
+  dplyr::mutate(Hours.Work_10 =  Hours.Work/10)%>%
+  dplyr::mutate(Religion.Prayer_log =  log(Religion.Prayer+1))%>%
+  dplyr::mutate(Religion.Prayer_lead2_log =  log(Religion.Prayer_lead2 +1))%>%
+  dplyr::mutate(Religion.Scripture_log =  log(Religion.Scripture+1))%>%
+  dplyr::mutate(Religion.Scripture_lead2_log =  log(Religion.Scripture_lead2+1))%>%
+  dplyr::mutate(Religion.CongregationSize_log=  log(Religion.CongregationSize + 1))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_log=  log(Religion.CongregationSize_lead1 + 1))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_100=  Religion.CongregationSize_lead1/100)%>%
+  dplyr::mutate(Religion.CongregationSize_dunbar1=  if_else(Religion.CongregationSize== 0, 0,
+                                                            if_else(Religion.CongregationSize > 0 &
+                                                                      Religion.CongregationSize< 151, 1, 2)))%>%
+  dplyr::mutate(Religion.CongregationSize_lead1_dunbar1=  if_else(Religion.CongregationSize_lead1 == 0, 0,
+                                                                  if_else(Religion.CongregationSize_lead1 > 0 &
+                                                                            Religion.CongregationSize_lead1 < 151, 1, 2)))%>%
+  dplyr::mutate(NZSEI06_10 =  NZSEI06/10)%>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z)) %>%
-  dplyr::mutate(id = as.factor(rep(1:N, 10)))# needed for g-comp
-
+  select(-c(.imp_z, .id_z))%>%
+  dplyr::mutate(id = as.factor(rep(1:N, 10)))# needed for g-comp# Respect for Self is fully missingneeded for g-comp# Respect for Self is fully missing
 
 # Get data into shape
-wf3 <- w_f2 %>% mutate_if(is.matrix, as.vector)
-wl3 <- w_l2 %>% mutate_if(is.matrix, as.vector)
+cc3 <- cc_f %>% mutate_if(is.matrix, as.vector)
+cc3l <- cc_l %>% mutate_if(is.matrix, as.vector)
 
-w_m <- mice::as.mids(wl3)
+ccu <- mice::as.mids(cc3l)
 
-saveh(w_m, "w_m")
-saveh(wf3, "wf3")
 
+saveh(cc3, "cc3")
+saveh(ccu, "ccu")
+
+
+skimr::skim(cc3)
 
 
 ###### READ THIS DATA IN BELLA  #########
-w_m <- readh("w_m")
-wf3 <- readh("wf3")
+cc3 <- readh("cc3")
+ccu <- readh("ccu")
 
+table(cc3$Religion.CongregationSize_dunbar1 == cc3$Religion.CongregationSize_lead1_dunbar1)
 
+hist(cc3$Hou)
 # model equations ---------------------------------------------------------
-baselinevars = c("AGREEABLENESS_z","CONSCIENTIOUSNESS_z","EXTRAVERSION_z","HONESTY_HUMILITY_z","NEUROTICISM_z","OPENNESS_z","Age_z","Alcohol.Frequency_z","Alcohol.Intensity_log_z","Bodysat_z","BornNZ_z","Believe.God_z","Believe.Spirit_z","BELONG_z","CharityDonate_log_z","ChildrenNum_z","Church_z", "community","Edu_z","Employed_z","EmotionRegulation1_z", "EmotionRegulation2_z","EmotionRegulation3_z","Euro_z", "GRATITUDE_z","HomeOwner_z","Hours.Exercise_log_z","Hours.Work_z","HLTH.BMI_z", "HLTH.Disability_z", "HLTH.Fatigue_z", "HLTH.SleepHours_z", "ImpermeabilityGroup_z","income_log_z", "KESSLER6sum_z", "LIFEMEANING_z", "LIFESAT_z", "Male_z","NZdep_z", "NWI_z","NZSEI13_z","Parent_z","Partner_z","PERFECTIONISM_z", "PermeabilityIndividual_z", "Pol.Orient_z", "POWERDEPENDENCE1_z","POWERDEPENDENCE2_z","Relid_z", "Respect.Self_z", "retired", "Rumination_z","SELF.CONTROL_z", "SELF.ESTEEM_z", "semiretired", "SexualSatisfaction_z","SFHEALTH_z","Smoker_z", "Spiritual.Identification_z","Standard.Living_z", "SUPPORT_z","Urban_z", "VENGEFUL.RUMIN_z", "Volunteers_z", "Your.Health_z", "Your.Future.Security_z", "Your.Personal.Relationships_z")
+baselinevars = c("AGREEABLENESS_z","CONSCIENTIOUSNESS_z","EXTRAVERSION_z","HONESTY_HUMILITY_z","NEUROTICISM_z","OPENNESS_z","Age_z","BornNZ_z","Believe.God_z","Believe.Spirit_z","BELONG_z","CharityDonate_log_z","Church_z", "community","Edu_z","Employed_z","Euro_z", "Hours.Exercise_log_z","Hours.Work_z","HLTH.BMI_z", "HLTH.Disability_z", "HLTH.Fatigue_z", "HLTH.SleepHours_z","income_log_z", "KESSLER6sum_z", "LIFESAT_z", "Male_z", "NWI_z","NZSEI06_z","Parent_z","Partner_z","Pol.Orient_z", "PWI_z", "Relid_z", "Respect.Self_z", "Religion.CongregationSize_log_z", "RWA_z",  "SDO_z", "SELF.CONTROL_z", "SELF.ESTEEM_z", "SFHEALTH_z","Smoker_z", "Spiritual.Identification_z","SUPPORT_z","Urban_z",  "Volunteers_z")
 
 
 # functions ---------------------------------------------------------------
@@ -454,271 +451,63 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 3)
 
 
 # set up vars -------------------------------------------------------------
-
-ylim <- c(-.25,.25)
-xlab <- "Weekly Hours Work/10"
-df <-  w_m
+ylim <- c(-1,1)
+xlab <- "Congregation Size (log)"
+df <-  ccu
 m = 10
-X = "Hours.Work_lead1_10"
-x = c(0,2,4,6)
-xlab = "Work/10 hours"
+X = "Religion.CongregationSize_lead1_log"
+x = 0:9
+
+
 # reference level
-r = 4
+r = 0
 
-# bmi ---------------------------------------------------------------------
-#conditional  -- not we are using splines
-bmi_st <- as.formula(paste("HLTH.BMI_lead2_z ~ bs(Hours.Work_lead1_10) +",
-                           paste(baselinevars,
-                                 collapse = "+")))
-
-# this mice code won't work, alas!
-#m1_bmi <- with(w_m, exp = glm(bmi_st))
-
-## for some reason, writing a function works.
-fit_bmi = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.BMI_lead2_z ~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))) )
-}
-# pooled model
-m1_bmi <- fit_bmi()
-
-main = "BMI"
-ylab = "BMI (SD)"
-
-# gcomputation
-out_bmi <- pool_stglm(m1_bmi, df = df, m = m,  X = X, x = x)
-
-## tba
-out_bmi %>%
-  print_html()
-
-# turn off image
-dev.off()
-
-# plot
-plot_stglm(out_bmi, ylim, main, xlab, ylab)
-ggplot_stglm(out_bmi, ylim, main, xlab, ylab)
-
-##
-out_bmic <- pool_stglm_contrast(m1_bmi, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_bmic, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_bmic, ylim, main, xlab, ylab)
-
-out_bmic %>%
-  print_md()
-#
-# # Marginal Contrasts requires the long data from MICED
-# # G computation
-# m1_long <- glm(bmi_st, data = wf3)
-# gform_m1<- stdGlm(fit = m1_long, data = wf3, X = "Hours.Work_lead1_10", x =x, clusterid="id")
-# summary(gform_m1, contrast = "difference", reference = r)
-#
-# # increase
-# round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-#
-# # decrease
-# round( EValue::evalues.OLS( -0.0222  , se = 0.00768  , sd = 1, delta = 3, true = 0), 3)
-#
-# # Graph
-# plot(gform_m1, ylim = ylim,
-#      contrast = "difference", reference = r,
-#      main="Standarised BMI difference relative to baseline", col.main="black",
-#      sub="Baseline = 30 hours", col.sub="black",
-#      xlab="Work Hours/10", ylab="BMI",
-#      col.lab="black", cex.lab=0.75)
-#
-
-# verify comparisons
-library(marginaleffects)
-# unit level change
-comps_m0 <- comparisons(m1_long, variables = "Hours.Work_lead1_10")
-
-summary(comps_m0) |>
-  print_md()
+sum(cc3$Religion.CongregationSize_lead1 > 0)
+sum(cc3$Religion.CongregationSize > 0)
+# no changes
+table(cc3$Religion.CongregationSize_lead1_lowerdunbar == cc3$Religion.CongregationSize_lowerdunbar)/10
 
 
-# distribution of unit level changes
-ggplot(comps_m0, aes(comparison)) +
-  geom_histogram(bins = 30) +
-  facet_wrap(~contrast, scale = "free_x") +
-  labs(x = "Distribution of unit-level contrasts")
 
-#comparisons at diff levels
-comps_m1 <- comparisons(m1_long, variables = list(Hours.Work_lead1_10 = c(0,3))) %>% tidy()
-comps_m1
+# sfhealth ----------------------------------------------------------------
 
-comps_m2 <- comparisons(m1_long, variables = list(Hours.Work_lead1_10 = c(3,6))) %>% tidy()
-comps_m2
-
-
-# sf-health ---------------------------------------------------------------
-sfhealth_st <- as.formula(paste("SFHEALTH_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                paste(baselinevars,
-                                      collapse = "+")))
-## fit
-fit_sfhealth = function(formula) {
-  with(w_m, glm(as.formula(paste("SFHEALTH_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
+# fit
+fit_0 = function(formula) {
+  with(ccu,
+       glm(as.formula(paste("SFHEALTH_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
+                          paste(baselinevars, collapse = "+")))
+         ))
 }
 # ppoled model
-m2_sfhealth <- fit_sfhealth()
+out_0 <- fit_0()
 
 main = "SF Health"
 ylab = "SF Health (SD)"
-out_sfhealth <- pool_stglm(m2_sfhealth, df = df, m = m,  X = X, x = x)
-plot_stglm(out_sfhealth, ylim, main, xlab, ylab)
-ggplot_stglm(out_sfhealth, ylim, main, xlab, ylab)
 
+# g-formula
+pout_0 <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
 
-out_c <- pool_stglm_contrast(m2_sfhealth, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-
-out_c %>%
-  print_md()
-
-# exercise ---------------------------------------------------------------
-Hours.Exercise_st <- as.formula(paste("Hours.Exercise_lead2_log_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars, collapse = "+")))
-
-## fit for mice to work, don't ask why
-fit_Hours.Exercise = function(formula) {
-  with(w_m, glm(as.formula(paste("Hours.Exercise_lead2_log_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))))
-}
-
-# pooled model
-m3_Hours.Exercise <- fit_Hours.Exercise()
-
-main = "Log Hours Exercise"
-ylab = "Log Hours Exercise (SD)"
-
-out_Hours.Exercise <- pool_stglm(m3_Hours.Exercise, df = df, m = m,  X = X, x = x)
-plot_stglm(out_Hours.Exercise, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Hours.Exercise, ylim, main, xlab, ylab)
-
-
-out_c <- pool_stglm_contrast(m3_Hours.Exercise, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-
-# how much is one standard deviation of exercise
-
-sd(exp(wf3$Hours.Exercise_lead2_log)+1)
-
-sd(wf3$Hours.Exercise_lead2)
-
-#7.15373/10  # t/10th standard deviation
-# 60 * .715373 = 42 mins
-
-# HLTH.Sleep --------------------------------------------------------------
-
-HLTH.SleepHours_st <- as.formula(paste("HLTH.SleepHours_lead2 ~ bs(Hours.Work_lead1_10) +",  paste(baselinevars, collapse = "+")))
-
-## fit
-fit_HLTH.SleepHours = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.SleepHours_lead2_z ~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))))
-}
-# pooled model
-m4_HLTH.SleepHours <- fit_HLTH.SleepHours()
-
-main = "Hours Sleep (SD)"
-ylab = "Hours Sleep (SD)"
-out_HLTH.SleepHours <- pool_stglm(HLTH.SleepHours_lead2_z, df = df, m = m,  X = X, x = x)
-out_HLTH.SleepHours
-
-plot_stglm(out_HLTH.SleepHours, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_HLTH.SleepHours, ylim, main, xlab, ylab)
-
-
-dev.off()
-out_c <- pool_stglm_contrast(m4_HLTH.SleepHours, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-out_c
-
-
-#
-# sd(wf3$HLTH.SleepHours_lead2)
-# 1.061555 * number  # t/10th standard deviation
-# 60 * number)
-
-# smoker ------------------------------------------------------------------
-
-Smoker_st <- as.formula(paste("Smoker_lead2 ~ bs(Hours.Work_lead1_10) +",
-                              paste(baselinevars,
-                                    collapse = "+")))
-
-# fit
-fit_Smoker = function(formula) {
-  with(w_m, glm(as.formula(paste("Smoker_lead2 ~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+"))), family = "poisson"))
-}
-# pooled model
-m5_Smoker <- fit_Smoker()
-main = "Smoking Rate"
-ylab = "Smoking Rate"
-out_Smoker <- pool_stglm(m5_Smoker, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_Smoker, ylim = c(0,.06), main, xlab, ylab)
-ggplot_stglm(out_Smoker, ylim = c(0,.06), main, xlab, ylab)
-
-out_c <- pool_stglm_contrast_ratio(m5_Smoker, df = df, m = m,  X = X, x = x, r= r)
-
-
-plot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-#
-# # contrast model for comparison
-# m5_long <- glm(Smoker_st, data = wf3, family = "poisson")
-# m5_long
-# gform_m5<- stdGlm(fit = m5_long, data = wf3, X = X, x =x, clusterid="id")
-# summary(gform_m5,
-#         contrast = "ratio",
-#         type="odds",
-#         reference = r)
-#
-# plot(gform_m5)
-#
-# # evalues for risk ratios
-# round( EValue::evalues.RR(0.899 , lo =  0.8808, hi = 0.9172, true = 1), 3)
+# Evalues
+# round( EValue::evalues.RR( , lo =  , hi = , true = 1), 3)
 # round( EValue::evalues.RR(1.207  , lo =  1.1759, hi =1.2381, true = 1), 3)
-#
-# # increase
-# round( EValue::evalues.OLS(  , se =     , sd = 1, delta = 3, true = 0), 3)
-# # decrease
-# round( EValue::evalues.OLS(-    , se =    , sd = 1, delta = 3, true = 0), 3)
-#
-#
-# plot(gform_m5,# ylim = c(0,.06),
-#      contrast = "ratio",
-#      reference = r,# type = "odds",
-#      main="Smoking risk ratio relative to baseline ", col.main="black",
-#      sub="Baseline = 30 hours", col.sub="black",
-#      xlab="Work Hours/10", ylab="Smoking rate",
-#      col.lab="black", cex.lab=0.75)
 
-# ratio of adjusted predictions
+round( EValue::evalues.OLS( 0.109, se = 0.00647, sd = 1, delta = 3, true = 0), 3)
 
-# p1 <- plot_cco(
-#   m5_long,
-#   effect = "Hours.Work_lead1_10",
-#   condition = "Hours.Work_lead1_10",
-#   transform_pre = "ratio") +
-#   ylab("Adjusted Risk Ratio\nP(Smoke | Work + 1) / P(Smoke | work)")
-#
-# p1
+
+# plots
+plot_stglm(pout_0, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(pout_0, ylim  = c(-.5,.5), main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
 
 # fatigue -----------------------------------------------------------------
 
-# formula
-HLTH.Fatigue_st <- as.formula(paste("HLTH.Fatigue_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                    paste(baselinevars, collapse = "+")))
-
 # fit
 fit_Fatigue = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.Fatigue_lead2_z ~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(as.formula(paste("HLTH.Fatigue_lead2_z ~ bs(Religion.CongregationSize_lead1_log)+",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
@@ -740,255 +529,11 @@ round( EValue::evalues.OLS( 0.109, se = 0.00647, sd = 1, delta = 3, true = 0), 3
 
 # plots
 plot_stglm(out_Fatigue, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Fatigue, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_Fatigue, ylim = ylim = c(-.5,.5), main, xlab, ylab)
 
 out_cr <- pool_stglm_contrast(m6_Fatigue, df = df, m = m,  X = X, x = x, r= r)
 plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-wf3$HLTH.Fatigue_lead2_z
-sd(wf3$HLTH.Fatigue_lead2)
-
-# alcohol freq ------------------------------------------------------------
-
-# fit
-fit_Alcohol.Frequency = function(formula) {
-  with(w_m, glm(as.formula(paste("Alcohol.Frequency_lead2ord_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m7_Alcohol.Frequency <- fit_Alcohol.Frequency()
-
-main = "Alcohol Frequency"
-ylab = "Alcohol Frequency (SD)"
-
-# g-formula
-out_Alcohol.Frequency <- pool_stglm(m7_Alcohol.Frequency, df = df, m = m,  X = X, x = x)
-
-# plots
-out_Alcohol.Frequency
-
-# evalue
-round( EValue::evalues.OLS( , se = , sd = 1, delta = 3, true = 0), 3)
-
-
-plot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m7_Alcohol.Frequency, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# Evalues
-# round( EValue::evalues.RR( , lo =  , hi = , true = 1), 3)
-# round( EValue::evalues.RR(1.207  , lo =  1.1759, hi =1.2381, true = 1), 3)
-
-# evalue  for loss
-round( EValue::evalues.OLS( -0.029038016, se = 0.01082889, sd = 1, delta = 3, true = 0), 3)
-
-
-
-# Alcohol.Intensity ----------------------------------------------------------
-
-# fit
-fit_Alcohol.Intensity = function(formula) {
-  with(w_m, glm(as.formula(paste("Alcohol.Intensity_log_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
-}
-
-# ppoled model
-m8_Alcohol.Intensity  <- fit_Alcohol.Intensity()
-
-main = "Alcohol Intensity"
-ylab = "Alcohol Intensity (SD)"
-
-# g-formula
-out_Alcohol.Intensity <- pool_stglm(m8_Alcohol.Intensity, df = df, m = m,  X = X, x = x)
-
-# plots
-plot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m8_Alcohol.Intensity, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# body satisfaction -------------------------------------------------------
-# fit
-fit_Bodysat_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Bodysat_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
-}
-
-# ppoled model
-m9_Bodysat_st  <- fit_Bodysat_st()
-
-# g-formula
-out_p <- pool_stglm(m9_Bodysat_st, df = df, m = m,  X = X, x = x)
-
-# plots
-main = "Body Satisfaction"
-ylab = "Body Satisfaction (SD)"
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m9_Bodysat_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# rumination --------------------------------------------------------------
-# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
-
-# fit
-fit_Rumination_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Rumination_lead2ord_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
-}
-
-m10_Rumination <- fit_Rumination_st()
-
-#labels
-main = "Rumination"
-ylab = "Rumination (SD)"
-
-#g-compuations
-out_p <- pool_stglm(m10_Rumination, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m10_Rumination, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# sex satisfaction --------------------------------------------------------
-
-
-SexualSatisfaction_st <- as.formula(paste("SexualSatisfaction_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))
-
-## fit
-fit_SexualSatisfaction_st = function(formula) {
-  with(w_m, glm( as.formula(paste("SexualSatisfaction_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m11_SexualSatisfaction_st <- fit_SexualSatisfaction_st()
-
-main = "Sexual Satisfaction (SD)"
-ylab = "Sexual Satisfaction (SD)"
-out_p <- pool_stglm(m11_SexualSatisfaction_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m11_SexualSatisfaction_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-
-# emotional regulation 1 ----------------------------------------------------
-# When I feel negative emotions, my emotions feel out of control.
-
-EmotionRegulation1_st <- as.formula(paste("EmotionRegulation1_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))
-
-## fit
-fit_EmotionRegulation1 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation1_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m12_fit_EmotionRegulation1 <- fit_EmotionRegulation1()
-
-main = "Emotion Regulation1"
-ylab = "Emotion Regulation1 (SD)"
-out_p<- pool_stglm(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-
-# emotional reg 2 ---------------------------------------------------------
-# When I feel negative emotions, I suppress or hide my emotions.
-
-EmotionRegulation2_st <- as.formula(paste("EmotionRegulation2_lead2_z~ bs(Hours.Work_lead1_10) +",paste(baselinevars,collapse = "+")))
-
-
-## fit
-fit_EmotionRegulation2 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation2_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m13_fit_EmotionRegulation2 <- fit_EmotionRegulation2()
-
-main = "Emotion Regulation2"
-ylab = "Emotion Regulation2 (SD)"
-out_p <- pool_stglm(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# emotional reg 3 ---------------------------------------------------------
-# When I feel negative emotions, I change the way I think to help me stay calm.
-
-## fit
-fit_EmotionRegulation3 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation3_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m14_fit_EmotionRegulation3 <- fit_EmotionRegulation3()
-
-main = "Emotion Regulation3"
-ylab = "Emotion Regulation3 (SD)"
-out_p <- pool_stglm(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 
 # kessler 6 ---------------------------------------------------------------
@@ -1002,7 +547,7 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 #   During the last 30 days, how often did.... you feel nervous?
 
 fit_KESSLER6sum_st = function(formula) {
-  with(w_m, glm(as.formula(paste("KESSLER6sum_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(as.formula(paste("KESSLER6sum_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
@@ -1015,13 +560,16 @@ out_p <- pool_stglm(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x)
 
 plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
 ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
+out_p
 out_cr <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim = ylim, main, xlab, ylab)
 
 out_cr
+mean(cc3$KESSLER6sum_lead2)
+effectunit <- sd(cc3$KESSLER6sum_lead2)
+effectunit *  -0.06071452
 
-effectunit <- sd(wf3$KESSLER6sum_lead2) *  0.036227231
+4.805503
 
 # note that 5 is consider moderate distress
 ave40 <-mean(wf3$KESSLER6sum_lead2)
@@ -1033,232 +581,20 @@ ave40 + effectunit
 # increase
 round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
 # decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+round( EValue::evalues.OLS(  0.04651621 , se =   0.03914626, sd = 1, delta = 3, true = 0), 3)
 
 # how to examine differences?
 
 diffbase <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= 0)
 diffbase
 
-diffbase2 <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= 6)
+diffbase2 <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= 5)
 diffbase2
 
 # plot it
 ggplot_stglm_contrast(diffbase, ylim, main, xlab, ylab)
 ggplot_stglm_contrast(diffbase2, ylim, main, xlab, ylab)
 
-
-
-# power dependence 1 ------------------------------------------------------
-# I do not have enough power or control over important parts of my life.
-## fit
-fit_POWERDEPENDENCE1_st = function(formula) {
-  with(w_m, glm(as.formula(paste("POWERDEPENDENCE1_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
-}
-# ppoled model
-m16_POWERDEPENDENCE1_st <- fit_POWERDEPENDENCE1_st()
-
-main = "Power Dependence 1"
-ylab = "Power Dependence 1(SD)"
-out_p <- pool_stglm(m16_POWERDEPENDENCE1_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m16_POWERDEPENDENCE1_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-# power dependence 2 ------------------------------------------------------
-## fit
-#Other people have too much power or control over important parts of my life.
-
-fit_POWERDEPENDENCE2_st = function(formula) {
-  with(w_m, glm(as.formula(paste("POWERDEPENDENCE2_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
-}
-# ppoled model
-m17_POWERDEPENDENCE2_st <- fit_POWERDEPENDENCE2_st()
-
-main = "Power Dependence 2"
-ylab = "Power Dependence 2(SD)"
-out_p <- pool_stglm(m17_POWERDEPENDENCE2_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m17_POWERDEPENDENCE2_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-# perfectionism  ----------------------------------------------------------
-# Perfectionism Discrepancy Subscale
-# Doing my best never seems to be enough.
-# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-
-## fit
-fit_PERFECTIONISM_st = function(formula) {
-  with(w_m, glm( as.formula(paste("PERFECTIONISM_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                  paste(baselinevars,
-                                        collapse = "+")))))
-}
-# ppoled model
-m18_PERFECTIONISM_st <- fit_PERFECTIONISM_st()
-
-main = "Perfectionism"
-ylab = "Perfectionism (SD)"
-out_p <- pool_stglm(m18_PERFECTIONISM_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m18_PERFECTIONISM_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-# self esteem -------------------------------------------------------------
-# Self-esteem
-# On the whole am satisfied with myself.
-# Take a positive attitude toward myself.
-# Am inclined to feel that I am a failure.
-
-## fit
-fit_SELF.ESTEEM_st = function(formula) {
-  with(w_m, glm( as.formula(paste("SELF.ESTEEM_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                  paste(baselinevars,
-                                        collapse = "+")))))
-}
-#  model
-m19_SELF.ESTEEM_st <- fit_SELF.ESTEEM_st()
-
-main = "Self Esteem"
-ylab = "Self Esteem (SD)"
-out_p <- pool_stglm(m19_SELF.ESTEEM_st, df = df, m = m,  X = X, x = x)
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m19_SELF.ESTEEM_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# gratitude ---------------------------------------------------------------
-# Gratitude
-# I have much in my life to be thankful for.
-# When I look at the world, I don’t see much to be grateful for.
-# I am grateful to a wide variety of people.
-
-## fit
-fit_GRATITUDE_st = function(formula) {
-  with(w_m, glm( as.formula(paste("GRATITUDE_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                  paste(baselinevars,
-                                        collapse = "+")))
-                 ))
-}
-#  model
-m20_GRATITUDE_st <- fit_GRATITUDE_st()
-
-main = "Gratitude"
-ylab = "Gratitude (SD)"
-out_p <- pool_stglm(m20_GRATITUDE_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m20_GRATITUDE_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-# veng rumination ---------------------------------------------------------
-# Forgivingness versus Vengeful Rumination
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.
-# I can usually forgive and forget when someone does me wrong.
-# I find myself regularly thinking about past times that I have been wronged.
-
-
-## fit
-fit_VENGEFUL.RUMIN_st = function(formula) {
-  with(w_m, glm( as.formula(paste("VENGEFUL.RUMIN_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                  paste(baselinevars,
-                                        collapse = "+")))
-  ))
-}
-# pooled model
-m21_VENGEFUL.RUMIN_st <- fit_VENGEFUL.RUMIN_st()
-
-main = "Vengefulness (anti-Foregiveness)"
-ylab = "Vengefulness (anti-Foregiveness) (SD)"
-out_p <- pool_stglm(m21_VENGEFUL.RUMIN_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m21_VENGEFUL.RUMIN_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# life meaning ------------------------------------------------------------
-
-# Meaning in Life
-# My life has a clear sense of purpose.
-# I have a good sense of what makes my life meaningful.
-
-LIFEMEANING_st <- as.formula(paste("LIFEMEANING_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                   paste(baselinevars,
-                                         collapse = "+")))
-## fit
-fit_LIFEMEANING_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("LIFEMEANING_lead2ord_z~ bs(Hours.Work_lead1_10) +",
-                     paste(baselinevars,
-                           collapse = "+")))
-  ))
-}
-# pooled model
-m22_fit_LIFEMEANING_st <- fit_LIFEMEANING_st()
-
-main = "Life Meaning"
-ylab = "Life Meaning (SD)"
-out_p <- pool_stglm(m22_fit_LIFEMEANING_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m22_fit_LIFEMEANING_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-out_cr
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 # honesty humility --------------------------------------------------------
 
@@ -1270,8 +606,8 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 ## fit
 fit_HONESTY_HUMILITY_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("HONESTY_HUMILITY_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("HONESTY_HUMILITY_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1300,13 +636,13 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # Feel like an outsider.
 # Know that people around me share my attitudes and beliefs.
 
-BELONG_st <- as.formula(paste("BELONG_lead2_z~ bs(Hours.Work_lead1_10) +",
+BELONG_st <- as.formula(paste("BELONG_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                               paste(baselinevars,
                                     collapse = "+")))
 ## fit
 fit_BELONG_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("BELONG_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("BELONG_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1337,14 +673,14 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # I know there are people I can turn to when I need help.
 
 
-SUPPORT_st <- as.formula(paste("SUPPORT_lead2_z~ bs(Hours.Work_lead1_10) +",
+SUPPORT_st <- as.formula(paste("SUPPORT_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                                paste(baselinevars,
                                      collapse = "+")))
 
 ## fit
 fit_SUPPORT_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("SUPPORT_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1357,11 +693,14 @@ main = "Social Support"
 ylab = "Social Support (SD)"
 out_p<- pool_stglm(m25_SUPPORT_st, df = df, m = m,  X = X, x = x)
 plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+out_p
 ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
 
 out_cr <- pool_stglm_contrast(m25_SUPPORT_st, df = df, m = m,  X = X, x = x, r= r)
 ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
+dev.off()
 # increase
 round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
 # decrease
@@ -1369,13 +708,13 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 
 # volunteers --------------------------------------------------------------
-Volunteers_st <- as.formula(paste("Volunteers_lead2~ bs(Hours.Work_lead1_10) +",
-                              paste(baselinevars,  collapse = "+")))
+Volunteers_st <- as.formula(paste("Volunteers_lead2~ bs(Religion.CongregationSize_lead1_log)+",
+                                  paste(baselinevars,  collapse = "+")))
 
 
 # fit
 fit_Volunteers_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Volunteers_lead2~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(as.formula(paste("Volunteers_lead2~ bs(Religion.CongregationSize_lead1_log)+",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
@@ -1387,13 +726,13 @@ main = "Volunteer Rate"
 ylab = "Volunteer Rate"
 out_Volunteers<- pool_stglm(m26_Volunteers, df = df, m = m,  X = X, x = x)
 
-plot_stglm(out_Volunteers, ylim = c(0,.06), main, xlab, ylab)
-ggplot_stglm(out_Volunteers, ylim = c(0,.06), main, xlab, ylab)
+plot_stglm(out_Volunteers, ylim = c(0,1), main, xlab, ylab)
+ggplot_stglm(out_Volunteers, ylim = c(0,1), main, xlab, ylab)
 
 out_c <- pool_stglm_contrast_ratio(m26_Volunteers, df = df, m = m,  X = X, x = x, r= r)
 
-plot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
+plot_stglm_contrast(out_c, ylim = c(0,2), main, xlab, ylab)
+ggplot_stglm_contrast(out_c, ylim = c(0,2), main, xlab, ylab)
 #
 
 #
@@ -1432,8 +771,8 @@ ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
 
 ## fit
 fit_CharityDonate_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("CharityDonate_log_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("CharityDonate_log_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1461,8 +800,8 @@ ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 ## fit
 fit_community_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("community_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("community_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1491,8 +830,8 @@ ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 ## fit
 fit_NWI_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("NWI_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("NWI_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1508,162 +847,35 @@ plot_stglm(out_NWI, ylim, main, xlab, ylab)
 ggplot_stglm(out_NWI, ylim, main, xlab, ylab)
 
 out_cr <- pool_stglm_contrast(m29_NWI_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 
-# imperm group ------------------------------------------------------------
-ImpermeabilityGroup_st <- as.formula(paste("ImpermeabilityGroup_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                           paste(baselinevars,
-                                                 collapse = "+")))
+
+
+# PWI -------------------------------------------------------------
+
 ## fit
-fit_ImpermeabilityGroup_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("ImpermeabilityGroup_lead2_z~ bs(Hours.Work_lead1_10) +",
+fit_PWI_st= function(formula) {
+  with(ccu, glm(
+    as.formula(paste("PWI_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
 # pooled model
-m30_ImpermeabilityGroup_st <- fit_ImpermeabilityGroup_st()
-main = "Impermeability Group"
-ylab = "Impermeability Group (SD)"
-out_p <- pool_stglm(m30_ImpermeabilityGroup_st, df = df, m = m,  X = X, x = x)
+m33_fit_PWI_st <- fit_PWI_st()
+main = "PWI"
+ylab = "PWI (SD)"
+out_p <- pool_stglm(m33_fit_PWI_st, df = df, m = m,  X = X, x = x)
 
 plot_stglm(out_p, ylim, main, xlab, ylab)
 ggplot_stglm(out_p, ylim, main, xlab, ylab)
 
-out_cr <- pool_stglm_contrast(m30_ImpermeabilityGroup_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# stand living ------------------------------------------------------------
-# Part of pwi
-# Personal Wellbeing Index
-# Your health.
-# Your standard of living.
-# Your future security.
-# Your personal relationships.
-
-## fit
-fit_Standard.Living_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Standard.Living_lead2ord_z~ bs(Hours.Work_lead1_10) +",
-                     paste(baselinevars,
-                           collapse = "+")))
-  ))
-}
-
-# pooled model
-m31_Standard.Living_st <- fit_Standard.Living_st()
-main = "Standard Living"
-ylab = "Standard Living (SD)"
-out_p <- pool_stglm(m31_Standard.Living_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m31_Standard.Living_st, df = df, m = m,  X = X, x = x, r= r)
+out_cr <- pool_stglm_contrast(m33_fit_PWI_st, df = df, m = m,  X = X, x = x, r= r)
 plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 out_cr
-
-# future security ---------------------------------------------------------
-
-## fit
-fit_Your.Future.Security = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Future.Security_lead2_z~ bs(Hours.Work_lead1_10) +",
-                     paste(baselinevars,
-                           collapse = "+")))
-  ))
-}
-
-# pooled model
-m32_Your.Future.Security_st <- fit_Your.Future.Security()
-main = "Your Future Security"
-ylab = "Your Future Security (SD)"
-out_p <- pool_stglm(m32_Your.Future.Security_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m32_Your.Future.Security_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# your health -------------------------------------------------------------
-
-## fit
-fit_Your.Health_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Health_lead2_z~ bs(Hours.Work_lead1_10) +",
-                     paste(baselinevars,
-                           collapse = "+")))
-  ))
-}
-
-# pooled model
-m33_Your.Health_st <- fit_Your.Health_st()
-main = "Your Health"
-ylab = "Your Health (SD)"
-out_p <- pool_stglm(m33_Your.Health_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m33_Your.Health_st, df = df, m = m,  X = X, x = x, r= 3)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# personal relationships --------------------------------------------------
-
-Your.Personal.Relationships_st <- as.formula(paste("Your.Personal.Relationships_lead2ord_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))
-
-## fit
-fit_Your.Personal.Relationships_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Personal.Relationships_lead2ord_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))
-  ))
-}
-
-# pooled model
-m34_Your.Personal.Relationships <- fit_Your.Personal.Relationships_st()
-main = "Your Personal Relationships"
-ylab = "Your Personal Relationships (SD)"
-out_p <- pool_stglm(m34_Your.Personal.Relationships, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m34_Your.Personal.Relationships, df = df, m = m,  X = X, x = x, r= 3)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# Work-life balance -------------------------------------------------------
-
-#fit
-fit_Emp.WorkLifeBalance_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Emp.WorkLifeBalance_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                               paste(baselinevars,
-                                                     collapse = "+")))
-  ))
-}
-
-# pooled model
-m35_Emp.WorkLifeBalance_st <- fit_Emp.WorkLifeBalance_st()
-main = "Work Life Balance"
-ylab = "Work Life Balance (SD)"
-out_p <- pool_stglm(m35_Emp.WorkLifeBalance_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = c(-.5,.5), main, xlab, ylab)
-ggplot_stglm(out_p, ylim = c(-.5,.5), main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m35_Emp.WorkLifeBalance_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
-
 
 
 
@@ -1674,8 +886,8 @@ ggplot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
 
 ## fit
 fit_LIFESAT_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("LIFESAT_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ccu, glm(
+    as.formula(paste("LIFESAT_lead2_z~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
@@ -1701,27 +913,52 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 # Promotion NZSEI ---------------------------------------------------------------
 ## fit
-fit_NZSEI13_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("NZSEI13_lead2_10_z ~ bs(Hours.Work_lead1_10) +",
+fit_NZSEI06_st = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("NZSEI06_lead2_10 ~ bs(Religion.CongregationSize_lead1_log)+",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 # pooled model
-m38_NZSEI13  <- fit_NZSEI13_st()
-m38_NZSEI13
-main = "Occupational Status"
-ylab = "Occupational Status (SD)"
+m38_NZSEI06  <- fit_NZSEI06_st()
 
-
-
-out_p <- pool_stglm(m38_NZSEI13, df = df, m = m,  X = X, x = x)
+main = "Occupational Success/10"
+ylab = "Occupational Success (/10)"
+out_p <- pool_stglm(m38_NZSEI06, df = df, m = m,  X = X, x = x)
 
 plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
 ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
 
-out_cr <- pool_stglm_contrast(m38_NZSEI13, df = df, m = m,  X = X, x = x, r= r)
+out_cr <- pool_stglm_contrast(m38_NZSEI06, df = df, m = m,  X = X, x = x, r= r)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+
+
+# prayer ------------------------------------------------------------------
+
+fit = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("Religion.Prayer_lead2_log_z ~ bs(Religion.CongregationSize_lead1_log)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+fit_0  <- fit()
+
+main = "Religion Prayer log (SD)"
+ylab = "Religion Prayer log (SD)"
+out_p <- pool_stglm(fit_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(fit_0, df = df, m = m,  X = X, x = x, r= r)
 ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 # increase
@@ -1731,10 +968,215 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 
 
+# scripture ---------------------------------------------------------------
+
+fit = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("Religion.Scripture_lead2_log_z ~ bs(Religion.CongregationSize_lead1_log)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+fit_0  <- fit()
+
+main = "Religion Scripture log (SD)"
+ylab = "Religion Scripture log (SD)"
+out_p <- pool_stglm(fit_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(fit_0, df = df, m = m,  X = X, x = x, r= r)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+
+
+
+
+# church ------------------------------------------------------------------
+fit = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("Church_lead2 ~ bs(Religion.CongregationSize_lead1_log)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+fit_0  <- fit()
+
+main = "Religion Church log (SD)"
+ylab = "Religion Church log (SD)"
+out_p <- pool_stglm(fit_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim=c(0,8), main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(fit_0, df = df, m = m,  X = X, x = x, r= r)
+ggplot_stglm_contrast(out_cr, ylim=c(0,2), main, xlab, ylab)
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+
+
+
+# SUPPORT on wellbeing ---------------------------------------------
+# set up vars2 -------------------------------------------------------------
+ylim <- c(-1,1)
+xlab <- "Social Support (SD)"
+df <-  ccu
+m = 10
+X = "SUPPORT_lead1_z"
+x = -1:1
+r = -1
+
+## SFHEALTH
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("SFHEALTH_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+out_0 <- fit_0()
+summary(pool(out_0))
+main = "SF Health"
+ylab = "SF Health (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+
+##Fatigue HLTH.Fatigue_lead2_z
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("HLTH.Fatigue_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+out_0 <- fit_0()
+summary(pool(out_0))
+main = "Fatigue"
+ylab = "Support (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+##KESSLER6sum_lead2_z
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("KESSLER6sum_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+out_0 <- fit_0()
+summary(pool(out_0))
+main = "Kessler 6 Distress (SD)"
+ylab = "Support (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+
+
+## PWI
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("PWI_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+# pooled model
+out_0 <- fit_0()
+summary(pool(out_0))
+main = "PWI"
+ylab = "SUPPORT (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+
+## LIFE SAT
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("LIFESAT_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+
+# pooled model
+out_0 <- fit_0()
+summary(pool(out_0))
+main = "Life Satisfaction (SD)"
+ylab = "SUPPORT (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+### BELONG_lead2_z
+fit_0 = function(formula) {
+  with(ccu, glm(
+    as.formula(paste("BELONG_lead2_z~ bs(SUPPORT_lead1_z)+",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+
+# pooled model
+out_0 <- fit_0()
+main = "Social Belonging (SD)"
+ylab = "SUPPORT (SD)"
+out_p <- pool_stglm(out_0, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(out_0, df = df, m = m,  X = X, x = x, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
 # hours-work --------------------------------------------------------------
 
 library(MatchThem)
-library(optmatch)
+1library(optmatch)
 models_hw <- weightthem(Hours.Work_lead1_z ~
                           Hours.Work_z +
                           AGREEABLENESS_z +
@@ -1774,7 +1216,7 @@ models_hw <- weightthem(Hours.Work_lead1_z ~
                           Male_z +
                           NZdep_z +
                           NWI_z +
-                          NZSEI13_z +
+                          NZSEI06_z +
                           Parent_z +
                           Partner_z +
                           PERFECTIONISM_z +
@@ -2000,7 +1442,7 @@ summary(output, conf.int = TRUE)
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm( SUPPORT_lead2_z ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( SUPPORT_lead2_z ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
@@ -2009,14 +1451,14 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
 
-out <- with(ctrim_st, glm( Volunteers_lead2 ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( Volunteers_lead2 ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm( CharityDonate_lead2 ~ Hours.Work_lead1_10 , family = "poisson"))
+out <- with(ctrim_st, glm( CharityDonate_lead2 ~ bs(Religion.CongregationSize_lead1_log) + , family = "poisson"))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 exp( 6.9785313)
@@ -2034,21 +1476,21 @@ exp(-0.1001891 + 0.01807244 - 6.9785313)/ exp(-6.9785313 )
 exp(-0.1001891 - 0.01807244 - 6.9785313)/ exp(-6.9785313 )
 
 
-out <- with(ctrim_st, glm(community_lead2_z ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm(community_lead2_z ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm(NWI_lead2_z~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm(NWI_lead2_z~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
 round( EValue::evalues.OLS(0.025172099 , se = 0.007768097, sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm(ImpermeabilityGroup_lead2 ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm(ImpermeabilityGroup_lead2 ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
@@ -2056,7 +1498,7 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
 
-out <- with(ctrim_st, glm( Standard.Living_lead2ord_z ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( Standard.Living_lead2ord_z ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
@@ -2064,14 +1506,14 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
 
-out <- with(ctrim_st, glm( Your.Future.Security_lead2_z ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( Your.Future.Security_lead2_z ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm( Your.Health_lead2_z  ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( Your.Health_lead2_z  ~ bs(Religion.CongregationSize_lead1_log) + ))
 
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
@@ -2079,7 +1521,7 @@ summary(output, conf.int = TRUE)
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
-out <- with(ctrim_st, glm( Your.Personal.Relationships_lead2ord_z ~ Hours.Work_lead1_10 ))
+out <- with(ctrim_st, glm( Your.Personal.Relationships_lead2ord_z ~ bs(Religion.CongregationSize_lead1_log) + ))
 output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 
@@ -2087,7 +1529,7 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
 
 
-# NZSEI13 -- status variable
+# NZSEI06 -- status variable
 
 
 
@@ -2135,7 +1577,7 @@ models_sl <- weightthem(Standard.Living_lead1_z ~
                           Male_z +
                           NZdep_z +
                           NWI_z +
-                          NZSEI13_z +
+                          NZSEI06_z +
                           Parent_z +
                           Partner_z +
                           PERFECTIONISM_z +
@@ -2251,7 +1693,7 @@ out2 <-  with(
       Male_z +
       NZdep_z +
       NWI_z +
-      NZSEI13_z +
+      NZSEI06_z +
       Parent_z +
       Partner_z +
       PERFECTIONISM_z +
@@ -3290,7 +2732,7 @@ models_st <- weightthem(income_log_lead1_z ~
                           Male_z +
                           NZdep_z +
                           NWI_z +
-                          NZSEI13_z +
+                          NZSEI06_z +
                           Parent_z +
                           Partner_z +
                           PERFECTIONISM_z +

@@ -1,30 +1,17 @@
-# Bella hours work
-# set science digits
+# church-use R
+# set digits = 3
 options(scipen=999)
 
-### ELIGIBILITY CRITERIA
-# 2018/ 2019 - Hours Working Reported
-# Not retired baseline?
-# Not semi retired baseline?
-# Employed at baseline and Employed in 2019?
-# income above poverty
-
-# read data
-df <- readRDS(here::here("data_raw", "df.Rds"))
-
-
-# df %>%
-#   filter(Wave == 2020 &  YearMeasured == 1) %>%
-#   n_distinct("Id")
-
-# read libraries in
+#libraries and functions
 source(here::here("scripts", "libs.R"))
 source(here::here("scripts", "funs.R"))
 
-
+### ELIGIBILITY CRITERIA
+# read data
+dat <- readRDS(here::here("data_raw", "df.Rds"))
 
 # table for participant N
-tab_in <- df %>%
+tab_in <- dat %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
   dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
@@ -34,24 +21,27 @@ tab_in <- df %>%
   dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
   # dplyr::filter(Id != 9630) %>% # problematic for income
   group_by(Id) %>%
-  dplyr::mutate(org2019 = ifelse(Wave == 2019 &
-                                   YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
-  dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
-  dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
   dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold18 = mean(org2018, na.rm = TRUE)) %>%  # Hack
   dplyr::filter(hold18 > 0) %>% # hack to enable repeat of baseline
+  dplyr::mutate(org2019 = ifelse(Wave == 2019 &
+                                   YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+  dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
+  dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
   ungroup() %>%
   droplevels() %>%
   arrange(Id, Wave)
 # check n # 34782
-table1::table1(~ Household.INC | Wave , data = tab_in, overall = FALSE)
 
 length(unique(tab_in$Id)) # 34783
 
+table1::table1(~   Religion.Church + SDO| Wave , data = tab_in, overall = FALSE)
+
+
+
 # increasing rate
-dff%>%
+dat%>%
   group_by(Wave) %>%
   summarise(mean(HLTH.Disability, na.rm = TRUE))
 
@@ -60,12 +50,8 @@ dff%>%
 
 
 ## select vars
-df_wk <- tab_in %>%
-  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
-                  (Wave == 2019  &
-                     YearMeasured  == 1) |
-                  (Wave == 2020))  %>% # Eligibility criteria
-  dplyr::filter(Id != 9630) %>% # problematic
+df_c <- tab_in %>%
+ # dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
     YearMeasured,
@@ -82,6 +68,8 @@ df_wk <- tab_in %>%
     NEUROTICISM,
     AGREEABLENESS,
     Edu,
+    SDO,
+    RWA,
     NZdep,
     Employed,
     HomeOwner,
@@ -90,14 +78,14 @@ df_wk <- tab_in %>%
     Household.INC,
     Parent,
     Relid,
-    Religion.Church,
+    Religion.Church2,
     Believe.Spirit,
     Believe.God,
     Spiritual.Identification,
     SWB.SoC01,
-    EmotionRegulation1,
-    EmotionRegulation2,
-    EmotionRegulation3,
+    # EmotionRegulation1,
+    # EmotionRegulation2,
+    # EmotionRegulation3,
     Bodysat,
     VENGEFUL.RUMIN,
     retired,
@@ -121,7 +109,7 @@ df_wk <- tab_in %>%
     Hours.Exercise,
     LIFEMEANING,
     LIFESAT,
-    # PWI,  ##  we use the individual
+    PWI,
     NWI,
     SFHEALTH,
     SELF.CONTROL,
@@ -177,16 +165,11 @@ df_wk <- tab_in %>%
     #   )
     # ) - 1),
     # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-    Church = ifelse(Religion.Church > 8, 8, Religion.Church),
+    Church = ifelse(Religion.Church2 > 8, 8, Religion.Church2),
     income_log = log(Household.INC + 1),
   ) %>%
   arrange(Id, Wave)  %>% #
-  dplyr::mutate(income_log_lead1 = lead(income_log, n = 1)) %>%
-  dplyr::mutate(Hours.Work_lead1 = lead(Hours.Work, n = 1)) %>%
-  dplyr::mutate(HLTH.Disability_lead1 = lead(Hours.Work, n = 1)) %>%
-  # dplyr::mutate(Standard.Living_lead1 = lead(Standard.Living, n = 1)) %>%
-  dplyr::mutate(retired_lead1 = lead(retired, n = 1)) %>%
-  dplyr::mutate(semiretired_lead1 = lead(semiretired, n = 1)) %>%
+  dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
   #dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%  Your.Future.Security
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
@@ -198,7 +181,7 @@ df_wk <- tab_in %>%
       SFHEALTH,
       LIFEMEANING,
       LIFESAT,
-      #  PWI,
+      PWI,
       Hours.Work,
       SELF.ESTEEM,
       SELF.CONTROL,
@@ -209,7 +192,6 @@ df_wk <- tab_in %>%
       HLTH.BMI,
       HLTH.Disability,
       Smoker,
-      # ChildrenNum,
       NWI,
       BELONG,
       SUPPORT,
@@ -225,9 +207,9 @@ df_wk <- tab_in %>%
       VENGEFUL.RUMIN,
       community,
       HONESTY_HUMILITY,
-      EmotionRegulation1,
-      EmotionRegulation2,
-      EmotionRegulation3,
+     # EmotionRegulation1,
+     # EmotionRegulation2,
+     # EmotionRegulation3, Every high missingness
       Emp.WorkLifeBalance,
       PermeabilityIndividual,
       ImpermeabilityGroup,
@@ -243,40 +225,38 @@ df_wk <- tab_in %>%
     .names = "{col}_lead2"
   )) %>% # make leads
   dplyr::filter(Wave == 2018) %>%
- # dplyr::filter(retired != 1) %>%
- # dplyr::filter(retired_lead1 != 1) %>%  #needed for the intervention
+  # dplyr::filter(retired != 1) %>%
+  # dplyr::filter(retired_lead1 != 1) %>%  #needed for the intervention
   # dplyr::filter(semiretired != 1) %>%
   #dplyr::filter(semiretired_lead1 != 1) %>%
   #dplyr::filter(!is.na(income_log_lead1) )%>%  #   ABOUT
   #dplyr::filter(!is.na(income_log) )%>% #  THINK ABOUT
-  dplyr::filter(Household.INC >= 30975) %>% # min income
+ # dplyr::filter(Household.INC >= 30975) %>% # min income
   # dplyr::filter(income_log_lead1 > income_log) %>%
-  dplyr::filter(!is.na(Hours.Work)) %>%
-  dplyr::filter(!is.na(Hours.Work_lead1)) %>%
+  dplyr::filter(!is.na(Church)) %>%
+  dplyr::filter(!is.na(Church_lead1)) %>%
   #dplyr::filter(!is.na(Standard.Living) )%>%
   # dplyr::filter(!is.na(Standard.Living_lead1) )%>%
   #  dplyr::filter(semiretired_lead1 != 1) %>%  #needed for the intervention
   dplyr::select(-c(
-      Religion.Church,
-      # EthCat,
-      HoursCharity,
-      Respect.Self_lead2,
-      Household.INC,
-      #  org2018,
-      #  not_euro,
-      #  not_euro_lead2,
-      # hold18,
-      #   Euro,
-      Emp.WorkLifeBalance,
-      YearMeasured,
-      HLTH.Disability_lead1,
-      # org2019,
-      # hold19,
-     # retired,
-      retired_lead1,
-     # semiretired,
-      semiretired_lead1
-    )
+    Religion.Church2,
+    # EthCat,
+    HoursCharity,
+    Respect.Self_lead2,
+    Household.INC,
+    #  org2018,
+    #  not_euro,
+    #  not_euro_lead2,
+    # hold18,
+    #   Euro,
+    Emp.WorkLifeBalance,
+    YearMeasured,
+    #HLTH.Disability_lead1,
+    # org2019,
+    # hold19,
+    # retired,
+    # semiretired,
+  )
   ) %>%
   #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
   arrange(Id, Wave) %>%
@@ -288,64 +268,65 @@ df_wk <- tab_in %>%
 # Filtering retirement -- consistency and positivity assumptions
 
 # number of ids
-N <- length(unique(df_wk$Id))
-N  # 28676
+N <- length(unique(df_c$Id))
+N  # 33137
 
 # inspect data
-skim(df_wk)
+skim(df_c)
 
 
 # save function
-saveh(df_wk, "df_wk")
+saveh(df_c, "df_c")
 
 # read if needed
-df_wk<- readh("df_wk")
+df_c<- readh("df_c")
 
 
 # mice model  -------------------------------------------------------------
 library(mice)
 
-mice_wk <- df_wk %>%
+mice_c <- df_c %>%
   dplyr::select(-c( Wave, Id))  # won't otherwise run
 
+mice_c$SDO
 library(naniar)
-naniar::gg_miss_var(mice_wk)
-vis_miss(mice_wk,
+naniar::gg_miss_var(mice_c)
+vis_miss(mice_c,
          warn_large_data = FALSE)
 
 # any colinear vars?
-mice:::find.collinear(mice_wk)
+mice:::find.collinear(mice_c)
 
 # impute
-wk_mice <- mice::mice(mice_wk,  seed = 0, m = 10)
+c_mice <- mice::mice(mice_c,  seed = 0, m = 10)
 
 # save
-saveh(wk_mice, "wk_mice")
+saveh(c_mice, "c_mice")
 
 # read
-wk_mice <- readh("wk_mice")
+c_mice <- readh("c_mice")
 
 # checks
 outlist2 <-
-  row.names(wk_mice)[wk_mice$outflux < 0.5]
+  row.names(c_mice)[c_mice$outflux < 0.5]
 length(outlist2)
 
 # checks
-head(wk_mice$loggedEvents, 10)
+head(c_mice$loggedEvents, 10)
 
 # data warangling
 # we create two completed data sets -- the one without the missing data will be useful for
 # determing causal contrasts -- which we'll describe below.
 
-w_f <- mice::complete(wk_mice, "long", inc = F)
-w_l <- mice::complete(wk_mice, "long", inc = TRUE)
+mf <- mice::complete(c_mice, "long", inc = F)
+ml <- mice::complete(c_mice, "long", inc = TRUE)
 
 
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
-skimr::skim(w_l)
+skimr::skim(ml)
 
 # create variables in z score
-w_l2 <- w_l %>%
+ml <- ml %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0)))%>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0))%>%
@@ -374,20 +355,19 @@ w_l2 <- w_l %>%
   dplyr::mutate(alcohol_bin2 = if_else( Alcohol.Frequency > 3, 1, 0))%>%
   dplyr::mutate(alcohol_bin = if_else( Alcohol.Frequency > 2, 1, 0))%>%
   dplyr::mutate(Hours.Work_10 =  Hours.Work/10)%>%
-  dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
+  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
+  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
   dplyr::mutate(NZSEI13_10 =  NZSEI13/10)%>%
   dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2/10))%>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z))%>%
   dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
 
-hist(w_l2$Hours.Work_lead1_sqrt_z)
 
 
 # for models wihout looping (not advised)
 
-w_f2 <- w_f %>%
+mf <- mf %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0)))%>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0))%>%
@@ -415,8 +395,8 @@ w_f2 <- w_f %>%
   dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0) )) %>%
   dplyr::mutate(alcohol_bin2 = if_else( Alcohol.Frequency > 3, 1, 0))%>%
   dplyr::mutate(alcohol_bin = if_else( Alcohol.Frequency > 2, 1, 0))%>%
-  dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
+  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
+  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
   dplyr::mutate(NZSEI13_10 =  NZSEI13/10)%>%
   dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2/10))%>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
@@ -425,23 +405,24 @@ w_f2 <- w_f %>%
 
 
 # Get data into shape
-wf3 <- w_f2 %>% mutate_if(is.matrix, as.vector)
-wl3 <- w_l2 %>% mutate_if(is.matrix, as.vector)
+mf <- mf %>% mutate_if(is.matrix, as.vector)
+ml <- ml %>% mutate_if(is.matrix, as.vector)
 
-w_m <- mice::as.mids(wl3)
+ml <- mice::as.mids(ml)
 
-saveh(w_m, "w_m")
-saveh(wf3, "wf3")
+saveh(ml, "churchl")
+saveh(mf, "churchf")
 
 
 
-###### READ THIS DATA IN BELLA  #########
-w_m <- readh("w_m")
-wf3 <- readh("wf3")
+###### READ THIS DATA IN   #########
+ml <- readh("churchl")
+mf <- readh("churchf")
 
 
 # model equations ---------------------------------------------------------
-baselinevars = c("AGREEABLENESS_z","CONSCIENTIOUSNESS_z","EXTRAVERSION_z","HONESTY_HUMILITY_z","NEUROTICISM_z","OPENNESS_z","Age_z","Alcohol.Frequency_z","Alcohol.Intensity_log_z","Bodysat_z","BornNZ_z","Believe.God_z","Believe.Spirit_z","BELONG_z","CharityDonate_log_z","ChildrenNum_z","Church_z", "community","Edu_z","Employed_z","EmotionRegulation1_z", "EmotionRegulation2_z","EmotionRegulation3_z","Euro_z", "GRATITUDE_z","HomeOwner_z","Hours.Exercise_log_z","Hours.Work_z","HLTH.BMI_z", "HLTH.Disability_z", "HLTH.Fatigue_z", "HLTH.SleepHours_z", "ImpermeabilityGroup_z","income_log_z", "KESSLER6sum_z", "LIFEMEANING_z", "LIFESAT_z", "Male_z","NZdep_z", "NWI_z","NZSEI13_z","Parent_z","Partner_z","PERFECTIONISM_z", "PermeabilityIndividual_z", "Pol.Orient_z", "POWERDEPENDENCE1_z","POWERDEPENDENCE2_z","Relid_z", "Respect.Self_z", "retired", "Rumination_z","SELF.CONTROL_z", "SELF.ESTEEM_z", "semiretired", "SexualSatisfaction_z","SFHEALTH_z","Smoker_z", "Spiritual.Identification_z","Standard.Living_z", "SUPPORT_z","Urban_z", "VENGEFUL.RUMIN_z", "Volunteers_z", "Your.Health_z", "Your.Future.Security_z", "Your.Personal.Relationships_z")
+
+baselinevars = c("AGREEABLENESS_z","CONSCIENTIOUSNESS_z","EXTRAVERSION_z","HONESTY_HUMILITY_z","NEUROTICISM_z","OPENNESS_z","Age_z","Alcohol.Frequency_z","Alcohol.Intensity_log_z","Bodysat_z","BornNZ_z","Believe.God_z","Believe.Spirit_z","BELONG_z","CharityDonate_log_z","ChildrenNum_z","Church_z", "community","Edu_z","Employed_z","Euro_z", "GRATITUDE_z","HomeOwner_z","Hours.Exercise_log_z","Hours.Work_z","HLTH.BMI_z", "HLTH.Disability_z", "HLTH.Fatigue_z", "HLTH.SleepHours_z", "ImpermeabilityGroup_z", "income_log_z", "KESSLER6sum_z", "LIFEMEANING_z", "LIFESAT_z", "Male_z","NZdep_z", "NWI_z","NZSEI13_z","Parent_z","Partner_z","PERFECTIONISM_z", "PermeabilityIndividual_z", "Pol.Orient_z", "POWERDEPENDENCE1_z","POWERDEPENDENCE2_z","Relid_z", "Respect.Self_z", "retired", "Rumination_z","RWA_z","SDO_z", "SELF.CONTROL_z", "SELF.ESTEEM_z", "semiretired", "SexualSatisfaction_z","SFHEALTH_z","Smoker_z", "Spiritual.Identification_z","Standard.Living_z", "SUPPORT_z","Urban_z", "VENGEFUL.RUMIN_z", "Volunteers_z", "Your.Health_z", "Your.Future.Security_z", "Your.Personal.Relationships_z")
 
 
 # functions ---------------------------------------------------------------
@@ -450,546 +431,475 @@ baselinevars = c("AGREEABLENESS_z","CONSCIENTIOUSNESS_z","EXTRAVERSION_z","HONES
 
 ## Also use
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
-round( EValue::evalues.RR( , lo =  , hi =, true = 1), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
 # set up vars -------------------------------------------------------------
 
 ylim <- c(-.25,.25)
-xlab <- "Weekly Hours Work/10"
-df <-  w_m
+xlab <- "Monthly Church"
+df <-  ml
 m = 10
-X = "Hours.Work_lead1_10"
-x = c(0,2,4,6)
-xlab = "Work/10 hours"
+X = "Church_lead1"
+x =  0:8
+xlab = "Church_lead1"
+c = c(0,4)
 # reference level
-r = 4
+r = 0
+
+
 
 # bmi ---------------------------------------------------------------------
-#conditional  -- not we are using splines
-bmi_st <- as.formula(paste("HLTH.BMI_lead2_z ~ bs(Hours.Work_lead1_10) +",
-                           paste(baselinevars,
-                                 collapse = "+")))
 
-# this mice code won't work, alas!
-#m1_bmi <- with(w_m, exp = glm(bmi_st))
-
-## for some reason, writing a function works.
-fit_bmi = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.BMI_lead2_z ~ bs(Hours.Work_lead1_10) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))) )
+# prepare
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("HLTH.BMI_lead2_z ~ bs(Church_lead1) +",
+                                paste(baselinevars,
+                                      collapse = "+")))) )
 }
-# pooled model
-m1_bmi <- fit_bmi()
 
+# labels
 main = "BMI"
 ylab = "BMI (SD)"
 
-# gcomputation
-out_bmi <- pool_stglm(m1_bmi, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-## tba
-out_bmi %>%
-  print_html()
+# bake
+out_m <- out_f()
+out_m
 
-# turn off image
-dev.off()
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+pool_m %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-# plot
-plot_stglm(out_bmi, ylim, main, xlab, ylab)
-ggplot_stglm(out_bmi, ylim, main, xlab, ylab)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
-##
-out_bmic <- pool_stglm_contrast(m1_bmi, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_bmic, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_bmic, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_bmic %>%
-  print_md()
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# out_ct %>%
+#   kbl(format = "latex", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( 0.004, se = 0.018, sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
 #
-# # Marginal Contrasts requires the long data from MICED
-# # G computation
-# m1_long <- glm(bmi_st, data = wf3)
-# gform_m1<- stdGlm(fit = m1_long, data = wf3, X = "Hours.Work_lead1_10", x =x, clusterid="id")
-# summary(gform_m1, contrast = "difference", reference = r)
+# boostrap
+# library(marginaleffects)
+# library(boot)
+# bootfun <- function(data, indices, ...) {
+#   d <- data[indices, ]
+#   mod <- glm(as.formula(paste("HLTH.BMI_lead2_z ~ bs(Church_lead1) +",
+#                               paste(baselinevars,
+#                                     collapse = "+"))), data =d)
+#   cmp <- comparisons(mod, newdata = datagrid(), vcov = FALSE, variables = list(Church_lead1 = c(0,4)))
+#   tidy(cmp)$estimate
+# }
 #
-# # increase
-# round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-#
-# # decrease
-# round( EValue::evalues.OLS( -0.0222  , se = 0.00768  , sd = 1, delta = 3, true = 0), 3)
-#
-# # Graph
-# plot(gform_m1, ylim = ylim,
-#      contrast = "difference", reference = r,
-#      main="Standarised BMI difference relative to baseline", col.main="black",
-#      sub="Baseline = 30 hours", col.sub="black",
-#      xlab="Work Hours/10", ylab="BMI",
-#      col.lab="black", cex.lab=0.75)
-#
-
-# verify comparisons
-library(marginaleffects)
-# unit level change
-comps_m0 <- comparisons(m1_long, variables = "Hours.Work_lead1_10")
-
-summary(comps_m0) |>
-  print_md()
-
-
-# distribution of unit level changes
-ggplot(comps_m0, aes(comparison)) +
-  geom_histogram(bins = 30) +
-  facet_wrap(~contrast, scale = "free_x") +
-  labs(x = "Distribution of unit-level contrasts")
-
-#comparisons at diff levels
-comps_m1 <- comparisons(m1_long, variables = list(Hours.Work_lead1_10 = c(0,3))) %>% tidy()
-comps_m1
-
-comps_m2 <- comparisons(m1_long, variables = list(Hours.Work_lead1_10 = c(3,6))) %>% tidy()
-comps_m2
+# b <- boot(data = mf, statistic = bootfun, R = 3)
+# b
+# # Bootstrap Statistics :
+# #   original      bias    std. error
+# # t1* -0.004582486 0.005836902 0.005184014
+# round( EValue::evalues.OLS(0.003680699  , se = 0.00522961, sd = 1, delta = 4, true = 0), 3)
+# round( EValue::evalues.OLS(0.003654699  , se = 0.01821223, sd = 1, delta = 4, true = 0), 3)
 
 
 # sf-health ---------------------------------------------------------------
-sfhealth_st <- as.formula(paste("SFHEALTH_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                paste(baselinevars,
-                                      collapse = "+")))
 ## fit
 fit_sfhealth = function(formula) {
-  with(w_m, glm(as.formula(paste("SFHEALTH_lead2_z~ bs(Hours.Work_lead1_10) +",
+  with(ml, glm(as.formula(paste("SFHEALTH_lead2_z~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-# ppoled model
-m2_sfhealth <- fit_sfhealth()
 
+#labels
 main = "SF Health"
 ylab = "SF Health (SD)"
-out_sfhealth <- pool_stglm(m2_sfhealth, df = df, m = m,  X = X, x = x)
-plot_stglm(out_sfhealth, ylim, main, xlab, ylab)
-ggplot_stglm(out_sfhealth, ylim, main, xlab, ylab)
 
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-out_c <- pool_stglm_contrast(m2_sfhealth, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_c %>%
-  print_md()
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# out_ct %>%
+# kbl(format = "latex", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # exercise ---------------------------------------------------------------
-Hours.Exercise_st <- as.formula(paste("Hours.Exercise_lead2_log_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars, collapse = "+")))
-
-## fit for mice to work, don't ask why
-fit_Hours.Exercise = function(formula) {
-  with(w_m, glm(as.formula(paste("Hours.Exercise_lead2_log_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))))
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Hours.Exercise_lead2_log_z~ bs(Church_lead1) +",  paste(baselinevars,collapse = "+")))))
 }
 
-# pooled model
-m3_Hours.Exercise <- fit_Hours.Exercise()
-
+# lb
 main = "Log Hours Exercise"
 ylab = "Log Hours Exercise (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-out_Hours.Exercise <- pool_stglm(m3_Hours.Exercise, df = df, m = m,  X = X, x = x)
-plot_stglm(out_Hours.Exercise, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Hours.Exercise, ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_c <- pool_stglm_contrast(m3_Hours.Exercise, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
 
-# how much is one standard deviation of exercise
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-sd(exp(wf3$Hours.Exercise_lead2_log)+1)
+# out_ct %>%
+# kbl(format = "latex", booktabs = T, digits = 3)
 
-sd(wf3$Hours.Exercise_lead2)
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-#7.15373/10  # t/10th standard deviation
-# 60 * .715373 = 42 mins
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # HLTH.Sleep --------------------------------------------------------------
-
-HLTH.SleepHours_st <- as.formula(paste("HLTH.SleepHours_lead2 ~ bs(Hours.Work_lead1_10) +",  paste(baselinevars, collapse = "+")))
-
 ## fit
-fit_HLTH.SleepHours = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.SleepHours_lead2_z ~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))))
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("HLTH.SleepHours_lead2_z ~ bs(Church_lead1) +",  paste(baselinevars,collapse = "+")))))
 }
-# pooled model
-m4_HLTH.SleepHours <- fit_HLTH.SleepHours()
-
+#lb
 main = "Hours Sleep (SD)"
 ylab = "Hours Sleep (SD)"
-out_HLTH.SleepHours <- pool_stglm(HLTH.SleepHours_lead2_z, df = df, m = m,  X = X, x = x)
-out_HLTH.SleepHours
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_HLTH.SleepHours, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_HLTH.SleepHours, ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-dev.off()
-out_c <- pool_stglm_contrast(m4_HLTH.SleepHours, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
-out_c
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# out_ct %>%
+# kbl(format = "latex", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 #
 # sd(wf3$HLTH.SleepHours_lead2)
 # 1.061555 * number  # t/10th standard deviation
 # 60 * number)
 
-# smoker ------------------------------------------------------------------
-
-Smoker_st <- as.formula(paste("Smoker_lead2 ~ bs(Hours.Work_lead1_10) +",
-                              paste(baselinevars,
-                                    collapse = "+")))
+# ;smoker ------------------------------------------------------------------
 
 # fit
-fit_Smoker = function(formula) {
-  with(w_m, glm(as.formula(paste("Smoker_lead2 ~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Smoker_lead2 ~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+"))), family = "poisson"))
 }
-# pooled model
-m5_Smoker <- fit_Smoker()
 main = "Smoking Rate"
 ylab = "Smoking Rate"
-out_Smoker <- pool_stglm(m5_Smoker, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_Smoker, ylim = c(0,.06), main, xlab, ylab)
-ggplot_stglm(out_Smoker, ylim = c(0,.06), main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_c <- pool_stglm_contrast_ratio(m5_Smoker, df = df, m = m,  X = X, x = x, r= r)
+## contrasts (note ratio)
+out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = m,  X = X, x = c, r= r)
 
+ggplot_stglm_contrast(out_ct, ylim=c(0,2), main, xlab, ylab)
 
-plot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-#
-# # contrast model for comparison
-# m5_long <- glm(Smoker_st, data = wf3, family = "poisson")
-# m5_long
-# gform_m5<- stdGlm(fit = m5_long, data = wf3, X = X, x =x, clusterid="id")
-# summary(gform_m5,
-#         contrast = "ratio",
-#         type="odds",
-#         reference = r)
-#
-# plot(gform_m5)
-#
-# # evalues for risk ratios
-# round( EValue::evalues.RR(0.899 , lo =  0.8808, hi = 0.9172, true = 1), 3)
-# round( EValue::evalues.RR(1.207  , lo =  1.1759, hi =1.2381, true = 1), 3)
-#
-# # increase
-# round( EValue::evalues.OLS(  , se =     , sd = 1, delta = 3, true = 0), 3)
-# # decrease
-# round( EValue::evalues.OLS(-    , se =    , sd = 1, delta = 3, true = 0), 3)
-#
-#
-# plot(gform_m5,# ylim = c(0,.06),
-#      contrast = "ratio",
-#      reference = r,# type = "odds",
-#      main="Smoking risk ratio relative to baseline ", col.main="black",
-#      sub="Baseline = 30 hours", col.sub="black",
-#      xlab="Work Hours/10", ylab="Smoking rate",
-#      col.lab="black", cex.lab=0.75)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-# ratio of adjusted predictions
+# evalues
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-# p1 <- plot_cco(
-#   m5_long,
-#   effect = "Hours.Work_lead1_10",
-#   condition = "Hours.Work_lead1_10",
-#   transform_pre = "ratio") +
-#   ylab("Adjusted Risk Ratio\nP(Smoke | Work + 1) / P(Smoke | work)")
-#
-# p1
 
 # fatigue -----------------------------------------------------------------
-
-# formula
-HLTH.Fatigue_st <- as.formula(paste("HLTH.Fatigue_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                    paste(baselinevars, collapse = "+")))
-
 # fit
-fit_Fatigue = function(formula) {
-  with(w_m, glm(as.formula(paste("HLTH.Fatigue_lead2_z ~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("HLTH.Fatigue_lead2_z ~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-# ppoled model
-m6_Fatigue <- fit_Fatigue()
-
 main = "Fatigue"
 ylab = "Fatigue (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-# g-formula
-out_Fatigue <- pool_stglm(m6_Fatigue, df = df, m = m,  X = X, x = x)
+# bake
+out_m <- out_f()
 
-# Evalues
-# round( EValue::evalues.RR( , lo =  , hi = , true = 1), 3)
-# round( EValue::evalues.RR(1.207  , lo =  1.1759, hi =1.2381, true = 1), 3)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-round( EValue::evalues.OLS( 0.109, se = 0.00647, sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-# plots
-plot_stglm(out_Fatigue, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Fatigue, ylim = ylim, main, xlab, ylab)
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-out_cr <- pool_stglm_contrast(m6_Fatigue, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-wf3$HLTH.Fatigue_lead2_z
-sd(wf3$HLTH.Fatigue_lead2)
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # alcohol freq ------------------------------------------------------------
-
 # fit
-fit_Alcohol.Frequency = function(formula) {
-  with(w_m, glm(as.formula(paste("Alcohol.Frequency_lead2ord_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Alcohol.Frequency_lead2ord_z~ bs(Church_lead1) +",
                                  paste(baselinevars, collapse = "+")))))
 }
-# ppoled model
-m7_Alcohol.Frequency <- fit_Alcohol.Frequency()
-
 main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-# g-formula
-out_Alcohol.Frequency <- pool_stglm(m7_Alcohol.Frequency, df = df, m = m,  X = X, x = x)
+# bake
+out_m <- out_f()
 
-# plots
-out_Alcohol.Frequency
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# evalue
-round( EValue::evalues.OLS( , se = , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-plot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
+# evalues
+round( EValue::evalues.OLS(-0.08 , se = 0.022, sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-out_cr <- pool_stglm_contrast(m7_Alcohol.Frequency, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# Evalues
-# round( EValue::evalues.RR( , lo =  , hi = , true = 1), 3)
-# round( EValue::evalues.RR(1.207  , lo =  1.1759, hi =1.2381, true = 1), 3)
-
-# evalue  for loss
-round( EValue::evalues.OLS( -0.029038016, se = 0.01082889, sd = 1, delta = 3, true = 0), 3)
-
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # Alcohol.Intensity ----------------------------------------------------------
-
 # fit
-fit_Alcohol.Intensity = function(formula) {
-  with(w_m, glm(as.formula(paste("Alcohol.Intensity_log_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Alcohol.Intensity_log_lead2_z~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-
-# ppoled model
-m8_Alcohol.Intensity  <- fit_Alcohol.Intensity()
-
 main = "Alcohol Intensity"
 ylab = "Alcohol Intensity (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-# g-formula
-out_Alcohol.Intensity <- pool_stglm(m8_Alcohol.Intensity, df = df, m = m,  X = X, x = x)
+# bake
+out_m <- out_f()
 
-# plots
-plot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_Alcohol.Frequency, ylim = ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m8_Alcohol.Intensity, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS(-0.065 , se = 0.024, sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
 
 # body satisfaction -------------------------------------------------------
 # fit
-fit_Bodysat_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Bodysat_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Bodysat_lead2_z~ bs(Church_lead1) +",
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
-
-# ppoled model
-m9_Bodysat_st  <- fit_Bodysat_st()
-
-# g-formula
-out_p <- pool_stglm(m9_Bodysat_st, df = df, m = m,  X = X, x = x)
-
-# plots
 main = "Body Satisfaction"
 ylab = "Body Satisfaction (SD)"
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-out_cr <- pool_stglm_contrast(m9_Bodysat_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
 
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS(0.045 , se = 0.028, sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # rumination --------------------------------------------------------------
 # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
-
 # fit
-fit_Rumination_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Rumination_lead2ord_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Rumination_lead2ord_z~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-
-m10_Rumination <- fit_Rumination_st()
 
 #labels
 main = "Rumination"
 ylab = "Rumination (SD)"
 
-#g-compuations
-out_p <- pool_stglm(m10_Rumination, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m10_Rumination, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # sex satisfaction --------------------------------------------------------
-
-
-SexualSatisfaction_st <- as.formula(paste("SexualSatisfaction_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))
-
-## fit
-fit_SexualSatisfaction_st = function(formula) {
-  with(w_m, glm( as.formula(paste("SexualSatisfaction_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
+out_f = function(formula) {
+  with(ml, glm( as.formula(paste("SexualSatisfaction_lead2_z~ bs(Church_lead1) +", paste(baselinevars, collapse = "+")))))
 }
-# ppoled model
-m11_SexualSatisfaction_st <- fit_SexualSatisfaction_st()
-
 main = "Sexual Satisfaction (SD)"
 ylab = "Sexual Satisfaction (SD)"
-out_p <- pool_stglm(m11_SexualSatisfaction_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m11_SexualSatisfaction_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 
 # emotional regulation 1 ----------------------------------------------------
 # When I feel negative emotions, my emotions feel out of control.
-
-EmotionRegulation1_st <- as.formula(paste("EmotionRegulation1_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))
-
-## fit
-fit_EmotionRegulation1 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation1_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m12_fit_EmotionRegulation1 <- fit_EmotionRegulation1()
-
-main = "Emotion Regulation1"
-ylab = "Emotion Regulation1 (SD)"
-out_p<- pool_stglm(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-
-# emotional reg 2 ---------------------------------------------------------
-# When I feel negative emotions, I suppress or hide my emotions.
-
-EmotionRegulation2_st <- as.formula(paste("EmotionRegulation2_lead2_z~ bs(Hours.Work_lead1_10) +",paste(baselinevars,collapse = "+")))
-
-
-## fit
-fit_EmotionRegulation2 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation2_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m13_fit_EmotionRegulation2 <- fit_EmotionRegulation2()
-
-main = "Emotion Regulation2"
-ylab = "Emotion Regulation2 (SD)"
-out_p <- pool_stglm(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-
-# emotional reg 3 ---------------------------------------------------------
-# When I feel negative emotions, I change the way I think to help me stay calm.
-
-## fit
-fit_EmotionRegulation3 = function(formula) {
-  with(w_m, glm(as.formula(paste("EmotionRegulation3_lead2_z~ bs(Hours.Work_lead1_10) +", paste(baselinevars, collapse = "+")))))
-}
-# ppoled model
-m14_fit_EmotionRegulation3 <- fit_EmotionRegulation3()
-
-main = "Emotion Regulation3"
-ylab = "Emotion Regulation3 (SD)"
-out_p <- pool_stglm(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
 
 # kessler 6 ---------------------------------------------------------------
 ## fit
@@ -1001,106 +911,90 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 #   During the last 30 days, how often did.... you feel worthless?
 #   During the last 30 days, how often did.... you feel nervous?
 
-fit_KESSLER6sum_st = function(formula) {
-  with(w_m, glm(as.formula(paste("KESSLER6sum_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("KESSLER6sum_lead2~ bs(Church_lead1) +",
                                  paste(baselinevars,
-                                       collapse = "+")))))
+                                       collapse = "+"))), family = "poisson"))
 }
-# ppoled model
-m15_KESSLER6sum_st <- fit_KESSLER6sum_st()
-
 main = "Kessler 6 Distress"
 ylab = "Kessler 6 Distress (SD)"
-out_p <- pool_stglm(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = c(.75,1.25), main, xlab, ylab)
 
-effectunit <- sd(wf3$KESSLER6sum_lead2) *  0.036227231
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-# note that 5 is consider moderate distress
-ave40 <-mean(wf3$KESSLER6sum_lead2)
-ave40
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-# the loss of 40 hour work pushes people over this threshold
-ave40 + effectunit
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
-
-# how to examine differences?
-
-diffbase <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= 0)
-diffbase
-
-diffbase2 <- pool_stglm_contrast(m15_KESSLER6sum_st, df = df, m = m,  X = X, x = x, r= 6)
-diffbase2
-
-# plot it
-ggplot_stglm_contrast(diffbase, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(diffbase2, ylim, main, xlab, ylab)
-
-
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # power dependence 1 ------------------------------------------------------
 # I do not have enough power or control over important parts of my life.
 ## fit
-fit_POWERDEPENDENCE1_st = function(formula) {
-  with(w_m, glm(as.formula(paste("POWERDEPENDENCE1_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("POWERDEPENDENCE1_lead2_z~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-# ppoled model
-m16_POWERDEPENDENCE1_st <- fit_POWERDEPENDENCE1_st()
-
 main = "Power Dependence 1"
 ylab = "Power Dependence 1(SD)"
-out_p <- pool_stglm(m16_POWERDEPENDENCE1_st, df = df, m = m,  X = X, x = x)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m16_POWERDEPENDENCE1_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 # power dependence 2 ------------------------------------------------------
 ## fit
 #Other people have too much power or control over important parts of my life.
 
-fit_POWERDEPENDENCE2_st = function(formula) {
-  with(w_m, glm(as.formula(paste("POWERDEPENDENCE2_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("POWERDEPENDENCE2_lead2_z~ bs(Church_lead1) +",
                                  paste(baselinevars,
                                        collapse = "+")))))
 }
-# ppoled model
-m17_POWERDEPENDENCE2_st <- fit_POWERDEPENDENCE2_st()
-
 main = "Power Dependence 2"
 ylab = "Power Dependence 2(SD)"
-out_p <- pool_stglm(m17_POWERDEPENDENCE2_st, df = df, m = m,  X = X, x = x)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-out_cr <- pool_stglm_contrast(m17_POWERDEPENDENCE2_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # perfectionism  ----------------------------------------------------------
 # Perfectionism Discrepancy Subscale
@@ -1109,28 +1003,41 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # I am hardly ever satisfied with my performance.
 
 ## fit
-fit_PERFECTIONISM_st = function(formula) {
-  with(w_m, glm( as.formula(paste("PERFECTIONISM_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm( as.formula(paste("PERFECTIONISM_lead2_z~ bs(Church_lead1) +",
                                   paste(baselinevars,
                                         collapse = "+")))))
 }
-# ppoled model
-m18_PERFECTIONISM_st <- fit_PERFECTIONISM_st()
 
 main = "Perfectionism"
 ylab = "Perfectionism (SD)"
-out_p <- pool_stglm(m18_PERFECTIONISM_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m18_PERFECTIONISM_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
 # self esteem -------------------------------------------------------------
 # Self-esteem
 # On the whole am satisfied with myself.
@@ -1138,27 +1045,38 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # Am inclined to feel that I am a failure.
 
 ## fit
-fit_SELF.ESTEEM_st = function(formula) {
-  with(w_m, glm( as.formula(paste("SELF.ESTEEM_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm( as.formula(paste("SELF.ESTEEM_lead2_z~ bs(Church_lead1) +",
                                   paste(baselinevars,
                                         collapse = "+")))))
 }
-#  model
-m19_SELF.ESTEEM_st <- fit_SELF.ESTEEM_st()
-
 main = "Self Esteem"
 ylab = "Self Esteem (SD)"
-out_p <- pool_stglm(m19_SELF.ESTEEM_st, df = df, m = m,  X = X, x = x)
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m19_SELF.ESTEEM_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # gratitude ---------------------------------------------------------------
@@ -1168,29 +1086,39 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # I am grateful to a wide variety of people.
 
 ## fit
-fit_GRATITUDE_st = function(formula) {
-  with(w_m, glm( as.formula(paste("GRATITUDE_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm( as.formula(paste("GRATITUDE_lead2_z~ bs(Church_lead1) +",
                                   paste(baselinevars,
                                         collapse = "+")))
-                 ))
+  ))
 }
-#  model
-m20_GRATITUDE_st <- fit_GRATITUDE_st()
-
 main = "Gratitude"
 ylab = "Gratitude (SD)"
-out_p <- pool_stglm(m20_GRATITUDE_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m20_GRATITUDE_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # veng rumination ---------------------------------------------------------
 # Forgivingness versus Vengeful Rumination
@@ -1198,67 +1126,85 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # I can usually forgive and forget when someone does me wrong.
 # I find myself regularly thinking about past times that I have been wronged.
 
-
 ## fit
-fit_VENGEFUL.RUMIN_st = function(formula) {
-  with(w_m, glm( as.formula(paste("VENGEFUL.RUMIN_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm( as.formula(paste("VENGEFUL.RUMIN_lead2_z~ bs(Church_lead1) +",
                                   paste(baselinevars,
                                         collapse = "+")))
   ))
 }
-# pooled model
-m21_VENGEFUL.RUMIN_st <- fit_VENGEFUL.RUMIN_st()
-
+#
 main = "Vengefulness (anti-Foregiveness)"
 ylab = "Vengefulness (anti-Foregiveness) (SD)"
-out_p <- pool_stglm(m21_VENGEFUL.RUMIN_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m21_VENGEFUL.RUMIN_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
 
 
 # life meaning ------------------------------------------------------------
-
 # Meaning in Life
 # My life has a clear sense of purpose.
 # I have a good sense of what makes my life meaningful.
 
-LIFEMEANING_st <- as.formula(paste("LIFEMEANING_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                   paste(baselinevars,
-                                         collapse = "+")))
 ## fit
-fit_LIFEMEANING_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("LIFEMEANING_lead2ord_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("LIFEMEANING_lead2ord_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
-# pooled model
-m22_fit_LIFEMEANING_st <- fit_LIFEMEANING_st()
-
 main = "Life Meaning"
 ylab = "Life Meaning (SD)"
-out_p <- pool_stglm(m22_fit_LIFEMEANING_st, df = df, m = m,  X = X, x = x)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m22_fit_LIFEMEANING_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-out_cr
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # honesty humility --------------------------------------------------------
 
@@ -1269,218 +1215,246 @@ round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 # Deserve more things in life.
 
 ## fit
-fit_HONESTY_HUMILITY_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("HONESTY_HUMILITY_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("HONESTY_HUMILITY_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
-# pooled model
-m23_HONESTY_HUMILITY_st <- fit_HONESTY_HUMILITY_st()
-
+#
 main = "Honesty Humility"
 ylab = "Honesty Humility (SD)"
-out_p <- pool_stglm(m23_HONESTY_HUMILITY_st, df = df, m = m,  X = X, x = x)
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m23_HONESTY_HUMILITY_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # belonging ---------------------------------------------------------------
 # Felt belongingness
 # Know that people in my life accept and value me.
 # Feel like an outsider.
 # Know that people around me share my attitudes and beliefs.
 
-BELONG_st <- as.formula(paste("BELONG_lead2_z~ bs(Hours.Work_lead1_10) +",
-                              paste(baselinevars,
-                                    collapse = "+")))
-## fit
-fit_BELONG_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("BELONG_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("BELONG_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
-# pooled model
-m24_BELONG_st <- fit_BELONG_st()
 
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
-out_p <- pool_stglm(m24_BELONG_st, df = df, m = m,  X = X, x = x)
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m24_BELONG_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # soc support -------------------------------------------------------------
-
 # Perceived social support
 # There are people I can depend on to help me if I really need it.
 # There is no one I can turn to for guidance in times of stress.
 # I know there are people I can turn to when I need help.
-
-
-SUPPORT_st <- as.formula(paste("SUPPORT_lead2_z~ bs(Hours.Work_lead1_10) +",
-                               paste(baselinevars,
-                                     collapse = "+")))
-
 ## fit
-fit_SUPPORT_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("SUPPORT_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
-
-# pooled model
-m25_SUPPORT_st <- fit_SUPPORT_st()
-
 main = "Social Support"
 ylab = "Social Support (SD)"
-out_p<- pool_stglm(m25_SUPPORT_st, df = df, m = m,  X = X, x = x)
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-out_cr <- pool_stglm_contrast(m25_SUPPORT_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # volunteers --------------------------------------------------------------
-Volunteers_st <- as.formula(paste("Volunteers_lead2~ bs(Hours.Work_lead1_10) +",
-                              paste(baselinevars,  collapse = "+")))
-
-
 # fit
-fit_Volunteers_st = function(formula) {
-  with(w_m, glm(as.formula(paste("Volunteers_lead2~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(as.formula(paste("Volunteers_lead2~ bs(Church_lead1) +",
                                  paste(baselinevars,
-                                       collapse = "+")))))
+                                       collapse = "+"))), family = "poisson"))
 }
-# pooled model
-m26_Volunteers <- fit_Volunteers_st()
 
+main = "Volunteers"
+ylab = "Volunteers (rate)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-main = "Volunteer Rate"
-ylab = "Volunteer Rate"
-out_Volunteers<- pool_stglm(m26_Volunteers, df = df, m = m,  X = X, x = x)
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-plot_stglm(out_Volunteers, ylim = c(0,.06), main, xlab, ylab)
-ggplot_stglm(out_Volunteers, ylim = c(0,.06), main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = c(.5,2.5), main, xlab, ylab)
 
-out_c <- pool_stglm_contrast_ratio(m26_Volunteers, df = df, m = m,  X = X, x = x, r= r)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
-plot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
-#
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-#
-# # contrast model
-# m26_long <- glm(Volunteers_st, data = wf3, family = "poisson")
-# m26_long
-# gform_m26<- stdGlm(fit = m26_long, data = wf3, X = X, x =x, clusterid="id")
-# summary(gform_m26,
-#         contrast = "ratio",
-#         #type="odds",
-#         reference = r)
-#
-# plot(gform_m26)
-#
-# # evalues for risk ratios
-# round( EValue::evalues.RR( , lo =  , hi = 0.9172, true = 1), 3)
-# round( EValue::evalues.RR(  , lo =  , hi =1.2381, true = 1), 3)
-#
-# # increase
-# round( EValue::evalues.OLS(  , se =     , sd = 1, delta = 3, true = 0), 3)
-# # decrease
-# round( EValue::evalues.OLS(-    , se =    , sd = 1, delta = 3, true = 0), 3)
-#
-#
-# plot(gform_m26,# ylim = c(0,.06),
-#      contrast = "ratio",
-#      reference = r,# type = "odds",
-#      main="Volunteering risk ratio relative to baseline ", col.main="black",
-#      sub="Baseline = 30 hours", col.sub="black",
-#      xlab="Work Hours/10", ylab="Volunteering rate",
-#      col.lab="black", cex.lab=0.75)
-#
-# dev.off()
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = c(0:8),  X = X)
+# graph
+ggplot_stglm(pool_m, ylim = c(-.5, 1), main, xlab, ylab, c=(0:8))
 
 # charity donate ----------------------------------------------------------
-
 ## fit
-fit_CharityDonate_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("CharityDonate_log_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("CharityDonate_log_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
-  ))
+    ))
 }
+main = "Charity Donations (annual)"
+ylab = "Charity Donations (annual)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-# pooled model
-m27_CharityDonate_st <- fit_CharityDonate_st()
-main = "Charity Donatations (annual SD)"
-ylab = "Charity Donatations (annual SD)"
-out_CharityDonate <- pool_stglm(m27_CharityDonate_st, df = df, m = m,  X = X, x = x)
-out_CharityDonate
-plot_stglm(out_CharityDonate, ylim, main, xlab, ylab)
-ggplot_stglm(out_CharityDonate, ylim, main, xlab, ylab)
+summary(pool(out_m))
 
+## contrasts (ratio scale)
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+out_ct
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = c(0,.5), main, xlab, ylab)
 
-out_cr <- pool_stglm_contrast(m27_CharityDonate_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# sd(mf$CharityDonate_lead2) * 0.2538613  # 100 dollars per month
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
 
 # community lead ----------------------------------------------------------
-# Sense of community
-# I feel a sense of community with others in my local neighbourhood.
-
-
 ## fit
-fit_community_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("community_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("community_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m28_community_st <- fit_community_st()
 main = "Community"
 ylab = "Community (SD)"
-out_community <- pool_stglm(m28_community_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_community, ylim, main, xlab, ylab)
-ggplot_stglm(out_community, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m28_community_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # national wellbeing ------------------------------------------------------
 
@@ -1490,51 +1464,98 @@ ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 # Business in New Zealand.
 
 ## fit
-fit_NWI_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("NWI_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("NWI_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m29_NWI_st <- fit_NWI_st()
 main = "National Well Being"
 ylab = "National Well Being (SD)"
-out_NWI <- pool_stglm(m29_NWI_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_NWI, ylim, main, xlab, ylab)
-ggplot_stglm(out_NWI, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m29_NWI_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # imperm group ------------------------------------------------------------
-ImpermeabilityGroup_st <- as.formula(paste("ImpermeabilityGroup_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                           paste(baselinevars,
-                                                 collapse = "+")))
+
 ## fit
-fit_ImpermeabilityGroup_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("ImpermeabilityGroup_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("ImpermeabilityGroup_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m30_ImpermeabilityGroup_st <- fit_ImpermeabilityGroup_st()
 main = "Impermeability Group"
 ylab = "Impermeability Group (SD)"
-out_p <- pool_stglm(m30_ImpermeabilityGroup_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m30_ImpermeabilityGroup_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # stand living ------------------------------------------------------------
@@ -1546,124 +1567,235 @@ plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 # Your personal relationships.
 
 ## fit
-fit_Standard.Living_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Standard.Living_lead2ord_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("Standard.Living_lead2ord_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m31_Standard.Living_st <- fit_Standard.Living_st()
 main = "Standard Living"
 ylab = "Standard Living (SD)"
-out_p <- pool_stglm(m31_Standard.Living_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m31_Standard.Living_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-out_cr
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # future security ---------------------------------------------------------
 
-## fit
-fit_Your.Future.Security = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Future.Security_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("Your.Future.Security_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m32_Your.Future.Security_st <- fit_Your.Future.Security()
 main = "Your Future Security"
 ylab = "Your Future Security (SD)"
-out_p <- pool_stglm(m32_Your.Future.Security_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m32_Your.Future.Security_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 # your health -------------------------------------------------------------
+out_f= function(formula) {
+  with(ml, glm(
+    as.formula(paste("Your.Health_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Your Health"
+ylab = "Your Health (SD)"
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
+
+# personal relationships --------------------------------------------------
 ## fit
-fit_Your.Health_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Health_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f= function(formula) {
+  with(ml, glm(
+    as.formula(paste("Your.Personal.Relationships_lead2ord_z~ bs(Church_lead1) +",  paste(baselinevars,collapse = "+")))
+  ))
+}
+
+main = "Your Personal Relationships"
+ylab = "Your Personal Relationships (SD)"
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
+
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
+# Work-life balance -------------------------------------------------------
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("Emp.WorkLifeBalance_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 
-# pooled model
-m33_Your.Health_st <- fit_Your.Health_st()
-main = "Your Health"
-ylab = "Your Health (SD)"
-out_p <- pool_stglm(m33_Your.Health_st, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m33_Your.Health_st, df = df, m = m,  X = X, x = x, r= 3)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-
-# personal relationships --------------------------------------------------
-
-Your.Personal.Relationships_st <- as.formula(paste("Your.Personal.Relationships_lead2ord_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))
-
-## fit
-fit_Your.Personal.Relationships_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Your.Personal.Relationships_lead2ord_z~ bs(Hours.Work_lead1_10) +",  paste(baselinevars,collapse = "+")))
-  ))
-}
-
-# pooled model
-m34_Your.Personal.Relationships <- fit_Your.Personal.Relationships_st()
-main = "Your Personal Relationships"
-ylab = "Your Personal Relationships (SD)"
-out_p <- pool_stglm(m34_Your.Personal.Relationships, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m34_Your.Personal.Relationships, df = df, m = m,  X = X, x = x, r= 3)
-plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# Work-life balance -------------------------------------------------------
-
-#fit
-fit_Emp.WorkLifeBalance_st= function(formula) {
-  with(w_m, glm(
-    as.formula(paste("Emp.WorkLifeBalance_lead2_z~ bs(Hours.Work_lead1_10) +",
-                                               paste(baselinevars,
-                                                     collapse = "+")))
-  ))
-}
-
-# pooled model
-m35_Emp.WorkLifeBalance_st <- fit_Emp.WorkLifeBalance_st()
 main = "Work Life Balance"
 ylab = "Work Life Balance (SD)"
-out_p <- pool_stglm(m35_Emp.WorkLifeBalance_st, df = df, m = m,  X = X, x = x)
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("SUPPORT_lead2_z~ bs(Church_lead1) +",
+                     paste(baselinevars,
+                           collapse = "+")))
+  ))
+}
+main = "Social Support"
+ylab = "Social Support (SD)"
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim = c(-.5,.5), main, xlab, ylab)
-ggplot_stglm(out_p, ylim = c(-.5,.5), main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m35_Emp.WorkLifeBalance_st, df = df, m = m,  X = X, x = x, r= r)
-plot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
-ggplot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
 
@@ -1671,63 +1803,82 @@ ggplot_stglm_contrast(out_cr, ylim = c(-.5,.5), main, xlab, ylab)
 # Satisfaction with life
 # I am satisfied with my life.
 # In most ways my life is close to ideal.
-
 ## fit
-fit_LIFESAT_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("LIFESAT_lead2_z~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("LIFESAT_lead2_z~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
 # pooled model
-m37_LIFESAT_st  <- fit_LIFESAT_st()
-
 main = "Life Satisfaction"
 ylab = "Life Satisfaction (SD)"
-out_p <- pool_stglm(m37_LIFESAT_st, df = df, m = m,  X = X, x = x)
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
 
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 
-out_cr <- pool_stglm_contrast(m37_LIFESAT_st, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
 
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 # Promotion NZSEI ---------------------------------------------------------------
 ## fit
-fit_NZSEI13_st = function(formula) {
-  with(w_m, glm(
-    as.formula(paste("NZSEI13_lead2_10_z ~ bs(Hours.Work_lead1_10) +",
+out_f = function(formula) {
+  with(ml, glm(
+    as.formula(paste("NZSEI13_lead2_10_z ~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
   ))
 }
-# pooled model
-m38_NZSEI13  <- fit_NZSEI13_st()
-m38_NZSEI13
-main = "Occupational Status"
-ylab = "Occupational Status (SD)"
+main = "Occupational Status/10"
+ylab = "Occupational Status/10"
+
+# clean oven
+rm(out_m)
+rm(pool_m)
+rm(out_ct)
+# bake
+out_m <- out_f()
+
+## contrasts
+out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
+
+# graph of contrasts
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
+
+# table
+out_ct %>%
+  kbl(format = "markdown", booktabs = T, digits = 3)
+
+# evalues
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+# g-computation
+pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
+# graph
+ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 
-
-out_p <- pool_stglm(m38_NZSEI13, df = df, m = m,  X = X, x = x)
-
-plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
-
-out_cr <- pool_stglm_contrast(m38_NZSEI13, df = df, m = m,  X = X, x = x, r= r)
-ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
-
-# increase
-round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
-# decrease
-round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 
 
 
@@ -3347,4 +3498,87 @@ output <- pool(out, dfcom = NULL)
 summary(output, conf.int = TRUE)
 round( EValue::evalues.OLS(0.02376129 , se = 0.009437003, sd = 1, delta = 2, true = 0), 3)
 round( EValue::evalues.RR(, lo =  , hi =, true = 1), 3)
+
+
+EmotionRegulation1_st <- as.formula(paste("EmotionRegulation1_lead2_z~ bs(Church_lead1) +", paste(baselinevars, collapse = "+")))
+
+## fit
+fit_EmotionRegulation1 = function(formula) {
+  with(ml, glm(as.formula(paste("EmotionRegulation1_lead2_z~ bs(Church_lead1) +", paste(baselinevars, collapse = "+")))))
+}
+# ppoled model
+m12_fit_EmotionRegulation1 <- fit_EmotionRegulation1()
+
+main = "Emotion Regulation1"
+ylab = "Emotion Regulation1 (SD)"
+out_p<- pool_stglm(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(m12_fit_EmotionRegulation1, df = df, m = m,  X = X, x = c, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+
+
+
+# emotional reg 2 ---------------------------------------------------------
+# When I feel negative emotions, I suppress or hide my emotions.
+
+EmotionRegulation2_st <- as.formula(paste("EmotionRegulation2_lead2_z~ bs(Church_lead1) +",paste(baselinevars,collapse = "+")))
+
+
+## fit
+fit_EmotionRegulation2 = function(formula) {
+  with(ml, glm(as.formula(paste("EmotionRegulation2_lead2_z~ bs(Church_lead1) +", paste(baselinevars, collapse = "+")))))
+}
+# ppoled model
+m13_fit_EmotionRegulation2 <- fit_EmotionRegulation2()
+
+main = "Emotion Regulation2"
+ylab = "Emotion Regulation2 (SD)"
+out_p <- pool_stglm(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(m13_fit_EmotionRegulation2, df = df, m = m,  X = X, x = c, r= r)
+plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
+
+
+# emotional reg 3 ---------------------------------------------------------
+# When I feel negative emotions, I change the way I think to help me stay calm.
+
+## fit
+fit_EmotionRegulation3 = function(formula) {
+  with(ml, glm(as.formula(paste("EmotionRegulation3_lead2_z~ bs(Church_lead1) +", paste(baselinevars, collapse = "+")))))
+}
+# ppoled model
+m14_fit_EmotionRegulation3 <- fit_EmotionRegulation3()
+
+main = "Emotion Regulation3"
+ylab = "Emotion Regulation3 (SD)"
+out_p <- pool_stglm(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = x)
+
+plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+ggplot_stglm(out_p, ylim = ylim, main, xlab, ylab)
+
+out_cr <- pool_stglm_contrast(m14_fit_EmotionRegulation3, df = df, m = m,  X = X, x = c, r= r)
+ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
+
+# increase
+round( EValue::evalues.OLS(  , se =    , sd = 1, delta = 3, true = 0), 3)
+# decrease
+round( EValue::evalues.OLS(   , se =   , sd = 1, delta = 3, true = 0), 3)
 

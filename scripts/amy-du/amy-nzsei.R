@@ -1708,7 +1708,7 @@ ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 
 
-# life meaning ------------------------------------------------------------
+# life satisfacation ------------------------------------------------------------
 
 ## fit
 fit_LIFESAT_st = function(formula) {

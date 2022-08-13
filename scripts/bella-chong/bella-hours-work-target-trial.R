@@ -461,20 +461,20 @@ w_f2t <- w_ft %>%
 wf3t <- w_f2t %>% mutate_if(is.matrix, as.vector)
 wl3t <- w_l2t %>% mutate_if(is.matrix, as.vector)
 
-w_mtt <- mice::as.mids(wl3t)
+w_mt <- mice::as.mids(wl3t)
 
-saveh(w_mt, "w_mtt")
-saveh(wf3, "wf3t")
+saveh(w_mt, "w_mt")
+saveh(wf3t, "wf3t")
 
 ###### READ THIS DATA IN BELLA  #########
 
-w_mtt <- readh("w_mtt")
+w_mt <- readh("w_mt")
 
 wf3t <- readh("wf3t")
 
 
-# hist(wf3$Hours.Work_lead1_10_z)
-# hist(wf3$BornNZ_z)
+# hist(wf3t$Hours.Work_lead1_10_z)
+# hist(wf3t$BornNZ_z)
 
 
 
@@ -553,8 +553,8 @@ out_bmic %>%
 #
 # # Marginal Contrasts requires the long data from MICED
 # # G computation
-# m1_long <- glm(bmi_st, data = wf3)
-# gform_m1<- stdGlm(fit = m1_long, data = wf3, X = "Hours.Work_lead1_10", x =x, clusterid="id")
+# m1_long <- glm(bmi_st, data = wf3t)
+# gform_m1<- stdGlm(fit = m1_long, data = wf3t, X = "Hours.Work_lead1_10", x =x, clusterid="id")
 # summary(gform_m1, contrast = "difference", reference = r)
 #
 # # increase
@@ -647,9 +647,9 @@ ggplot_stglm_contrast(out_c, ylim, main, xlab, ylab)
 
 # how much is one standard deviation of exercise
 
-sd(exp(wf3$Hours.Exercise_lead2_log)+1)
+sd(exp(wf3t$Hours.Exercise_lead2_log)+1)
 
-sd(wf3$Hours.Exercise_lead2)
+sd(wf3t$Hours.Exercise_lead2)
 
 #7.15373/10  # t/10th standard deviation
 # 60 * .715373 = 42 mins
@@ -667,7 +667,7 @@ m4_HLTH.SleepHours <- fit_HLTH.SleepHours()
 
 main = "Hours Sleep (SD)"
 ylab = "Hours Sleep (SD)"
-out_HLTH.SleepHours <- pool_stglm(HLTH.SleepHours_lead2_z, df = df, m = m,  X = X, x = x)
+out_HLTH.SleepHours <- pool_stglm(m4_HLTH.SleepHours, df = df, m = m,  X = X, x = x)
 out_HLTH.SleepHours
 
 plot_stglm(out_HLTH.SleepHours, ylim = ylim, main, xlab, ylab)
@@ -682,7 +682,7 @@ out_c
 
 
 #
-# sd(wf3$HLTH.SleepHours_lead2)
+# sd(wf3t$HLTH.SleepHours_lead2)
 # 1.061555 * number  # t/10th standard deviation
 # 60 * number)
 
@@ -714,9 +714,9 @@ plot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
 ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
 #
 # # contrast model for comparison
-# m5_long <- glm(Smoker_st, data = wf3, family = "poisson")
+# m5_long <- glm(Smoker_st, data = wf3t, family = "poisson")
 # m5_long
-# gform_m5<- stdGlm(fit = m5_long, data = wf3, X = X, x =x, clusterid="id")
+# gform_m5<- stdGlm(fit = m5_long, data = wf3t, X = X, x =x, clusterid="id")
 # summary(gform_m5,
 #         contrast = "ratio",
 #         type="odds",
@@ -789,8 +789,8 @@ out_cr <- pool_stglm_contrast(m6_Fatigue, df = df, m = m,  X = X, x = x, r= r)
 plot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
-wf3$HLTH.Fatigue_lead2_z
-sd(wf3$HLTH.Fatigue_lead2)
+wf3t$HLTH.Fatigue_lead2_z
+sd(wf3t$HLTH.Fatigue_lead2)
 
 # alcohol freq ------------------------------------------------------------
 
@@ -1064,10 +1064,10 @@ ggplot_stglm_contrast(out_cr, ylim, main, xlab, ylab)
 
 out_cr
 
-effectunit <- sd(wf3$KESSLER6sum_lead2) *  0.036227231
+effectunit <- sd(wf3t$KESSLER6sum_lead2) *  0.036227231
 
 # note that 5 is consider moderate distress
-ave40 <-mean(wf3$KESSLER6sum_lead2)
+ave40 <-mean(wf3t$KESSLER6sum_lead2)
 ave40
 
 # the loss of 40 hour work pushes people over this threshold
@@ -1441,9 +1441,9 @@ ggplot_stglm_contrast(out_c, ylim = c(.75,1.5), main, xlab, ylab)
 
 #
 # # contrast model
-# m26_long <- glm(Volunteers_st, data = wf3, family = "poisson")
+# m26_long <- glm(Volunteers_st, data = wf3t, family = "poisson")
 # m26_long
-# gform_m26<- stdGlm(fit = m26_long, data = wf3, X = X, x =x, clusterid="id")
+# gform_m26<- stdGlm(fit = m26_long, data = wf3t, X = X, x =x, clusterid="id")
 # summary(gform_m26,
 #         contrast = "ratio",
 #         #type="odds",
@@ -1766,8 +1766,8 @@ fit_NZSEI13_st = function(formula) {
 # pooled model
 m38_NZSEI13  <- fit_NZSEI13_st()
 
-main = "Life Satisfaction"
-ylab = "Life Satisfaction (SD)"
+main = "NZSEI13/10"
+ylab = "NZSEI13/10"
 out_p <- pool_stglm(m38_NZSEI13, df = df, m = m,  X = X, x = x)
 
 plot_stglm(out_p, ylim = ylim, main, xlab, ylab)
