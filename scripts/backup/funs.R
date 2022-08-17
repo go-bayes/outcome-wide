@@ -14,6 +14,12 @@ conflict_prefer("cbind", "base")
 # set paths for pushing files (off of github)  ## for jb only
 push_mods <- fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
 push_figs <- fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+pull_path <- fs::path_expand("~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5")
+
+
+pull_data <- function() {
+  dat<-readRDS(pull_path)
+}
 
 
 # bella and amy just create foldes in your directory that are called:
@@ -309,6 +315,13 @@ ggplot_stglm_contrast <- function(out, ylim, main, xlab, ylab) {
       y = ylab
     ) +  theme_classic()
 }
+
+
+
+### pull data
+
+pull_path <- fs::path_expand("~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5")
+df<-readRDS(pull_path)
 
 
 

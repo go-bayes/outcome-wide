@@ -32,31 +32,31 @@ tab_in <- dat %>%
   ungroup() %>%
   droplevels() %>%
   arrange(Id, Wave)
-
-
 # check n # 34782
+
 length(unique(tab_in$Id)) # 34783
 
-# use table1 package to to create tables
-table1::table1(~   Religion.Church + SDO| Wave , data = tab_in, overall = FALSE)
 
-# average change in work over the years
+
+
+# increasing rate
 dat%>%
   group_by(Wave) %>%
-  summarise(mean(Hours.Work, na.rm = TRUE))
+  summarise(mean(HLTH.Disability, na.rm = TRUE))
 
+# Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
+dat$Religion.Church2
 
 ## select vars
-df_c <- tab_in %>%
-  # dplyr::filter(Id != 9630) %>% # problematic for income
+df_cr <- tab_in %>%
+ # dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
     YearMeasured,
     Wave,
     Partner,
-    EthCat,
-    #  Euro,
+    Euro,
     Age,
     Male,
     NZSEI13,
@@ -77,6 +77,7 @@ df_c <- tab_in %>%
     Household.INC,
     Parent,
     Relid,
+    Religious,
     Religion.Church2,
     Believe.Spirit,
     Believe.God,
@@ -101,13 +102,13 @@ df_c <- tab_in %>%
     CharityDonate,
     HoursCharity,
     GRATITUDE,
+    # Volunteers,
     Hours.Work,
     HLTH.SleepHours,
     HLTH.Disability,
     Hours.Exercise,
     LIFEMEANING,
     LIFESAT,
-    # PWI, can reconstruct later
     NWI,
     SFHEALTH,
     SELF.CONTROL,
@@ -125,10 +126,10 @@ df_c <- tab_in %>%
     Smoker,
     ChildrenNum,
     # GenCohort,
-    partnerlost_job,
-    lost_job,
-    Emp.JobSecure,
-
+    # Euro,
+    # partnerlost_job, rare
+    #lost_job,
+    #began_relationship,
     Alcohol.Intensity,
     Alcohol.Frequency,
     SexualSatisfaction,
@@ -138,9 +139,14 @@ df_c <- tab_in %>%
     Your.Personal.Relationships,
     Your.Health,
     Standard.Living,
+    #Env.SacWilling,
+    #Env.SacMade,
     PERFECTIONISM,
     PermeabilityIndividual,
-    ImpermeabilityGroup,
+    ImpermeabilityGroup
+    # Emp.JobSecure,
+    # Env.ClimateChgCause,
+    # Env.ClimateChgReal #,
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
@@ -149,21 +155,31 @@ df_c <- tab_in %>%
   dplyr::mutate(
     Edu = as.numeric(Edu),
     Volunteers = if_else(HoursCharity == 1, 1, 0),
+    # Depressed = (as.numeric(
+    #   cut(
+    #     KESSLER6sum,
+    #     breaks = c(-Inf, 13, Inf),
+    #     labels = c("0", "1"),
+    #     right = FALSE
+    #   )
+    # ) - 1),
     # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     Church = ifelse(Religion.Church2 > 8, 8, Religion.Church2),
     income_log = log(Household.INC + 1),
   ) %>%
   arrange(Id, Wave)  %>% #
   dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
-  # inc_prop = (Household.INC / (Household.INC) - 1),
-  dplyr::mutate(across(c(KESSLER6sum,
-                         HLTH.Fatigue,
-                         Rumination,
+  #dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%  Your.Future.Security
+  # inc_prop = (income_log / (income_log_lead1) - 1),
+  dplyr::mutate(across(
+    c(
+      KESSLER6sum,
+      HLTH.Fatigue,
+      Rumination,
       community,
       SFHEALTH,
       LIFEMEANING,
       LIFESAT,
-      PWI,
       Hours.Work,
       SELF.ESTEEM,
       SELF.CONTROL,
@@ -217,12 +233,15 @@ df_c <- tab_in %>%
   # dplyr::filter(income_log_lead1 > income_log) %>%
   dplyr::filter(!is.na(Church)) %>%
   dplyr::filter(!is.na(Church_lead1)) %>%
+  dplyr::mutate(Religious = as.numeric(Religious)-1) |>
+  dplyr::filter(Religious == 1) %>%
   #dplyr::filter(!is.na(Standard.Living) )%>%
   # dplyr::filter(!is.na(Standard.Living_lead1) )%>%
   #  dplyr::filter(semiretired_lead1 != 1) %>%  #needed for the intervention
   dplyr::select(-c(
     Religion.Church2,
     # EthCat,
+    Religious,
     HoursCharity,
     Respect.Self_lead2,
     Household.INC,
@@ -242,66 +261,63 @@ df_c <- tab_in %>%
   ) %>%
   #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
   arrange(Id, Wave) %>%
+  droplevels() %>%
   data.frame() %>%
   mutate(across(where(is.double), as.numeric)) %>%
   arrange(Id)
 
 
-# Filtering retirement -- consistency and positivity assumptions
 
+table1::table1(~Church + SDO| Wave , data = df_cr, overall = FALSE)#11953
+
+
+# Filtering retirement -- consistency and positivity assumptions
 # number of ids
-N <- length(unique(df_c$Id))
-N  # 33137
+N <- length(unique(df_cr$Id))
+N  #11953
 
 # inspect data
-skim(df_c)
-
-
-# save function
-saveh(df_c, "df_c")
-
-# read if needed
-df_c<- readh("df_c")
+skim(df_cr)
 
 
 # mice model  -------------------------------------------------------------
 library(mice)
 
-mice_c <- df_c %>%
+mice_cr <- df_cr %>%
   dplyr::select(-c( Wave, Id))  # won't otherwise run
 
-mice_c$SDO
+hist(mice_cr$SDO)
 library(naniar)
-naniar::gg_miss_var(mice_c)
-vis_miss(mice_c,
+naniar::gg_miss_var(mice_cr)
+vis_miss(mice_cr,
          warn_large_data = FALSE)
 
 # any colinear vars?
-mice:::find.collinear(mice_c)
+mice:::find.collinear(mice_cr)
 
 # impute
-c_mice <- mice::mice(mice_c,  seed = 0, m = 10)
+cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
 
 # save
-saveh(c_mice, "c_mice")
+saveh(cr_mice, "cr_mice")
 
 # read
-c_mice <- readh("c_mice")
+cr_mice <- readh("cr_mice")
 
 # checks
 outlist2 <-
-  row.names(c_mice)[c_mice$outflux < 0.5]
+  row.names(cr_mice)[cr_mice$outflux < 0.5]
 length(outlist2)
 
 # checks
-head(c_mice$loggedEvents, 10)
+head(cr_mice$loggedEvents, 10)
 
 # data warangling
 # we create two completed data sets -- the one without the missing data will be useful for
 # determing causal contrasts -- which we'll describe below.
 
-mf <- mice::complete(c_mice, "long", inc = F)
-ml <- mice::complete(c_mice, "long", inc = TRUE)
+mf <- mice::complete(cr_mice, "long", inc = F)
+ml <- mice::complete(cr_mice, "long", inc = TRUE)
 
 
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
@@ -392,8 +408,8 @@ ml <- ml %>% mutate_if(is.matrix, as.vector)
 
 ml <- mice::as.mids(ml)
 
-saveh(ml, "churchl")
-saveh(mf, "churchf")
+saveh(ml, "churchl_cr")
+saveh(mf, "churchf_cr")
 
 
 
@@ -506,8 +522,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 fit_sfhealth = function(formula) {
   with(ml, glm(as.formula(paste("SFHEALTH_lead2_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 
 #labels
@@ -633,8 +649,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Smoker_lead2 ~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+"))), family = "poisson"))
+                                 paste(baselinevars,
+                                       collapse = "+"))), family = "poisson"))
 }
 main = "Smoking Rate"
 ylab = "Smoking Rate"
@@ -663,8 +679,8 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("HLTH.Fatigue_lead2_z ~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 main = "Fatigue"
 ylab = "Fatigue (SD)"
@@ -699,7 +715,7 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Alcohol.Frequency_lead2ord_z~ bs(Church_lead1) +",
-                                paste(baselinevars, collapse = "+")))))
+                                 paste(baselinevars, collapse = "+")))))
 }
 main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
@@ -735,8 +751,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Alcohol.Intensity_log_lead2_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 main = "Alcohol Intensity"
 ylab = "Alcohol Intensity (SD)"
@@ -772,8 +788,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Bodysat_lead2_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 main = "Body Satisfaction"
 ylab = "Body Satisfaction (SD)"
@@ -811,8 +827,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Rumination_lead2ord_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 
 #labels
@@ -897,8 +913,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("KESSLER6sum_lead2~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+"))), family = "poisson"))
+                                 paste(baselinevars,
+                                       collapse = "+"))), family = "poisson"))
 }
 main = "Kessler 6 Distress"
 ylab = "Kessler 6 Distress (SD)"
@@ -934,8 +950,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("POWERDEPENDENCE1_lead2_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 main = "Power Dependence 1"
 ylab = "Power Dependence 1(SD)"
@@ -947,8 +963,8 @@ ylab = "Power Dependence 1(SD)"
 
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("POWERDEPENDENCE2_lead2_z~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+")))))
+                                 paste(baselinevars,
+                                       collapse = "+")))))
 }
 
 
@@ -991,8 +1007,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 out_f = function(formula) {
   with(ml, glm( as.formula(paste("PERFECTIONISM_lead2_z~ bs(Church_lead1) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
+                                  paste(baselinevars,
+                                        collapse = "+")))))
 }
 
 main = "Perfectionism"
@@ -1033,8 +1049,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 out_f = function(formula) {
   with(ml, glm( as.formula(paste("SELF.ESTEEM_lead2_z~ bs(Church_lead1) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))))
+                                  paste(baselinevars,
+                                        collapse = "+")))))
 }
 main = "Self Esteem"
 ylab = "Self Esteem (SD)"
@@ -1074,8 +1090,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 out_f = function(formula) {
   with(ml, glm( as.formula(paste("GRATITUDE_lead2_z~ bs(Church_lead1) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))
+                                  paste(baselinevars,
+                                        collapse = "+")))
   ))
 }
 
@@ -1121,8 +1137,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 ## fit
 out_f = function(formula) {
   with(ml, glm( as.formula(paste("VENGEFUL.RUMIN_lead2_z~ bs(Church_lead1) +",
-                                 paste(baselinevars,
-                                       collapse = "+")))
+                                  paste(baselinevars,
+                                        collapse = "+")))
   ))
 }
 #
@@ -1231,7 +1247,7 @@ out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 # graph of contrasts
 ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-# table
+  # table
 out_ct %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 
@@ -1329,8 +1345,8 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # fit
 out_f = function(formula) {
   with(ml, glm(as.formula(paste("Volunteers_lead2~ bs(Church_lead1) +",
-                                paste(baselinevars,
-                                      collapse = "+"))), family = "poisson"))
+                                 paste(baselinevars,
+                                       collapse = "+"))), family = "poisson"))
 }
 
 
@@ -1374,10 +1390,10 @@ ggplot_stglm(pool_m, ylim = c(-.5, 1), main, xlab, ylab, c=(0:8))
 ## fit
 out_f = function(formula) {
   with(ml, glm(
-    as.formula(paste("CharityDonate_log_lead2_z~ bs(Church_lead1) +",
+    as.formula(paste("CharityDonate_log_lead2_z ~ bs(Church_lead1) +",
                      paste(baselinevars,
                            collapse = "+")))
-  ))
+    ))
 }
 main = "Charity Donations (annual)"
 ylab = "Charity Donations (annual)"
@@ -1387,14 +1403,13 @@ rm(pool_m)
 rm(out_ct)
 # bake
 out_m <- out_f()
-
 summary(pool(out_m))
 
 ## contrasts (ratio scale)
 out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 out_ct
 # graph of contrasts
-ggplot_stglm_contrast(out_ct, ylim = c(0,.5), main, xlab, ylab)
+ggplot_stglm_contrast(out_ct, ylim =c(0,.5), main, xlab, ylab)
 
 # sd(mf$CharityDonate_lead2) * 0.2538613  # 100 dollars per month
 
@@ -1813,6 +1828,8 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 # graph
 ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
+
+
 
 
 
