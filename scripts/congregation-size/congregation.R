@@ -13,30 +13,40 @@
 # set science digits
 options(scipen=999)
 
-### ELIGIBILITY CRITERIA
-# Religious
-# Not retired baseline?
-# Not semi retired baseline?
-# Employed at baseline and Employed in 2019?
-# income above poverty
+library(fs)
 
-# read data
-dat <- readRDS(here::here("data_raw", "df.Rds"))
+# import libraries (jb)
+pull_path <-
+  fs::path_expand(
+    "~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5"
+  )
+# import functions
+pull_path_funs  <-
+  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/scripts/funs.R")
+pull_path_libs  <-
+  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/scripts/libs.R")
 
-df %>%
+#libraries
+source(pull_path_libs)
+
+#  functions
+source(pull_path_funs)
+
+# # read data
+# dff<- readRDS(pull_path)
+
+dff <- readRDS(here::here("data_raw", "df.Rds"))
+
+
+dff %>%
   filter(Wave == 2016 &  YearMeasured == 1) %>%
   n_distinct("Id")
-
-# read libraries in
-source(here::here("scripts", "libs.R"))
-source(here::here("scripts", "funs.R"))
-
 
 
 # table for participant N
  dc <- dat %>%
    arrange(Id,Wave) %>%
-  dplyr::mutate(Religion.CongregationSize = ifelse(Religion.Church == 0, 0,  Religion.CongregationSize) ) |> #handle missingness
+   dplyr::mutate(Religion.CongregationSize = ifelse(Religion.Church == 0, 0,  Religion.CongregationSize) ) |> #handle missingness
    dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
    dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
    dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
@@ -54,16 +64,16 @@ source(here::here("scripts", "funs.R"))
    dplyr::filter(hold1 > 0) %>% # hack to enable repeat of baseline
    ungroup() %>%
    droplevels() %>%
+   dplyr::filter(Religious == 1) |>
    arrange(Id, Wave)
 
- length(unique(dc$Id)) #15786
+ length(unique(dc$Id)) #6835
  # check n
 
-# check n
-table1::table1(~ Religion.CongregationSize | Wave , data = dc, overall = FALSE)
+table1::table1(~ Religion.CongregationSize + Religious| Wave , data = dc, overall = FALSE)
 
 
-table(dc$hold2)
+
 
 
 # increasing rate
@@ -73,105 +83,89 @@ dat%>%
 
 # Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
-table1::table1(~Religion.CongregationSize | Wave, data = dc)
-
 
 dcc <- dc |>
   select(
     Id,
     YearMeasured,
     Wave,
-    Partner,
-    Euro,
     Age,
-    Male,
-    NZSEI06,
-    CONSCIENTIOUSNESS,
-    OPENNESS,
-    HONESTY_HUMILITY,
-    EXTRAVERSION,
-    NEUROTICISM,
     AGREEABLENESS,
-    SDO,
-    RWA,
-    Edu,
-    Religion.Prayer2,
-    Religion.Scripture2,
-    #   NZdep,
-    Employed,
-    #  HomeOwner,
-    Pol.Orient,
-    Urban,
-    Household.INC,
-    Parent,
-    Relid,
-    Religious,
-    Religion.Church,
+    CONSCIENTIOUSNESS,
+    EXTRAVERSION,
+    HONESTY_HUMILITY,
+    NEUROTICISM,
+    OPENNESS,
+    Alcohol.Frequency,
+    Alcohol.Intensity,
+    began_relationship,
+    BELONG,
     Believe.Spirit,
     Believe.God,
-    Spiritual.Identification,
-    SWB.SoC01,
-    # EmotionRegulation1,
-    # EmotionRegulation2,
-    # EmotionRegulation3,
-    # VENGEFUL.RUMIN,
-    #  retired,
-    #  semiretired,
+    Bodysat,
     BornNZ,
-    KESSLER6sum,
-    HLTH.Fatigue,
-    # Rumination,
-    #  Smoker,
-    #  ChildrenNum,
-    NWI,
-    BELONG,
-    SUPPORT,
     CharityDonate,
-    HoursCharity,
-    # GRATITUDE,
-    # Volunteers,
-    Hours.Work,
-    HLTH.SleepHours,
-    HLTH.Disability,
-    Hours.Exercise,
-    # LIFEMEANING,
-    LIFESAT,
-    PWI,
-    # ##  we use the individual
-    NWI,
-    SFHEALTH,
-    Respect.Self,
+    ChildrenNum,
+    Edu,
+    Emp.JobSecure,
+    Euro,
+    EthCat,
+    Employed,
+    Emp.WorkLifeBalance,
     #  GenCohort,
-    SELF.ESTEEM,
-    SELF.CONTROL,
-    #  Respect.Self,
-    #  Emp.WorkLifeBalance,
+   # GRATITUDE,
     HLTH.BMI,
+    HLTH.Fatigue,
+    HLTH.Disability,
+    HLTH.SleepHours,
+    HomeOwner,
+    Household.INC,
+    HoursCharity,
+    Hours.Exercise,
+    Hours.Work,
+    ImpermeabilityGroup,
+    KESSLER6sum,
+   # LIFEMEANING,
+    LIFESAT,
+    lost_job,
+    Male,
+    NWI,
+    NZdep,
+    NZSEI13,
+    Parent,
+    Partner,
+    partnerlost_job,
+   # PERFECTIONISM,
+  #  PermeabilityIndividual,
+    Pol.Orient,
+  #  POWERDEPENDENCE1,
+  #  POWERDEPENDENCE2,
+    Relid,
+    Religion.CongregationSize,
+    Religion.Church2,
+    Religion.Prayer2,
+    Religion.Scripture2,
+    Religious,
+    Respect.Self,
+    retired,
+    RWA,
+    Rumination,
+    SDO,
+    semiretired,
+    SELF.CONTROL,
+    SELF.ESTEEM,
+    SexualSatisfaction,
+    SFHEALTH,
     Smoker,
-    # ChildrenNum,
-    # GenCohort,
-    # Euro,
-    # partnerlost_job, rare
-    #lost_job,
-    #began_relationship,
-    Alcohol.Intensity,
-    Alcohol.Frequency,
-    Religion.CongregationSize
-    # SexualSatisfaction,
-    #  POWERDEPENDENCE1,
-    # POWERDEPENDENCE2,
-    # Your.Future.Security,
-    # Your.Personal.Relationships,
-    # Your.Health,
-    # Standard.Living,
-    #Env.SacWilling,
-    #Env.SacMade,
-    # PERFECTIONISM,
-    # PermeabilityIndividual,
-    # ImpermeabilityGroup
-    # Emp.JobSecure,
-    # Env.ClimateChgCause,
-    # Env.ClimateChgReal #,
+    Spiritual.Identification,
+    Standard.Living,
+    SUPPORT,
+    SWB.SoC01,
+    Urban,
+  #  VENGEFUL.RUMIN,
+    Your.Health,
+    Your.Future.Security,
+    Your.Personal.Relationships
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
@@ -179,6 +173,7 @@ dcc <- dc |>
   arrange(Id, Wave) %>%
   rename(Religion.Prayer = Religion.Prayer2) |>
   rename(Religion.Scripture = Religion.Scripture2) %>%
+  rename(Religion.Church = Religion.Church2) %>%
   dplyr::mutate(
     Edu = as.numeric(Edu),
     Volunteers = if_else(HoursCharity == 1, 1, 0),
@@ -196,60 +191,92 @@ dcc <- dc |>
   ) %>%
   arrange(Id, Wave)  %>% #support
   dplyr::mutate(Religion.CongregationSize_lead1 = lead(Religion.CongregationSize, n = 1)) %>%
-  dplyr::mutate(SUPPORT_lead1 = lead(SUPPORT, n = 1)) %>%
+  dplyr::mutate(SUPPORT_lead1 = lead(SUPPORT, n = 1))%>%
   # dplyr::mutate(Standard.Living_lead1 = lead(Standard.Living, n = 1)) %>%
   #dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%  Your.Future.Security
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
     c(
-      KESSLER6sum,
-      HLTH.Fatigue,
-      # Rumination,
-      community,
-      SFHEALTH,
-      #  LIFEMEANING,
-      LIFESAT,
-      #  PWI,
-      Hours.Work,
-      # SELF.ESTEEM,
-      Respect.Self,
-      # Alcohol.Frequency,
-      #  HLTH.SleepHours,
-      HLTH.BMI,
-      # HLTH.Disability,
-      Smoker,
-      # ChildrenNum,
-      NWI,
+      Id,
+      YearMeasured,
+      Wave,
+      Age,
+      AGREEABLENESS,
+      CONSCIENTIOUSNESS,
+      EXTRAVERSION,
+      HONESTY_HUMILITY,
+      NEUROTICISM,
+      OPENNESS,
+      Alcohol.Frequency,
+      Alcohol.Intensity,
+      began_relationship,
       BELONG,
-      SUPPORT,
-      Volunteers,
+      Believe.Spirit,
+      Believe.God,
+      Bodysat,
+      BornNZ,
+      CharityDonate,
+      ChildrenNum,
+      Edu,
+      Emp.JobSecure,
+      Euro,
+      EthCat,
+      Employed,
+      Emp.WorkLifeBalance,
+      #  GenCohort,
       # GRATITUDE,
-      #  SexualSatisfaction,
+      HLTH.BMI,
+      HLTH.Fatigue,
+      HLTH.Disability,
+      HLTH.SleepHours,
+      HomeOwner,
+      Household.INC,
+      HoursCharity,
+      Hours.Exercise,
+      Hours.Work,
+      ImpermeabilityGroup,
+      KESSLER6sum,
+      # LIFEMEANING,
+      LIFESAT,
+      lost_job,
+      Male,
+      NWI,
+      NZdep,
+      NZSEI13,
+      Parent,
+      Partner,
+      partnerlost_job,
+      # PERFECTIONISM,
+      #  PermeabilityIndividual,
+      Pol.Orient,
       #  POWERDEPENDENCE1,
       #  POWERDEPENDENCE2,
-      CharityDonate,
-      #  Alcohol.Intensity,
-      #  PERFECTIONISM,
-      #  VENGEFUL.RUMIN,
+      Relid,
+      Religion.CongregationSize,
+      Religion.Church,
       Religion.Prayer,
       Religion.Scripture,
-      Church,
-      community,
-      Relid,
-      HONESTY_HUMILITY,
-      #   EmotionRegulation1,
-      #   EmotionRegulation2,
-      #  EmotionRegulation3,
-      #  Emp.WorkLifeBalance,
-      #  PermeabilityIndividual,
-      #  ImpermeabilityGroup,
-      PWI,
-      #  Your.Future.Security,
-      #  Your.Personal.Relationships,
-      #   Your.Health,
-      #   Standard.Living,
-      #   PermeabilityIndividual,
-      #   ImpermeabilityGroup,
+      Religious,
+      Respect.Self,
+      retired,
+      RWA,
+      Rumination,
+      SDO,
+      semiretired,
+      SELF.CONTROL,
+      SELF.ESTEEM,
+      SexualSatisfaction,
+      SFHEALTH,
+      Smoker,
+      Spiritual.Identification,
+      Standard.Living,
+      SUPPORT,
+      community, # SWB.SoC01,
+      Urban,
+      #  VENGEFUL.RUMIN,
+      Your.Health,
+      Your.Future.Security,
+      Your.Personal.Relationships
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
@@ -271,7 +298,6 @@ dcc <- dc |>
   #  dplyr::filter(semiretired_lead1 != 1) %>%  #needed for the intervention
 dplyr::select(
   -c(
-    Religion.Church,
     # EthCat,
     HoursCharity,
     Respect.Self_lead2,
@@ -296,14 +322,13 @@ dplyr::select(
   mutate(across(where(is.double), as.numeric)) |> data.frame() %>%
   arrange(Id)
 
-# Filtering retirement -- consistency and positivity assumptions
-1 - 3407/(5964 + 3407)
 
 # number of ids
 N <- length(unique(dcc$Id))
-N  # 3407
+N  # 5407
 
-table(!is.na(dcc$Religion.CongregationSize))
+
+table(!is.na(dc$Religion.CongregationSize))
 # inspect data
 skim(dcc)
 
