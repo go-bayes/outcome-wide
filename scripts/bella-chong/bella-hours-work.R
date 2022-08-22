@@ -25,6 +25,69 @@ source(pull_path_funs)
 # read data
 dat <- readRDS(pull_path)
 
+# dat$COVID19.Timeline
+# bels:
+#   value                                                                                              label
+# 0.0                                                                                   The Before Times
+# 1.0                                31.12.2019 -- 27.02.2020 [First cluster of cases in Wuhan reported]
+# 1.1                                      28.02.2020 -- 25.02.2020 [First case recorded in New Zealand]
+# 1.2                                                           26.03.2020 -- 27.04-2020 [Alert Level 4]
+# 1.3                                                           28.04.2020 -- 13.05.2020 [Alert Level 3]
+# 1.4                                                          14.05.2020 -- 08.06.2020 [Alert Level 2].
+# 1.5                                                           09.06.2020 -- 11.08.2020 [Alert Level 1]
+# 2.1 12.08.2020 -- 30.08.2020 [Second Outbreak - Auckland Alert Level 3, Rest of Country Alert Level 2]
+# 2.2                 30.08.2020 -- 21.09.2020 [Auckland Alert Level 2.5, Rest of Country Alert Level 2]
+# 2.3                    22.09.2020 -- 07.10.2020 [Auckland Alert Level 2, Rest of Country Alert Level 1
+# 2.4                                                              08.10.2020 -- onwards [Alert Level 1]
+
+# dat$REGC_2018
+
+# labels:
+#   value                     label
+# 1          Northland Region
+# 2           Auckland Region
+# 3            Waikato Region
+# 4      Bay of Plenty Region
+# 5           Gisborne Region
+# 6         Hawkes Bay Region
+# 7           Taranaki Region
+# 8 Manawatu-Whanganui Region
+# 9         Wellington Region
+# 12         West Coast Region
+# 13         Canterbury Region
+# 14              Otago Region
+# 15          Southland Region
+# 16             Tasman Region
+# 17             Nelson Region
+# 18        Marlborough Region
+# 99       Area Outside Region
+
+#  This isn't sensible
+# dat1 <- dat %>%
+#   dplyr::mutate(NZSEI06_lead1 = lead(NZSEI06, n = 1),
+#                 KESSLER6_lead1 = lead(KESSLER6, n = 1),
+#                 KESSLER6_lag1 = dplyr::lag(KESSLER6),
+#                 NZSEI06_lag1 =  dplyr::lag(NZSEI06),
+#                 Employed_lead1 = lead(Employed, n = 1),
+#                 Employed_lag1 = dplyr::lag(Employed, n = 1))|>
+#   dplyr::filter(Wave == 2019 & YearMeasured==1) |>
+#   dplyr::mutate(cum_lockdowns_baseline = if_else(COVID19.Timeline < 1.2, 0,
+#                                  if_else(COVID19.Timeline >  1:2 & COVID19.Timeline  < 2, 2,
+#                                          ifelse(COVID19.Timeline > 2 & REGC_2018 == 2  | COVID19.Timeline > 2 & REGC_2018 == 1, 4, 3))))
+#
+# summary(test<- lm(KESSLER6~ cum_lockdowns_baseline + KESSLER6_lag1, data = dat1))
+# summary(test<- lm(NZSEI06_lead1 ~ cum_lockdowns_baseline + NZSEI06_lag1, data = dat1))
+# summary(test<- glm(Employed_lead1 ~ cum_lockdowns_baseline + Employed_lag1, family = "binomial" ,  data = dat1))
+# summary(test<- glm(Employed ~ cum_lockdowns_baseline + Employed_lag1, family = "binomial" ,  data = dat1))
+
+# Code for timeline if needed
+#   dplyr::mutate(cum_lockdowns_baseline = if_else(COVID19.Timeline < 1.2, 0,
+# if_else(COVID19.Timeline >  1:2 & COVID19.Timeline  < 2, 2,
+#         ifelse(COVID19.Timeline > 2 & REGC_2018 == 2  | COVID19.Timeline > 2 &
+#                  REGC_2018 == 1, 4, 3)))) |>
+
+
+
 
 # table for participant N
 tab_in <- dat %>%
@@ -258,8 +321,7 @@ df_wk <- tab_in %>%
 # Filtering retirement -- consistency and positivity assumptions
 
 # number of ids
-N <- length(unique(df_wk$Id))
-N  # 28676
+length(unique(df_wk$Id))
 
 # inspect data, with eye to large missingness
 skim(df_wk) |>
@@ -275,43 +337,12 @@ df_wk <- readh("df_wk")
 # table code --------------------------------------------------------------
 
 
-# Build descriptive table
-dev.off()
-table1::table1(
-  ~ Partner +
-    Age +
-    as.factor(Male) +
-    Euro +
-    NZSEI13 +
-    AGREEABLENESS +
-    CONSCIENTIOUSNESS +
-    EXTRAVERSION +
-    HONESTY_HUMILITY +
-    NEUROTICISM +
-    OPENNESS,
-  # + factor(BornNZ)+   Add more here.
-  # KESSLER6sum +
-  # Smoker +
-  # ChildrenNum+
-  # BELONG+
-  # SUPPORT+
-  # CharityDonate+
-  # Volunteers +
-  # Your.Future.Security+
-  # Your.Personal.Relationships+
-  # Your.Health+
-  # Standard.Living,
-  data = df_wk,
-  transpose = F
-)
-
 
 # mice model  -------------------------------------------------------------
 library(mice)
 
 mice_wk <- df_wk %>%
   dplyr::select(-c(Wave, Id))  # won't otherwise run
-
 library(naniar)
 naniar::gg_miss_var(mice_wk)
 
@@ -320,7 +351,6 @@ mice:::find.collinear(mice_wk)
 
 # impute
 wk_mice <- mice::mice(mice_wk,  seed = 0, m = 10)
-
 # save
 saveh(wk_mice, "wk_mice")
 
@@ -340,13 +370,11 @@ head(wk_mice$loggedEvents, 10)
 
 w_l <- mice::complete(wk_mice, "long", inc = TRUE)
 
-
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
 skimr::skim(w_l)
 
 # n ids
-N <- length(1:nrow(wk_mice$data))
-N
+N<- length(1:nrow(wk_mice$data))
 
 # create variables in z score
 w_l2 <- w_l %>%
@@ -409,13 +437,92 @@ saveh(w_m, "w_m")
 saveh(w_f, "w_f")
 
 
+
+
 #########################################
 ###### READ THIS DATA IN BELLA  #########
 
-# JB TO SEND BELLA df_wk
 
+
+# 1. Create a folder called "scripts" in your home directory.
+
+# 2. create a folder called "data" in your home directory.
+
+# 3. download these files and place them in the "scripts" folder
+# https://www.dropbox.com/s/ypisiw5c8zyknnn/funs.R?dl=0
+# https://www.dropbox.com/s/25lbssmf4hqhko1/libs.R?dl=0
+
+# then download these data and place them in your data folder
+# https://www.dropbox.com/s/pnwr3jzogm1fdaz/df_wk?dl=0
+
+# https://www.dropbox.com/s/xu0wm1pqo58mpze/w_f?dl=0
+
+# https://www.dropbox.com/s/6y2z7m9bp0pgz9m/w_m?dl=0
+
+
+
+# Read the "libs.R" file and make sure you have installed all packages.
+
+# Then run these commands to load your library and your files
+
+source(here::here("scripts", "libs.R"))
+source(here::here("scripts", "funs.R"))
+
+# Read data here
+df_wk <- readh("df_wk")
+
+# imputed data
 w_m <- readh("w_m")
 w_f <- readh("w_f")
+
+
+# example of a descriptive table ------------------------------------------
+library(ggplot2)
+
+# Build descriptive table
+dev.off()
+
+# make labels as follows
+df_wk$Male <- factor(df_wk$Male, labels = c("No", "Yes"))
+df_wk$Euro <- factor(df_wk$Euro, labels = c("No", "Yes"))
+df_wk$Retired <- factor(df_wk$retired, labels = c("No", "Yes"))
+
+#and continue this way to obtain factor labels ...etc.
+
+table1::table1(
+  ~
+    Age +
+    Male +
+    Euro +
+    NZSEI13 +
+    AGREEABLENESS +
+    CONSCIENTIOUSNESS +
+    EXTRAVERSION +
+    HONESTY_HUMILITY +
+    NEUROTICISM +
+    OPENNESS, #... etc
+  data = df_wk,
+  transpose = F
+)
+
+# make more tables ... using this method
+
+
+# Save figs
+
+my_plot <- #ggplot(some coded etc etc. )
+
+  ggsave(
+    my_plot,
+    path = here::here(here::here("figs")),
+    width = 12,
+    height = 8,
+    units = "in",
+    filename = "name_of_graph.jpg",
+    device = 'jpeg',
+    limitsize = FALSE,
+    dpi = 800
+  )
 
 
 #########################################
@@ -424,7 +531,7 @@ w_f <- readh("w_f")
 
 # model equations ---------------------------------------------------------
 
-# JB add retired and semi retired.
+# baseline covariates. (we don't want to write them all out)  The "_z" at the end indicates centering.
 
 baselinevars = c(
   "AGREEABLENESS_z",
@@ -479,11 +586,11 @@ baselinevars = c(
   "POWERDEPENDENCE2_z",
   "Relid_z",
   "Respect.Self_z",
- # "retired",
+  "retired",
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
- # "semiretired",
+  "semiretired",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -503,7 +610,14 @@ baselinevars = c(
 # General set up ----------------------------------------------------------
 
 # ylimits
-ylim <- c(-.1,.1)
+ylim <- c(-.3,.3)
+
+# for poisson/binary plots
+ylim_contrast <- c(.8,1.2)
+
+# for poisson/binary pooled plots
+ylim_contrast_diff <- c(.9,1.1)
+
 # data
 df <-  w_m
 # n imputations
@@ -564,21 +678,38 @@ out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 out_ct %>%
   slice(2) |>
   kbl(digits = 3, "markdown")
+
+# you can make an html table, for options see:
+#https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+
+out_ct %>%
+  slice(2) |>
+  tibble() |>
+  rename(Contrast = row,
+         Estimate = est,
+         std_error = se,
+         CI_hi = ui,
+         CI_lo = li) |>
+  kbl(caption = "This is my caption",
+      digits = 3,
+      "html") |>
+  kable_minimal(full_width = F)
+
 # graph of contrasts
 ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-  # table
+# simple table
 out_ct %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 
-# g-computation
+# g-computation - estimate marginal effects across the range
 pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 
 # graph
-ggplot_stglm(pool_m, ylim = c(-.09,.1), main, xlab, ylab, min = min, p=p)
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
@@ -586,7 +717,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 ## make a combo graph
 contrast_points_bmi <- ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
-all_points_bmi <- ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+all_points_bmi <- ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 
 library(patchwork)
 dev.off()
@@ -629,9 +760,9 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( est = 0.053, se = 0.016, sd = 1, delta = 4, true = 0), 3)
+round( EValue::evalues.OLS( est = 0.053, se = 0.015, sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -641,7 +772,7 @@ sd(mf$HLTH.BMI) * 0.029
 # exercise ---------------------------------------------------------------
 
 ## fit for mice to work, don't ask why
-fit_Hours.Exercise = function(formula) {
+out_f = function(formula) {
   with(w_m, glm(as.formula(
     paste(
       "Hours.Exercise_lead2_log_z~ bs(Hours.Work_lead1_10) +",
@@ -673,7 +804,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -714,7 +845,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -722,7 +853,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # smoker ------------------------------------------------------------------
 # fit
-fit_Smoker = function(formula) {
+out_f = function(formula) {
   with(w_m, glm(as.formula(
     paste(
       "Smoker_lead2 ~ bs(Hours.Work_lead1_10) +",
@@ -755,7 +886,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -804,7 +935,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -842,7 +973,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -883,7 +1014,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -924,7 +1055,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -966,7 +1097,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1005,7 +1136,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1045,7 +1176,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1085,7 +1216,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1128,7 +1259,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1176,7 +1307,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1218,7 +1349,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1260,7 +1391,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1305,7 +1436,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1350,7 +1481,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1395,7 +1526,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1440,7 +1571,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1485,7 +1616,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1532,7 +1663,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1576,7 +1707,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1622,7 +1753,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1662,7 +1793,7 @@ pool_m <- pool_stglm_contrast_ratio(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1702,7 +1833,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1747,7 +1878,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1794,7 +1925,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1834,7 +1965,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1882,7 +2013,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1924,7 +2055,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -1965,7 +2096,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -2006,7 +2137,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -2047,7 +2178,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -2091,7 +2222,7 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
@@ -2131,1938 +2262,9 @@ pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
 round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 #IGNORE BELOW --------------------------------------------------------------
-
-library(MatchThem)
-library(optmatch)
-models_hw <- weightthem(
-  Hours.Work_lead1_z ~
-    Hours.Work_z +
-    AGREEABLENESS_z +
-    CONSCIENTIOUSNESS_z +
-    EXTRAVERSION_z  +
-    HONESTY_HUMILITY_z +
-    NEUROTICISM_z +
-    OPENNESS_z +
-    Age_z +
-    Alcohol.Frequency_z + #
-    Alcohol.Intensity_log_z + #
-    Bodysat_z +
-    Believe.God_z +
-    Believe.Spirit_z +
-    BELONG_z + #
-    CharityDonate_log_z + #
-    ChildrenNum_z +
-    Church_z +
-    community +
-    Edu_z +
-    Employed_z +
-    EmotionRegulation1_z +
-    EmotionRegulation2_z +
-    EmotionRegulation3_z +
-    Euro_z +
-    GRATITUDE_z +
-    HomeOwner_z +
-    Hours.Exercise_log_z +
-    # Hours.Work_z +
-    HLTH.BMI_z  + #
-    HLTH.Fatigue_z + #
-    income_log_z +
-    ImpermeabilityGroup_z +
-    KESSLER6sum_z + #
-    LIFEMEANING_z + #
-    LIFESAT_z + #
-    Male_z +
-    NZdep_z +
-    NWI_z +
-    NZSEI13_z +
-    Parent_z +
-    Partner_z +
-    PERFECTIONISM_z +
-    PermeabilityIndividual_z +
-    Pol.Orient_z +
-    POWERDEPENDENCE1_z + #
-    POWERDEPENDENCE2_z + #
-    # PWI_z +
-    Relid_z +
-    Respect.Self_z + #
-    Rumination_z + #
-    SELF.CONTROL_z + #
-    SELF.ESTEEM_z + #
-    SexualSatisfaction_z + #
-    SFHEALTH_z + #
-    Smoker_z + #
-    Spiritual.Identification_z +
-    Standard.Living_z +
-    SUPPORT_z + #
-    Urban_z +
-    VENGEFUL.RUMIN_z +
-    Volunteers_z +
-    Your.Health_z +
-    Your.Future.Security_z +
-    Your.Personal.Relationships_z,
-  out2_sl,
-  approach = "within",
-  estimand = "ATE",
-  stabilize = TRUE,
-  method = "ebal"
-)
-saveh(models_hw, "models_hw")
-sum <- summary(models_hw)
-plot(sum)
-sum
-bal.tab(models_hw)
-
-
-ctrim_st <- trim(models_hw, at = .998)
-bal.tab(ctrim_st)
-summary(ctrim_st)
-
-
-# iptw models  STANDARD LIVING -------------------------------------------------------------
-# no need to trim
-
-
-out <- with(ctrim_st, glm(HLTH.BMI_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <- with(ctrim_st, glm(SFHEALTH_lead2_z  ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st,
-       glm(Hours.Exercise_lead2_log_z ~ Hours.Work_lead1_z, family = "gaussian"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(Smoker_lead2 ~ Hours.Work_lead1_z, family = "poisson"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-exp(-3.02 - .14)
-
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(HLTH.Fatigue_lead2ord ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  0.01023787,
-  se = 0.003899096,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st,
-       glm(Alcohol.Frequency_lead2ord_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  0.01264201,
-  se = 0.005129188,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(Alcohol.Intensity_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <- with(ctrim_st, glm(Bodysat_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  -0.007741457,
-  se = 0.003929686,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-# out <- with(ctrim, glm(PWI_lead2_z ~ Standard.Living_lead1_z ))
-# output <- pool(out, dfcom = NULL)
-# summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim_st, glm(Rumination_lead2ord_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st,
-       glm(SexualSatisfaction_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  0.009236795 ,
-  se = 0.004273584 ,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(EmotionRegulation1_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(EmotionRegulation2_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(EmotionRegulation3_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(KESSLER6sum_lead2_z ~ Hours.Work_lead1_z , family = "gaussian"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  -0.006205853 ,
-  se = 0.002415414,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st, glm(POWERDEPENDENCE1_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(POWERDEPENDENCE1_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(PERFECTIONISM_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(SELF.ESTEEM_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <- with(ctrim_st, glm(GRATITUDE_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(VENGEFUL.RUMIN_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(LIFEMEANING_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st, glm(HONESTY_HUMILITY_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <- with(ctrim_st, glm(BELONG_lead2_z ~ Hours.Work_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <- with(ctrim_st, glm(SUPPORT_lead2_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <- with(ctrim_st, glm(Volunteers_lead2 ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(CharityDonate_lead2 ~ Hours.Work_lead1_10 , family = "poisson"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-exp(6.9785313)
-exp(6.9785313 - 0.1001891)
-exp(6.9785313 + 0.1001891 + 0.01807244)
-exp(6.9785313 + 0.1001891 - 0.01807244)
-
-
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(
-  0.9046663,
-  lo = 0.8884637,
-  hi = 0.9211645,
-  true = 1
-),
-3)
-
-exp(-0.1001891  - 6.9785313) / exp(-6.9785313)
-exp(-0.1001891 + 0.01807244 - 6.9785313) / exp(-6.9785313)
-exp(-0.1001891 - 0.01807244 - 6.9785313) / exp(-6.9785313)
-
-
-out <- with(ctrim_st, glm(community_lead2_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <- with(ctrim_st, glm(NWI_lead2_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  0.025172099 ,
-  se = 0.007768097,
-  sd = 1,
-  delta = 2,
-  true = 0
-),
-3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(ImpermeabilityGroup_lead2 ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st,
-       glm(Standard.Living_lead2ord_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-out <-
-  with(ctrim_st,
-       glm(Your.Future.Security_lead2_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st, glm(Your.Health_lead2_z  ~ Hours.Work_lead1_10))
-
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-out <-
-  with(ctrim_st,
-       glm(Your.Personal.Relationships_lead2ord_z ~ Hours.Work_lead1_10))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-round(EValue::evalues.OLS(
-  ,
-  se = ,
-  sd = 1,
-  delta = 2,
-  true = 0
-), 3)
-round(EValue::evalues.RR(, lo =  , hi = , true = 1), 3)
-
-
-# NZSEI13 -- status variable
-
-
-
-# Weights but now with the PWI  variables individually
-
-library(MatchThem)
-library(optmatch)
-library(splines)
-models_sl <- weightthem(
-  Standard.Living_lead1_z ~
-    bs(Standard.Living_z) +
-    AGREEABLENESS_z +
-    CONSCIENTIOUSNESS_z +
-    EXTRAVERSION_z  +
-    HONESTY_HUMILITY_z +
-    NEUROTICISM_z +
-    OPENNESS_z +
-    Age_z +
-    Alcohol.Frequency_z + #
-    Alcohol.Intensity_log_z + #
-    Bodysat_z +
-    Believe.God_z +
-    Believe.Spirit_z +
-    BELONG_z + #
-    CharityDonate_log_z + #
-    ChildrenNum_z +
-    Church_z +
-    community +
-    Edu_z +
-    Employed_z +
-    EmotionRegulation1_z +
-    EmotionRegulation2_z +
-    EmotionRegulation3_z +
-    Euro_z +
-    GRATITUDE_z +
-    HomeOwner_z +
-    Hours.Exercise_log_z +
-    Hours.Work_z +
-    HLTH.BMI_z  + #
-    HLTH.Fatigue_z + #
-    income_log_z +
-    ImpermeabilityGroup_z +
-    KESSLER6sum_z + #
-    LIFEMEANING_z + #
-    LIFESAT_z + #
-    Male_z +
-    NZdep_z +
-    NWI_z +
-    NZSEI13_z +
-    Parent_z +
-    Partner_z +
-    PERFECTIONISM_z +
-    PermeabilityIndividual_z +
-    Pol.Orient_z +
-    POWERDEPENDENCE1_z + #
-    POWERDEPENDENCE2_z + #
-    # PWI_z +
-    Relid_z +
-    Respect.Self_z + #
-    Rumination_z + #
-    SELF.CONTROL_z + #
-    SELF.ESTEEM_z + #
-    SexualSatisfaction_z + #
-    SFHEALTH_z + #
-    Smoker_z + #
-    Spiritual.Identification_z +
-    #  Standard.Living_z +
-    SUPPORT_z + #
-    Urban_z +
-    VENGEFUL.RUMIN_z +
-    Volunteers_z +
-    Your.Health_z +
-    Your.Future.Security_z +
-    Your.Personal.Relationships_z,
-  out2_sl,
-  approach = "within",
-  estimand = "ATE",
-  stabilize = TRUE,
-  method = "ebal"
-)
-
-
-saveh(models_sl, "models_sl.rds")
-
-
-sum <- summary(models_sl)
-plot(sum)
-sum
-bal.tab(models_sl)
-
-
-ctrim <- trim(models_sl, at = .999)
-bal.tab(ctrim)
-summary(ctrim)
-
-
-# iptw models -------------------------------------------------------------
-# no need to trim
-
-
-out <-
-  with(ctrim, glm(HLTH.BMI_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(SFHEALTH_lead2_z  ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(Hours.Exercise_lead2 ~ Standard.Living_lead1_z, family = "poisson"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(Smoker_lead2 ~ Standard.Living_lead1_z , family = "poisson"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-out <-
-  with(models_sl, glm(HLTH.Fatigue_lead2ord_z ~ bs(Standard.Living_lead1_z)))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-library(splines)
-out2 <-  with(
-  long3,
-  #  long_f3,
-  glm(
-    HLTH.Fatigue_lead2ord_z ~  bs(Standard.Living_lead1_z) +
-      Standard.Living_z +
-      AGREEABLENESS_z +
-      CONSCIENTIOUSNESS_z +
-      EXTRAVERSION_z  +
-      HONESTY_HUMILITY_z +
-      NEUROTICISM_z +
-      OPENNESS_z +
-      Age_z +
-      Alcohol.Frequency_z + #
-      Alcohol.Intensity_log_z + #
-      Bodysat_z +
-      Believe.God_z +
-      Believe.Spirit_z +
-      BELONG_z + #
-      CharityDonate_log_z + #
-      ChildrenNum_z +
-      Church_z +
-      community +
-      Edu_z +
-      Employed_z +
-      EmotionRegulation1_z +
-      EmotionRegulation2_z +
-      EmotionRegulation3_z +
-      Euro_z +
-      GRATITUDE_z +
-      HomeOwner_z +
-      Hours.Exercise_log_z +
-      Hours.Work_z +
-      HLTH.BMI_z  + #
-      HLTH.Fatigue_z + #
-      #  income_log_z +
-      ImpermeabilityGroup_z +
-      KESSLER6sum_z + #
-      LIFEMEANING_z + #
-      LIFESAT_z + #
-      Male_z +
-      NZdep_z +
-      NWI_z +
-      NZSEI13_z +
-      Parent_z +
-      Partner_z +
-      PERFECTIONISM_z +
-      PermeabilityIndividual_z +
-      Pol.Orient_z +
-      POWERDEPENDENCE1_z + #
-      POWERDEPENDENCE2_z + #
-      # PWI_z +
-      Relid_z +
-      Respect.Self_z + #
-      Rumination_z + #
-      SELF.CONTROL_z + #
-      SELF.ESTEEM_z + #
-      SexualSatisfaction_z + #
-      SFHEALTH_z + #
-      Smoker_z + #
-      Spiritual.Identification_z +
-      SUPPORT_z + #
-      Urban_z +
-      VENGEFUL.RUMIN_z +
-      Volunteers_z +
-      Your.Health_z +
-      Your.Future.Security_z +
-      Your.Personal.Relationships_z
-  )
-)
-library(stdReg)
-options(scipen = 999)
-
-summary(out2)
-
-output2 <- pool(out2, dfcom = NULL)
-output2
-#out2$df.null <- 27072
-
-gform_m1 <-
-  stdGlm(
-    fit = out2,
-    data = long3,
-    X  = "Standard.Living_lead1_z",
-    x = seq(-1, 1)
-  )
-summary(gform_m1)
-plot(gform_m1)
-
-Estimate Std. Error lower 0.95 upper 0.95
-- 1  0.02876    0.00347   0.021970    0.03556
-0   0.00491    0.00238   0.000244    0.00957
-1  - 0.03225    0.00326  - 0.038644   - 0.02586
-
-stimate Std. Error lower 0.95 upper 0.95
-- 1   0.0306    0.00337   0.023963    0.03716
-0    0.0050    0.00230   0.000485    0.00952
-1   - 0.0330    0.00316  - 0.039235   - 0.02684
-
-out <-
-  with(ctrim,
-       glm(Alcohol.Frequency_lead2ord ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(Alcohol.Intensity_lead2 ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <- with(ctrim, glm(Bodysat_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-# out <- with(ctrim, glm(PWI_lead2_z ~ Standard.Living_lead1_z ))
-# output <- pool(out, dfcom = NULL)
-# summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(Rumination_lead2ord ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-out <-
-  with(ctrim,
-       glm(SexualSatisfaction_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-out <-
-  with(ctrim,
-       glm(EmotionRegulation1_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(EmotionRegulation2_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(EmotionRegulation3_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(KESSLER6sum_lead2 ~ Standard.Living_lead1_z , family = "poisson"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(LIFEMEANING_lead2ord_z ~ Standard.Living_lead1_z , family = "gaussian"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-
-
-Estimate Std. Error lower 0.95 upper 0.95
-- 1 - 0.09386    0.00340   - 0.10053  - 0.087199
-0  - 0.00529    0.00222   - 0.00965  - 0.000932
-1   0.08709    0.00294    0.08134   0.092848
-
-out <-
-  with(ctrim,
-       glm(POWERDEPENDENCE1_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(POWERDEPENDENCE1_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(PERFECTIONISM_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(SELF.ESTEEM_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(GRATITUDE_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(VENGEFUL.RUMIN_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(LIFEMEANING_lead2ord ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(HONESTY_HUMILITY_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <- with(ctrim, glm(BELONG_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <- with(ctrim, glm(SUPPORT_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(Volunteers_lead2 ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(CharityDonate_log_lead2_z ~ Standard.Living_lead1_z , family = "gaussian"))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-exp(6.867947 + 0.2492043)
-
-
-out <-
-  with(ctrim, glm(community_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <- with(ctrim, glm(NWI_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(ImpermeabilityGroup_lead2 ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-out <-
-  with(ctrim,
-       glm(PermeabilityIndividual_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-
-# out <- with(ctrim2, glm( Standard.Living_lead2ord ~ Standard.Living_lead1_z ))
-# output <- pool(out, dfcom = NULL)
-# summary(output, conf.int = TRUE)
-
-
-out <-
-  with(ctrim,
-       glm(Your.Future.Security_lead2_z ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim, glm(Your.Health_lead2_z  ~ Standard.Living_lead1_z))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-out <-
-  with(ctrim,
-       glm(
-         Your.Personal.Relationships_lead2ord ~ Standard.Living_lead1_z
-       ))
-output <- pool(out, dfcom = NULL)
-summary(output, conf.int = TRUE)
-
-
-
-
-
-
-
-
-
-
-# BRMS --------------------------------------------------------------------
-
-
-
-# create list of data frames
-
-out_c <-
-  complete(ctrim,
-           action = "long",
-           include = FALSE,
-           mild = TRUE)
-
-m <- 10
-listdat <- list()
-for (i in 1:m) {
-  listdat[[i]] <- as.data.frame(out_c[[i]])
-}
-
-# create list of data frames
-
-out_c2 <-
-  complete(ctrim2,
-           action = "long",
-           include = FALSE,
-           mild = TRUE)
-
-m <- 10
-listdat2 <- list()
-for (i in 1:m) {
-  listdat2[[i]] <- as.data.frame(out_c2[[i]])
-}
-
-
-# enable memory
-options(future.globals.maxSize = 8000 * 1024 ^ 2)  # needed
-
-
-
-# BRMS MODELS forms -------------------------------------------------------------
-
-bf_HLTH.BMI_lead2_z <-
-  bf(HLTH.BMI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_SFHEALTH_lead2_z <-
-  bf(SFHEALTH_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Hours.Exercise_lead2 <-
-  bf(Hours.Exercise_lead2 |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Smoker_lead2 <-
-  bf(Smoker_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_HLTH.Fatigue_lead2ord <-
-  bf(HLTH.Fatigue_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Alcohol.Frequency_lead2ord <-
-  bf(Alcohol.Frequency_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Alcohol.Intensity_lead2 <-
-  bf(as.integer(Alcohol.Intensity_lead2) |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Bodysat_lead2_z <-
-  bf(Bodysat_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_PWI_lead2_z <-
-  bf(PWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Rumination_lead2ord <-
-  bf(Rumination_lead2ord | weights(weights) ~ Standard.Living_lead1_z)
-bf_SexualSatisfaction_lead2_z <-
-  bf(SexualSatisfaction_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PWI_lead2_z <-
-  bf(PWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation1_lead2_z <-
-  bf(EmotionRegulation1_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation2_lead2_z <-
-  bf(EmotionRegulation2_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation3_lead2_z <-
-  bf(EmotionRegulation3_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_KESSLER6sum_lead2 <-
-  bf(KESSLER6sum_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_LIFESAT_lead2ord <-
-  bf(LIFESAT_lead2ord | weights(weights) ~ Standard.Living_lead1_z)
-bf_POWERDEPENDENCE_lead2_z <-
-  bf(POWERDEPENDENCE_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PERFECTIONISM_lead2_z <-
-  bf(PERFECTIONISM_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_SELF.ESTEEM_lead2_z <-
-  bf(SELF.ESTEEM_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Emp.WorkLifeBalance_lead2_z <-
-  bf(Emp.WorkLifeBalance_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_GRATITUDE_lead2_z <-
-  bf(GRATITUDE_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_VENGEFUL.RUMIN_lead2ord <-
-  bf(VENGEFUL.RUMIN_lead2ord  |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_LIFEMEANING_lead2ord <-
-  bf(LIFEMEANING_lead2ord  |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_HONESTY_HUMILITY_lead2_z <-
-  bf(HONESTY_HUMILITY_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_BELONG_lead2_z <-
-  bf(BELONG_lead2_z  | weights(weights) ~ Standard.Living_lead1_z)
-bf_SUPPORT_lead2ord <-
-  bf(SUPPORT_lead2ord | weights(weights) ~ Standard.Living_lead1_z)
-bf_Volunteers_lead2 <-
-  bf(Volunteers_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_CharityDonate_lead2 <-
-  bf(CharityDonate_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_community_lead2_z <-
-  bf(community_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_NWI_lead2_z <-
-  bf(NWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_ImpermeabilityGroup_z <-
-  bf(ImpermeabilityGroup_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PermeabilityIndividual_z <-
-  bf(PermeabilityIndividual_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-## ADD ONE
-
-bf_Standard.Living_lead2ord <-
-  bf(Standard.Living_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Health_lead2_z <-
-  bf(Your.Health_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Future.Security_lead2 <-
-  bf(Your.Future.Security_lead2 |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Personal.Relationships_lead2ord <-
-  bf(Your.Personal.Relationships_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-
-
-# bmi ---------------------------------------------------------------------
-
-m1_bmi_stome <- brm_multiple(
-  bf_HLTH.BMI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m1_bmi_stome.rds"),
-)
-
-m2__SFHEALTH_lead2_z <- brm_multiple(
-  bf_SFHEALTH_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m2_SFHEALTH_lead2_z.rds"),
-)
-
-
-m3_Hours.Exercise_lead2 <- brm_multiple(
-  bf_Hours.Exercise_lead2 ,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m3_Hours.Exercise_lead2.rds"),
-)
-
-m4_Smoker_lead2 <- brm_multiple(
-  bf_Smoker_lead2,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m4_Smoker_lead2.rds"),
-)
-
-m5_HLTH.Fatigue_lead2ord <- brm_multiple(
-  bf_HLTH.Fatigue_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  # Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m5_HLTH.Fatigue_lead2ord.rds"),
-)
-
-m6_Alcohol.Frequency_lead2ord <- brm_multiple(
-  bf_Alcohol.Frequency_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m6_Alcohol.Frequency_lead2ord.rds"
-  ),
-)
-
-m7_Alcohol.Intensity_lead2 <- brm_multiple(
-  bf_Alcohol.Intensity_lead2 ,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m7_Alcohol.Intensity_lead2.rds"),
-)
-
-m8_Bodysat_lead2_z <- brm_multiple(
-  bf_Bodysat_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m8_Bodysat_lead2_z.rds"),
-)
-
-m9_PWI_lead2_z <- brm_multiple(
-  bf_PWI_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m9_PWI_lead2_z.rds"),
-)
-
-m10_Rumination_lead2ord <- brm_multiple(
-  bf_Rumination_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m10_Rumination_lead2ord.rds"),
-)
-
-m11_SexualSatisfaction_lead2_z <- brm_multiple(
-  bf_SexualSatisfaction_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m11_SexualSatisfaction_lead2_z.rds"
-  ),
-)
-
-
-m12_PWI_lead2_z  <- brm_multiple(
-  bf_PWI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  file = here::here("mods", "standardliving", "m12_PWI_lead2_z.rds"),
-  set_prior('normal(0, 1)', class = 'b')
-)
-
-m13_EmotionRegulation1_lead2_z <- brm_multiple(
-  bf_EmotionRegulation1_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m13_EmotionRegulation1_lead2_z.rds"
-  ),
-)
-
-m14_EmotionRegulation2_lead2_z <- brm_multiple(
-  bf_EmotionRegulation2_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m14_EmotionRegulation2_lead2_z.rds"
-  ),
-)
-
-
-m15_EmotionRegulation3_lead2_z <- brm_multiple(
-  bf_EmotionRegulation3_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m15_EmotionRegulation3_lead2_z.rds"
-  ),
-)
-
-
-m16_KESSLER6sum_lead2 <- brm_multiple(
-  bf_KESSLER6sum_lead2,
-  data = listdat,
-  #  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m16_KESSLER6sum_lead2.rds"),
-)
-
-
-m17_LIFESAT_lead2ord <- brm_multiple(
-  bf_LIFESAT_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m17_LIFESAT_lead2_z.rds"),
-)
-
-
-m18_POWERDEPENDENCE_lead2_z <- brm_multiple(
-  bf_POWERDEPENDENCE_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m18_POWERDEPENDENCE_lead2_z.rds"),
-)
-
-
-m19_PERFECTIONISM_lead2_z <- brm_multiple(
-  bf_PERFECTIONISM_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m19_PERFECTIONISM_lead2_z.rds"),
-)
-
-
-m20_SELF.ESTEEM_lead2_z <- brm_multiple(
-  bf_SELF.ESTEEM_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m20_SELF.ESTEEM_lead2_z.rds"),
-)
-
-
-m21_Emp.WorkLifeBalance_lead2_z <- brm_multiple(
-  bf_Emp.WorkLifeBalance_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m21_Emp.WorkLifeBalance_lead2_z.rds"
-  ),
-)
-
-
-m22_GRATITUDE_lead2_z <- brm_multiple(
-  bf_GRATITUDE_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m22_GRATITUDE_lead2_z.rds"),
-)
-
-
-m23_VENGEFUL.RUMIN_lead2ord <- brm_multiple(
-  bf_VENGEFUL.RUMIN_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m23_VENGEFUL.RUMIN_lead2_z.rds"),
-)
-
-
-m24_LIFEMEANING_lead2ord <- brm_multiple(
-  bf_LIFEMEANING_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m24_LIFEMEANING_lead2ord"),
-)
-
-
-m25_HONESTY_HUMILITY_lead2_z <- brm_multiple(
-  bf_HONESTY_HUMILITY_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m25_HONESTY_HUMILITY_lead2_z.rds"),
-)
-
-
-m26_BELONG_lead2_z <- brm_multiple(
-  bf_BELONG_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m26_BELONG_lead2_z.rds"),
-)
-
-
-m27_SUPPORT_lead2_z <- brm_multiple(
-  bf_SUPPORT_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m27_SUPPORT_lead2_z.rds"),
-)
-
-
-m28_Volunteers_lead2 <- brm_multiple(
-  bf_Volunteers_lead2,
-  data = listdat,
-  #family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m28_Volunteers_lead2.rds"),
-)
-
-
-m28_CharityDonate_lead2 <- brm_multiple(
-  bf_CharityDonate_lead2,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m28_CharityDonate_lead2.rds"),
-)
-
-
-m29_community_lead2_z <- brm_multiple(
-  bf_community_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m29_community_lead2_z.rds"),
-)
-
-
-m30_NWI_lead2_z <- brm_multiple(
-  bf_NWI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m30_NWI_lead2_z.rds"),
-)
-
-
-m31_ImpermeabilityGroup_z <- brm_multiple(
-  bf_ImpermeabilityGroup_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m31_ImpermeabilityGroup_z.rds"),
-)
-
-
-m32_PermeabilityIndividual_z <- brm_multiple(
-  bf_PermeabilityIndividual_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m32_PermeabilityIndividual_z.rds"),
-)
-
-## try GEE
-
-library(geepack)
-
-out3 <- with(
-  ctrim,
-  geeglm(
-    PWI_lead2_z  ~ Standard.Living_lead1_z,
-    data = cmodels,
-    id = 1:nrow(cmodels),
-    family = gaussian
-  )
-)
-
-# same result
-output <- pool(out3)
-summary(output, conf.int = TRUE)
-plot(output)
-
-
-# brms pwi follow up ------------------------------------------------------
-
-bf_Standard.Living_lead2_z <-
-  bf(Standard.Living_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Health_lead2_z <-
-  bf(Your.Health_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Future.Security_lead2_z <-
-  bf(Your.Future.Security_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Personal.Relationships_lead2ord <-
-  bf(Your.Personal.Relationships_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-long2$Standard.Living_lead2_z
-
-
-m33_Standard.Living_lead2_z <- brm_multiple(
-  bf_Standard.Living_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m33_Standard.Living_lead2_z.rds"),
-)
-
-
-
-m34_Your.Health_lead2_z <- brm_multiple(
-  bf_Your.Health_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m34_Your.Health_lead2_z.rds"),
-)
-
-m35_Your.Future.Security_lead2_z <- brm_multiple(
-  bf_Your.Future.Security_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m35_Your.Future.Security_lead2_z.rds"
-  ),
-)
-
-
-m36_Your.Personal.Relationships_lead2ord <- brm_multiple(
-  bf_Your.Personal.Relationships_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m36_Your.Personal.Relationships_lead2ord.rds"
-  ),
-)
-
-
-
-# old IPTW ----------------------------------------------------------------
-
-# iptw income  --------------------------------------------------------------------
-#income
-
-# Weights but now with the PWI  variables individually
