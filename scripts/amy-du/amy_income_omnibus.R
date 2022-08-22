@@ -32,11 +32,9 @@ options(scipen = 999)
 #   filter(Wave == 2020 &  YearMeasured == 1) %>%
 #   n_distinct("Id")
 
-# read libraries in
+source(here::here("scripts", "funs.R"))
 source(here::here("scripts", "libs.R"))
 source(here::here("scripts", "funs.R"))
-#  functions
-#source(pull_path_funs)
 
 dat$COVID19.Timeline
 # bels:
@@ -493,57 +491,6 @@ library(ggplot2)
 # Build descriptive table
 dev.off()
 
-# make labels as follows
-df_a$Male <- factor(df_a$Male, labels = c("No", "Yes"))
-df_a$Euro <- factor(df_a$Euro, labels = c("No", "Yes"))
-df_a$Retired <- factor(df_a$retired, labels = c("No", "Yes"))
-
-#and continue this way to obtain factor labels ...etc.
-
-table1::table1(
-  ~
-    Age +
-    Male +
-    Euro +
-    NZSEI13 +
-    AGREEABLENESS +
-    CONSCIENTIOUSNESS +
-    EXTRAVERSION +
-    HONESTY_HUMILITY +
-    NEUROTICISM +
-    OPENNESS, #... etc
-  data = df_wk,
-  transpose = F
-)
-
-# make more tables ... using this method
-
-# USEFUL CODE FOR SAVING IMAGES
-
-
-# Save figs
-
-my_plot <- #ggplot(some coded etc etc. )
-
-library(patchwork)
-
-#double plot <- my_plot1 + mplot2 + plot_annotation(title = "My double plot", tag_levels = "a")
-
-ggsave(
-  my_plot,
-  path = here::here(here::here("figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "name_of_graph.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 800
-)
-
-
-
-
 # model equations ---------------------------------------------------------
 
 # baseline covariates. (we don't want to write them all out)  The "_z" at the end indicates centering.
@@ -630,12 +577,13 @@ ylim <- c(-.3,.3)
 df <-  ml
 # n imputations
 m = 10
-
-# for when we binary outcomes
 ylim_contrast <- c(.6,1.2)
 ylim_contrast_diff <- c(-.1,.1)
 
-#  ***** INCOME set up ** ---------------------------------------------------------------
+
+
+# Scripture set up ---------------------------------------------------------------
+#How many times did you pray in the last week?
 X = "income_log_lead1_z"
 xlab = "Log Annual Income (SD)"
 min= -2
@@ -654,8 +602,8 @@ p = 2
 # functions ---------------------------------------------------------------
 
 ## Also use
-round( EValue::evalues.OLS( est = , se = , sd = 1, delta = delta, true = 0), 3)
-round( EValue::evalues.RR( est =  , lo =  , hi =, true = 1), 4)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
+round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sd(df_a$Household.INC_lead1)
 # mean(mf$income_log_lead1)
@@ -666,14 +614,9 @@ round( EValue::evalues.RR( est =  , lo =  , hi =, true = 1), 4)
 #
 # exp(11.62 - (2 * .58))
 
-exp(11.62 + (1 * .58))
 
-# exp(11.62- (1 * .58) )
-# exp(11.62 + (2 * .58) )
+# models for income ------------------------------------------------------------------
 
-#
-# exp(mean(mf$income_log_lead1) + sd(mf$income_log_lead1))
-# models ------------------------------------------------------------------
 
 # BMI ---------------------------------------------------------------------
 out_f = function(formula) {
@@ -694,11 +637,7 @@ rm(pool_m)
 rm(out_ct)
 # bake
 out_m <- out_f()
-# if you need to make a table
-# out_m
-summary(pool(out_m)) |>
-  kbl(digits = 3, "html")
-
+out_m
 ## contrasts
 # using the stdGlm package which does g-computation
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
@@ -723,47 +662,21 @@ out_ct %>%
   kable_minimal(full_width = F)
 
 # graph of contrasts
-ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab, p = p)
+ggplot_stglm_contrast(out_ct, ylim = ylim, main, xlab, ylab)
 
-#ggplot_stglm_contrast(out_ct, ylim = c(-.05,.05), main, xlab, ylab, p = p)
-
-# simple table
+# table
 out_ct %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 
-ggplot_stglm <- function(out, ylim, main, xlab, ylab, min, p, r) {
-  require(ggplot2)
-  g1 <- out[match(p, x),]
-  g1
-  g2 <- out[match(r, x),]
-  g2
-  ggplot2::ggplot(out, aes(x = row, y = est)) +
-    geom_point() +
-    geom_pointrange(aes(ymin =  li, ymax = ui), colour = "darkgray")  +
-    scale_y_continuous(limits = ylim) +
-    labs(
-      title = main,
-      subtitle = "Marginal predictions by g-computation",
-      x = xlab,
-      y = ylab
-    ) +
-    geom_pointrange(data=g1, aes(ymin = li, ymax = ui), colour="red") +  # highlight contrast
-    #  geom_pointrange(data=g2, aes(ymin = li, ymax = ui), colour="black") +  # highlight contrast
-    theme_classic()
-}
-# g-computation - estimate marginal effects across the range
+# g-computation
 pool_m <- pool_stglm(out_m, df = df, m = m, x = x,  X = X)
 pool_m %>%
   kbl(format = "markdown", booktabs = T, digits = 3)
 
 # graph
-ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
-
-#ggplot_stglm(pool_m, ylim = c(-.05,.05), main, xlab, ylab, min = min, p=p, r=r)
-
-
+ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( 0.03, se = 0.018, sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 ## make a combo graph
@@ -813,7 +726,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( est = 0.053, se = 0.015, sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -857,7 +770,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -898,7 +811,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -939,7 +852,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim_contrast_diff, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #
 # out_c <-
@@ -988,7 +901,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # alcohol freq ------------------------------------------------------------
@@ -1026,7 +939,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -1067,7 +980,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # body satisfaction -------------------------------------------------------
@@ -1108,7 +1021,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # rumination --------------------------------------------------------------
@@ -1150,7 +1063,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sex satisfaction --------------------------------------------------------
@@ -1189,7 +1102,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional regulation 1 ----------------------------------------------------
@@ -1229,7 +1142,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional reg 2 ---------------------------------------------------------
@@ -1269,7 +1182,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -1312,7 +1225,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # kessler 6 ---------------------------------------------------------------
@@ -1360,7 +1273,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 1 ------------------------------------------------------
@@ -1402,7 +1315,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 2 ------------------------------------------------------
@@ -1444,7 +1357,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # perfectionism  ----------------------------------------------------------
@@ -1489,7 +1402,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # self esteem -------------------------------------------------------------
@@ -1534,7 +1447,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # gratitude ---------------------------------------------------------------
@@ -1579,7 +1492,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # veng rumination ---------------------------------------------------------
@@ -1624,7 +1537,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -1669,7 +1582,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # honesty humility --------------------------------------------------------
@@ -1716,7 +1629,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # belonging ---------------------------------------------------------------
@@ -1760,7 +1673,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # soc support -------------------------------------------------------------
@@ -1806,7 +1719,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # volunteers --------------------------------------------------------------
@@ -1846,7 +1759,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim_contrast_diff, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # charity donate ----------------------------------------------------------
@@ -1886,7 +1799,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -1931,7 +1844,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # national wellbeing ------------------------------------------------------
@@ -1978,7 +1891,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # imperm group ------------------------------------------------------------
@@ -2018,7 +1931,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2066,7 +1979,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2108,7 +2021,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # your health -------------------------------------------------------------
@@ -2149,7 +2062,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # personal relationships --------------------------------------------------
@@ -2190,7 +2103,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Work-life balance -------------------------------------------------------
@@ -2231,7 +2144,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # life sat ----------------------------------------------------------------
@@ -2275,7 +2188,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Promotion NZSEI ---------------------------------------------------------------
@@ -2315,34 +2228,21 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
 # **** NZSEI SET UP **** --------------------------------------------------
 
-X = "NZSEI13_lead1_10" # occupational prestigue
-xlab = "1"
-min= 1
-max = 9
-# baseline
-r = 3
-# focal contrast
-f = 7
-# for model functions
-c = c(r,f)
-# range of estimates
-x =  min:max
-# contrast for graphs
-p = 7
+################################################################################
+### MODELS FOR STANDARD OF LIVING
+################################################################################
 
 delta = 4
 
 # NZSEI functions ---------------------------------------------------------------
 
-## Also use
-round( EValue::evalues.OLS( est = , se = , sd = 1, delta = delta, true = 0), 3)
-round( EValue::evalues.RR( est =  , lo =  , hi =, true = 1), 4)
+# models for income ------------------------------------------------------------------
 
 
 # models ------------------------------------------------------------------
@@ -2408,7 +2308,7 @@ pool_m %>%
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 ## make a combo graph
@@ -2458,7 +2358,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( est = 0.053, se = 0.015, sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2502,7 +2402,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2543,7 +2443,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2584,7 +2484,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim_contrast_diff, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # fatigue -----------------------------------------------------------------
 out_f = function(formula) {
@@ -2622,7 +2522,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # alcohol freq ------------------------------------------------------------
@@ -2660,7 +2560,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2701,7 +2601,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # body satisfaction -------------------------------------------------------
@@ -2742,7 +2642,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # rumination --------------------------------------------------------------
@@ -2784,7 +2684,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sex satisfaction --------------------------------------------------------
@@ -2823,7 +2723,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional regulation 1 ----------------------------------------------------
@@ -2863,7 +2763,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional reg 2 ---------------------------------------------------------
@@ -2903,7 +2803,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -2946,7 +2846,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # kessler 6 ---------------------------------------------------------------
@@ -2994,7 +2894,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 1 ------------------------------------------------------
@@ -3036,7 +2936,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 2 ------------------------------------------------------
@@ -3078,7 +2978,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # perfectionism  ----------------------------------------------------------
@@ -3123,7 +3023,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # self esteem -------------------------------------------------------------
@@ -3168,7 +3068,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # gratitude ---------------------------------------------------------------
@@ -3213,7 +3113,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # veng rumination ---------------------------------------------------------
@@ -3258,7 +3158,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -3303,7 +3203,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # honesty humility --------------------------------------------------------
@@ -3350,7 +3250,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # belonging ---------------------------------------------------------------
@@ -3394,7 +3294,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # soc support -------------------------------------------------------------
@@ -3440,7 +3340,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # volunteers --------------------------------------------------------------
@@ -3480,7 +3380,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # charity donate ----------------------------------------------------------
@@ -3520,7 +3420,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -3565,7 +3465,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # national wellbeing ------------------------------------------------------
@@ -3612,7 +3512,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # imperm group ------------------------------------------------------------
@@ -3652,7 +3552,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -3700,7 +3600,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -3742,7 +3642,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # your health -------------------------------------------------------------
@@ -3783,7 +3683,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # personal relationships --------------------------------------------------
@@ -3824,7 +3724,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Work-life balance -------------------------------------------------------
@@ -3865,7 +3765,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # life sat ----------------------------------------------------------------
@@ -3909,7 +3809,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Promotion NZSEI ---------------------------------------------------------------
@@ -3949,38 +3849,22 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # ***** STANDARD OF LIVING SET UP  ------------------------------------------------------
 
-####  SET UP
-X = "Standard.Living_lead1_z"
-xlab = "Standard ofLiving"
-min = -2
-max = 2
-# baseline
-r = -1
-# focal contrast
-f = 1
-# for model functions
-c = c(r,f)
-# range of estimates
-x =  min:max
-# contrast for graphs
-p = 2
 
-# for Evalues
-delta = 2
+#################################################################################
+###### NZSEI
+#################################################################################
 
+mf$Standard.Living_lead1_z
 
 # functions ---------------------------------------------------------------
 
-## Also use
-round( EValue::evalues.OLS( est = , se = , sd = 1, delta = delta, true = 0), 3)
-round( EValue::evalues.RR( est =  , lo =  , hi =, true = 1), 4)
 
-mf$Standard.Living_lead1_z
+# models for income ------------------------------------------------------------------
 
 
 # BMI ---------------------------------------------------------------------
@@ -4045,7 +3929,7 @@ pool_m %>%
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 ## make a combo graph
@@ -4095,7 +3979,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( est = 0.053, se = 0.015, sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4139,7 +4023,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4180,7 +4064,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4221,7 +4105,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim_contrast_diff, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #
 # out_c <-
@@ -4270,7 +4154,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # alcohol freq ------------------------------------------------------------
@@ -4308,7 +4192,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4349,7 +4233,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # body satisfaction -------------------------------------------------------
@@ -4390,7 +4274,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # rumination --------------------------------------------------------------
@@ -4432,7 +4316,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sex satisfaction --------------------------------------------------------
@@ -4471,7 +4355,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional regulation 1 ----------------------------------------------------
@@ -4511,7 +4395,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # emotional reg 2 ---------------------------------------------------------
@@ -4551,7 +4435,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4594,7 +4478,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # kessler 6 ---------------------------------------------------------------
@@ -4642,7 +4526,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 1 ------------------------------------------------------
@@ -4684,7 +4568,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # power dependence 2 ------------------------------------------------------
@@ -4726,7 +4610,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # perfectionism  ----------------------------------------------------------
@@ -4771,7 +4655,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # self esteem -------------------------------------------------------------
@@ -4816,7 +4700,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # gratitude ---------------------------------------------------------------
@@ -4861,7 +4745,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # veng rumination ---------------------------------------------------------
@@ -4906,7 +4790,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -4951,7 +4835,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # honesty humility --------------------------------------------------------
@@ -4998,7 +4882,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # belonging ---------------------------------------------------------------
@@ -5042,7 +4926,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # soc support -------------------------------------------------------------
@@ -5088,7 +4972,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # volunteers --------------------------------------------------------------
@@ -5128,7 +5012,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim_contrast_diff, main, xlab, ylab, min = min, p=p)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # charity donate ----------------------------------------------------------
@@ -5168,7 +5052,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -5213,7 +5097,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # national wellbeing ------------------------------------------------------
@@ -5260,7 +5144,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # imperm group ------------------------------------------------------------
@@ -5300,7 +5184,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -5348,7 +5232,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
@@ -5390,7 +5274,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # your health -------------------------------------------------------------
@@ -5431,7 +5315,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # personal relationships --------------------------------------------------
@@ -5472,7 +5356,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Work-life balance -------------------------------------------------------
@@ -5513,7 +5397,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # life sat ----------------------------------------------------------------
@@ -5557,7 +5441,7 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Promotion NZSEI ---------------------------------------------------------------
@@ -5597,5 +5481,5 @@ pool_m %>%
 # graph
 ggplot_stglm(pool_m, ylim = ylim, main, xlab, ylab, min = min, p=p, r=r)
 # evalues
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+round( EValue::evalues.OLS( , se = , sd = 1, delta = 4, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
