@@ -287,15 +287,6 @@ df_in <- tab_in %>%
   mutate(across(where(is.double), as.numeric)) %>%
   arrange(Id)
 
-#hist(df_in$income_log)
-
-# test <- df_in %>%
-#   mutate(inc_diff = (Household.INC_100 - Household.INC_100_lead1) * 100000) %>%
-#   select(Id, inc_diff) %>%
-#   arrange(inc_diff)
-# test %>% as_tibble() %>% print(n=500)
-
-
 # Filtering retirement -- consistency and positivity assumptions
 
 # number of ids
@@ -309,8 +300,6 @@ saveh(df_in, "df_in")
 
 # read if needed
 df_in<- readh("df_in")
-
-
 
 # mice model  -------------------------------------------------------------
 library(mice)
@@ -398,25 +387,12 @@ i_l2 <- i_l %>%
   dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
   dplyr::mutate(NZSEI13_10 =  NZSEI13/10)%>%
   dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2/10))%>%
-  # dplyr::mutate(Hours.Work_lead1_10 = Hours.Work_lead1/10)%>%
-  # dplyr::mutate(Hours.Work_lead1ord = (as.numeric(
-  #   cut(
-  #     Hours.Work_lead1,
-  #     breaks = c(-Inf,  20, 40, Inf),
-  #     labels = c("0", "20", "40",  "over40"),
-  #     right = TRUE
-  #   )
-  # ) - 1)) %>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z))%>%
   dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
 
-# MNMONTONIC MODEL?
-hist(i_l2$Hours.Work_lead1_sqrt)
-
 
 # for models wihout looping (not advised)
-
 i_f2 <- i_f %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0)))%>%
@@ -476,8 +452,75 @@ saveh(if3, "if3")
 if3 <- readh("if3")
 
 
-# hist(wf3$Hours.Work_lead1_10_z)
-# hist(wf3$BornNZ_z)
+
+# READ DATA IN HERE -------------------------------------------------------
+
+
+
+
+
+# 1. Create a folder called "scripts" in your home directory.
+
+# 2. create a folder called "data" in your home directory.
+
+# 3. download these files and place them in the "scripts" folder
+# https://www.dropbox.com/s/ypisiw5c8zyknnn/funs.R?dl=0
+# https://www.dropbox.com/s/25lbssmf4hqhko1/libs.R?dl=0
+
+# then download these data and place them in your data folder
+# https://www.dropbox.com/s/pnwr3jzogm1fdaz/df_wk?dl=0
+
+# https://www.dropbox.com/s/xu0wm1pqo58mpze/w_f?dl=0
+
+# https://www.dropbox.com/s/6y2z7m9bp0pgz9m/w_m?dl=0
+
+
+
+# Read the "libs.R" file and make sure you have installed all packages.
+
+# Then run these commands to load your library and your files
+
+source(here::here("scripts", "libs.R"))
+source(here::here("scripts", "funs.R"))
+
+# Read data here
+df_wk <- readh("df_wk")
+
+# imputed data
+w_m <- readh("w_m")
+w_f <- readh("w_f")
+
+
+# example of a descriptive table ------------------------------------------
+library(ggplot2)
+
+# Build descriptive table
+dev.off()
+
+# make labels as follows
+df_wk$Male <- factor(df_wk$Male, labels = c("No", "Yes"))
+df_wk$Euro <- factor(df_wk$Euro, labels = c("No", "Yes"))
+df_wk$Retired <- factor(df_wk$retired, labels = c("No", "Yes"))
+
+#and continue this way to obtain factor labels ...etc.
+
+table1::table1(
+  ~
+    Age +
+    Male +
+    Euro +
+    NZSEI13 +
+    AGREEABLENESS +
+    CONSCIENTIOUSNESS +
+    EXTRAVERSION +
+    HONESTY_HUMILITY +
+    NEUROTICISM +
+    OPENNESS, #... etc
+  data = df_wk,
+  transpose = F
+)
+
+# make more tables ... using this method
 
 
 
