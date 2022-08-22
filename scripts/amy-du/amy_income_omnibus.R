@@ -2,30 +2,6 @@
 # Amy Income NZSEI STAND LIVIING
 # set science digits
 options(scipen = 999)
-# JB STUFF
-# library(fs)
-#
-# # import libraries (jb)
-# pull_path <-
-#   fs::path_expand(
-#     "~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5"
-#   )
-# # import functions
-# pull_path_funs  <-
-#   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/scripts/funs.R")
-# pull_path_libs  <-
-#   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/scripts/libs.R")
-#
-# #libraries
-# source(pull_path_libs)
-#
-# #  functions
-# source(pull_path_funs)
-#
-# # # read data
-# # dff<- readRDS(pull_path)
-#
-# dff <- readRDS(here::here("data_raw", "df.Rds"))
 
 
 # df %>%
@@ -34,70 +10,6 @@ options(scipen = 999)
 
 source(here::here("scripts", "funs.R"))
 source(here::here("scripts", "libs.R"))
-source(here::here("scripts", "funs.R"))
-
-dat$COVID19.Timeline
-# bels:
-#   value                                                                                              label
-# 0.0                                                                                   The Before Times
-# 1.0                                31.12.2019 -- 27.02.2020 [First cluster of cases in Wuhan reported]
-# 1.1                                      28.02.2020 -- 25.02.2020 [First case recorded in New Zealand]
-# 1.2                                                           26.03.2020 -- 27.04-2020 [Alert Level 4]
-# 1.3                                                           28.04.2020 -- 13.05.2020 [Alert Level 3]
-# 1.4                                                          14.05.2020 -- 08.06.2020 [Alert Level 2].
-# 1.5                                                           09.06.2020 -- 11.08.2020 [Alert Level 1]
-# 2.1 12.08.2020 -- 30.08.2020 [Second Outbreak - Auckland Alert Level 3, Rest of Country Alert Level 2]
-# 2.2                 30.08.2020 -- 21.09.2020 [Auckland Alert Level 2.5, Rest of Country Alert Level 2]
-# 2.3                    22.09.2020 -- 07.10.2020 [Auckland Alert Level 2, Rest of Country Alert Level 1
-# 2.4                                                              08.10.2020 -- onwards [Alert Level 1]
-
-# dat$REGC_2018
-
-# labels:
-#   value                     label
-# 1          Northland Region
-# 2           Auckland Region
-# 3            Waikato Region
-# 4      Bay of Plenty Region
-# 5           Gisborne Region
-# 6         Hawkes Bay Region
-# 7           Taranaki Region
-# 8 Manawatu-Whanganui Region
-# 9         Wellington Region
-# 12         West Coast Region
-# 13         Canterbury Region
-# 14              Otago Region
-# 15          Southland Region
-# 16             Tasman Region
-# 17             Nelson Region
-# 18        Marlborough Region
-# 99       Area Outside Region
-
-#  This isn't sensible
-# dat1 <- dat %>%
-#   dplyr::mutate(NZSEI06_lead1 = lead(NZSEI06, n = 1),
-#                 KESSLER6_lead1 = lead(KESSLER6, n = 1),
-#                 KESSLER6_lag1 = dplyr::lag(KESSLER6),
-#                 NZSEI06_lag1 =  dplyr::lag(NZSEI06),
-#                 Employed_lead1 = lead(Employed, n = 1),
-#                 Employed_lag1 = dplyr::lag(Employed, n = 1))|>
-#   dplyr::filter(Wave == 2019 & YearMeasured==1) |>
-#   dplyr::mutate(cum_lockdowns_baseline = if_else(COVID19.Timeline < 1.2, 0,
-#                                  if_else(COVID19.Timeline >  1:2 & COVID19.Timeline  < 2, 2,
-#                                          ifelse(COVID19.Timeline > 2 & REGC_2018 == 2  | COVID19.Timeline > 2 & REGC_2018 == 1, 4, 3))))
-#
-# summary(test<- lm(KESSLER6~ cum_lockdowns_baseline + KESSLER6_lag1, data = dat1))
-# summary(test<- lm(NZSEI06_lead1 ~ cum_lockdowns_baseline + NZSEI06_lag1, data = dat1))
-# summary(test<- glm(Employed_lead1 ~ cum_lockdowns_baseline + Employed_lag1, family = "binomial" ,  data = dat1))
-# summary(test<- glm(Employed ~ cum_lockdowns_baseline + Employed_lag1, family = "binomial" ,  data = dat1))
-
-# Code for timeline if needed
-#   dplyr::mutate(cum_lockdowns_baseline = if_else(COVID19.Timeline < 1.2, 0,
-# if_else(COVID19.Timeline >  1:2 & COVID19.Timeline  < 2, 2,
-#         ifelse(COVID19.Timeline > 2 & REGC_2018 == 2  | COVID19.Timeline > 2 &
-#                  REGC_2018 == 1, 4, 3)))) |>
-
-
 
 # table for participant N
 tab_in <- dat %>%
@@ -467,7 +379,6 @@ https://www.dropbox.com/s/iyv3o9xbku4o4s8/libs.R?dl=0
 
 
 # then download these data and place them in your data folder
-https://www.dropbox.com/s/jwr0xbk0ywkii3s/df_a?dl=0
 https://www.dropbox.com/s/651tj641plmvz28/mf_amy?dl=0
 https://www.dropbox.com/s/t9ff5qylhhn5vmo/ml_amy?dl=0
 
@@ -477,8 +388,6 @@ https://www.dropbox.com/s/t9ff5qylhhn5vmo/ml_amy?dl=0
 source(here::here("scripts", "libs.R"))
 source(here::here("scripts", "funs.R"))
 
-# Read data here
-df_a <- readh("df_a")
 
 # imputed data
 ml <- readh("ml_amy")

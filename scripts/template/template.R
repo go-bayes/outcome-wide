@@ -173,13 +173,13 @@ df_cr <- tab_in %>%
     ChildrenNum,
     Edu,
     Emp.JobSecure,
-    Euro,
-    EthCat,
     # EmotionRegulation1,
     # EmotionRegulation2,
     # EmotionRegulation3,
     Employed,
     Emp.WorkLifeBalance,
+    Euro,
+    EthCat,
     #  GenCohort,
     GRATITUDE,
     HLTH.BMI,
@@ -232,7 +232,9 @@ df_cr <- tab_in %>%
     VENGEFUL.RUMIN,
     Your.Health,
     Your.Future.Security,
-    Your.Personal.Relationships
+    Your.Personal.Relationships,
+    Alcohol.Frequency,
+    Alcohol.Intensity,
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
