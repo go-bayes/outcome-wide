@@ -459,20 +459,25 @@ saveh(w_f, "w_f")
 
 # https://www.dropbox.com/s/6y2z7m9bp0pgz9m/w_m?dl=0
 
-
+#https://www.dropbox.com/s/7jszcwlpp8q4x26/funs2.R?dl=0
 
 # Read the "libs.R" file and make sure you have installed all packages.
 
 # Then run these commands to load your library and your files
 
 source(here::here("scripts", "libs.R"))
-source(here::here("scripts", "funs.R"))
+#source(here::here("scripts", "funs.R"))
+source(here::here("scripts", "funs2.R"))
 
-# Read data here
+
+# Read data here for descriptive data
 df_wk <- readh("df_wk")
 
 # imputed data
+# this is what we need for the actual data analysis.
 w_m <- readh("w_m")
+
+# needed only to get information about the data for interpreting models.
 w_f <- readh("w_f")
 
 
@@ -510,15 +515,17 @@ table1::table1(
 
 # Save figs
 
+# you have made a plot and now you want to save it
 my_plot <- #ggplot(some coded etc etc. )
 
+  # save as follows
   ggsave(
-    my_plot,
-    path = here::here(here::here("figs")),
+    my_plot,  # the plot object
+    path = here::here(here::here("figs")), # this will send the plot to your figures folder
     width = 12,
     height = 8,
     units = "in",
-    filename = "name_of_graph.jpg",
+    filename = "name_of_graph.jpg", # make sure to name your plot so that you can find
     device = 'jpeg',
     limitsize = FALSE,
     dpi = 800
@@ -609,6 +616,7 @@ baselinevars = c(
 
 # General set up ----------------------------------------------------------
 
+# set up of the graphs
 # ylimits
 ylim <- c(-.3,.3)
 
@@ -623,8 +631,9 @@ df <-  w_m
 # n imputations
 m = 10
 
-# Scripture set up ---------------------------------------------------------------
-#How many times did you pray in the last week?
+#  set up ---------------------------------------------------------------
+# Work hours per week
+
 X = "Hours.Work_lead1_10"
 xlab = "Weekly Hours Work/ 10"
 min= 0

@@ -570,11 +570,11 @@ c = x #c(0,5)
 p = 5
 s = 1 # slot for contrast graph
 
-delta = delta
+delta = 5
 # functions ---------------------------------------------------------------
 
 ## Also use
-round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
+round( EValue::evalues.OLS( ESTIMATE_GOES_HERE, se = GOES_HERE, sd = 1, delta = delta, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sd(df_a$Household.INC_lead1)
@@ -590,6 +590,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # HEALTH  ------------------------------------------------------------------
 #  functions
 source(pull_path_funs)
+
 # BMI ---------------------------------------------------------------------
 out_f = function(formula) {
   with(df, glm(as.formula(
@@ -605,15 +606,15 @@ main = "BMI"
 ylab = "BMI (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
-# bake
+# run model
 out_m <- out_f()
-out_m
 summary(pool(out_m))
+
 ## contrasts
 # using the stdGlm package which does g-computation
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
+out_ct
 out_ct %>%
   slice(6) |>
   kbl(digits = 3, "markdown")
@@ -626,15 +627,16 @@ bmi_t <- out_ct %>%
   tibble() |>
   rename(Contrast = row,
          Estimate = est,
-         std_error = se,
+         Std_error = se,
          CI_hi = ui,
          CI_lo = li) |>
-  kbl(caption = "This is my caption",
+  kbl(caption = main,
       digits = 3,
       "html") |>
    kable_styling() %>%
   row_spec(c(6), bold = T, color = "white", background = "dodgerblue") |>
   kable_minimal(full_width = F)
+
 bmi_t
 bmi_p<- ggplot_stglm(out_ct, ylim = ylim8, main, xlab, ylab, min = min, p=p, r= 1)
 bmi_p
@@ -662,7 +664,6 @@ main = "Short Form Health"
 ylab = "SFHEALTH (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
 out_m <- out_f()
@@ -1580,7 +1581,6 @@ main = "Volunteer Rate"
 ylab = "Volunteer Rate"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
 out_m <- out_f()
@@ -1605,7 +1605,7 @@ volunteers_t
 volunteers_p<- ggplot_stglm(out_ct, ylim =c(.9,2), main, xlab, ylab, min = min, p=p, r= 1)
 volunteers_p
 
-round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
+#round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
 
 
 round( EValue::evalues.RR( 1.259, lo =  1.079, hi = 1.440, true = 1), 4) |>
@@ -1614,6 +1614,10 @@ round( EValue::evalues.RR( 1.259, lo =  1.079, hi = 1.440, true = 1), 4) |>
       "html") |>
   kable_styling() %>%
   kable_minimal(full_width = F)
+
+# “With an observed risk ratio of RR=1.3, an unmeasured confounder that was associated with both the outcome and the exposure by a risk ratio of 1.8-fold each, above and beyond the measured confounders, could explain away the estimate, but weaker joint confounder associations could not; to move the confidence interval to include the null, an unmeasured confounder that was associated with the outcome and the exposure by a risk ratio of 1.4-fold each could do so, but weaker joint confounder associations could not.”
+# We could include statements like this in all empirical papers
+# 41
 
 # charity donate ----------------------------------------------------------
 ## fit
@@ -1697,9 +1701,9 @@ dev.off()
 
 # belonging ---------------------------------------------------------------
 # Felt belongingness
-# Know that people in my life accept and value me.
-# Feel like an outsider.
-# Know that people around me share my attitudes and beliefs.
+# 1. Know that people in my life accept and value me.
+# 2. Feel like an outsider.
+# 3. Know that people around me share my attitudes and beliefs.
 
 out_f = function(formula) {
   with(df, glm(as.formula(
@@ -1714,7 +1718,6 @@ main = "Social Belonging"
 ylab = "Social Belonging (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
 out_m <- out_f()
@@ -1768,7 +1771,6 @@ main = "Social Support"
 ylab = "Social Support (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
 out_m <- out_f()
@@ -1907,6 +1909,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
 
+library(patchwork)
 
 social_plots <- belonging_p +  support_p +   community_p + nwi_p +
   plot_annotation(title = "Causal effects of congregation size on social wellbeing") +
@@ -2020,6 +2023,10 @@ round( EValue::evalues.OLS( 0.267	, se = 0.043, sd = 1, delta = delta, true = 0)
   kable_minimal(full_width = F)
 
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+
+
+#
+# “With an observed risk ratio of RR=3.4 , an unmeasured confounder that was associated with both the outcome and the exposure by a risk ratio of 6.2-fold each, above and beyond the measured confounders, could explain away the estimate, but weaker joint confounder associations could not; to move the confidence interval to include the null, an unmeasured confounder that was associated with the outcome and the exposure by a risk ratio of 4.0-fold each could do so, but weaker joint confounder associations could not.”
 
 
 # church attendance -------------------------------------------------------
