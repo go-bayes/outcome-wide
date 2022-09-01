@@ -567,8 +567,8 @@ x =  min:max
 # for model functions
 c = x #c(0,5)
 # contrast for graphs -- absolute distance from baseline
-p = 5
-s = 1 # slot for contrast graph
+p = c(0,5)
+s = c(0,1) # slot for contrast graph
 
 delta = 5
 # functions ---------------------------------------------------------------
@@ -592,24 +592,22 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 source(pull_path_funs)
 
 # BMI ---------------------------------------------------------------------
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "HLTH.BMI_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
-# labels
+
 main = "BMI"
 ylab = "BMI (SD)"
-# clean oven
-rm(out_m)
-rm(out_ct)
+Y = "HLTH.BMI_lead2_z"
+
 # run model
-out_m <- out_f()
-summary(pool(out_m))
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
+
+# summary(pool(out_m)) |>
+#    slice(2:4,7)|>
+#    kbl(caption = main,
+#        digits = 3,
+#       "html") |>
+#   kable_styling() %>%
+#   #row_spec(c(6), bold = T, color = "white", background = "dodgerblue") |>
+#   kable_minimal(full_width = F)
 
 ## contrasts
 # using the stdGlm package which does g-computation
@@ -650,23 +648,12 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # I seem to get sick a little easier than other people.
 # I expect my health to get worse.
 
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "SFHEALTH_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
-# labels
+Y = "SFHEALTH_lead2_z"
 main = "Short Form Health"
 ylab = "SFHEALTH (SD)"
-# clean oven
 rm(out_m)
-rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df, X, Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 
@@ -695,24 +682,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # exercise ---------------------------------------------------------------
 ## fit for mice to work, don't ask why
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Hours.Exercise_log_lead2~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars, collapse = "+")
-    )
-  )))
-}
-# labels
+Y = "Hours.Exercise_log_lead2"
 main = "Log Weekly Hours Exercise (SD)"
 ylab = "Log WeeklyHours Exercise (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # bake
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -740,24 +718,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # smoker ------------------------------------------------------------------
 # fit
 #Do you currently smoke?
-
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Smoker_lead2 ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  ), family = "poisson"))
-}
-main = "Smoking Rate"
-ylab = "Smoking Rate"
+Y = "Smoker_lead2"
+family = "binomial" # could be binomial if binary utcome is rare
+main = "Smoking Risk"
+ylab = "Smoking Risk"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # bake
-out_m <- out_f()
+out_m <- mice_generalised(df = df, X = X, Y = Y, family = family)
 out_m
 ## contrasts
 out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = m,  X = X, x = c, r= r)
@@ -784,22 +753,14 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # alcohol freq ------------------------------------------------------------
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Alcohol.Frequency_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars, collapse = "+")
-    )
-  )))
-}
+Y = "Alcohol.Frequency_lead2_z"
 main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -825,23 +786,14 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # Alcohol.Intensity ----------------------------------------------------------
 # fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Alcohol.Intensity_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "Alcohol.Intensity_lead2_z"
 main = "Alcohol Intensity"
 ylab = "Alcohol Intensity (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -872,9 +824,6 @@ round( EValue::evalues.OLS( -0.055, se = 0.037, sd = 1, delta = delta, true = 0)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
-
-
-
 # GRAPHS HEALTH -----------------------------------------------------------
 
 health_plots <- bmi_p + sfhealth_p + exercise_p   +
@@ -902,22 +851,14 @@ dev.off()
 # HLTH.Sleep --------------------------------------------------------------
 #
 ## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "HLTH.SleepHours_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars, collapse = "+")
-    )
-  )))
-}
+Y = "HLTH.SleepHours_lead2_z"
 main = "Hours Sleep (SD)"
 ylab = "Hours Sleep (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -943,23 +884,14 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
 # fatigue -----------------------------------------------------------------
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "HLTH.Fatigue_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "HLTH.Fatigue_lead2_z"
 main = "Fatigue"
 ylab = "Fatigue (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -985,25 +917,15 @@ round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # body satisfaction -------------------------------------------------------
-# fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Bodysat_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "Bodysat_lead2_z"
 # plots
 main = "Body Satisfaction"
 ylab = "Body Satisfaction (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1037,23 +959,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #   During the last 30 days, how often did.... you feel worthless?
 #   During the last 30 days, how often did.... you feel nervous?
 
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "KESSLER6sum_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+
+Y = "KESSLER6sum_lead2_z"
 main = "Kessler 6 Distress"
 ylab = "Kessler 6 Distress (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1080,7 +994,6 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
 # GRAPHS EMBODIED  --------------------------------------------------------
-
 
 embody_plots <- sleep_p + fatigue_p + bodysat_p + distress_p + plot_annotation(title = "Causal effects of congregation size on embodied wellbeing", tag_levels = "A") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
@@ -1110,23 +1023,14 @@ distress_t
 # Am inclined to feel that I am a failure.
 
 ## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "SELF.ESTEEM_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "SELF.ESTEEM_lead2_z"
 main = "Self Esteem"
 ylab = "Self Esteem (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1177,7 +1081,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #
 # rm(out_ct)
 # # fit regression model
-# out_m <- out_f()
+# out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # # g-computation - contrasts
 # out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 # #table
@@ -1223,7 +1127,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #
 # rm(out_ct)
 # # fit regression model
-# out_m <- out_f()
+# out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # # g-computation - contrasts
 # out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 # #table
@@ -1266,7 +1170,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # rm(out_ct)
 # # bake
 # # fit regression model
-# out_m <- out_f()
+# out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # # g-computation - contrasts
 # out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 # #table
@@ -1309,7 +1213,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 #
 # rm(out_ct)
 # # fit regression model
-# out_m <- out_f()
+# out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # # g-computation - contrasts
 # out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 # #table
@@ -1343,24 +1247,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # Your future security.
 # Your personal relationships.
 ## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "PWI_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
 
+Y =  "PWI_lead2_z"
 main = "Personal Well Being Index (SD)"
 ylab = "Personal Well Being Index (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1390,9 +1285,7 @@ round( EValue::evalues.OLS( 0.093, se = 0.032, sd = 1, delta = delta, true = 0),
 
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-# point lower upper
-# RR       1.368 1.089 1.718
-# E-values 2.077 1.400    NA
+
 
 
 # life sat ----------------------------------------------------------------
@@ -1400,24 +1293,14 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # I am satisfied with my life.
 # In most ways my life is close to ideal.
 
-## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "LIFESAT_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "LIFESAT_lead2_z"
 main = "Life Satisfaction"
 ylab = "Life Satisfaction (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1456,7 +1339,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 reflective_plots <- selfesteem_p + lifesat_p + pwi_p + plot_annotation(title = "Causal effects of congregation size on reflective wellbeing") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
+reflective_plots
 ggsave(
   reflective_plots,
   path = here::here(here::here("figs", "congregation")),
@@ -1469,7 +1352,6 @@ ggsave(
   dpi = 1200
 )
 
-reflective_plots
 dev.off()
 
 
@@ -1478,23 +1360,14 @@ dev.off()
 
 # Promotion NZSEI ---------------------------------------------------------------
 ##
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "NZSEI13_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "NZSEI13_lead2_z"
 main = "Occupational Status"
 ylab = "Occupational Status (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1522,23 +1395,14 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # income ------------------------------------------------------------------
 ##
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "income_log_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "income_log_lead2_z"
 main = "Log Household Income (SD)"
 ylab = "Log Household Income (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1568,22 +1432,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # volunteers --------------------------------------------------------------
 # fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Volunteers_lead2~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  ),  family = "poisson"))
-}
+Y = "Volunteers_lead2"
 main = "Volunteer Rate"
 ylab = "Volunteer Rate"
+family = "poisson" # binary outcome not rare
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_generalised(df = df, X = X, Y = Y, family = family)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1620,24 +1477,15 @@ round( EValue::evalues.RR( 1.259, lo =  1.079, hi = 1.440, true = 1), 4) |>
 # 41
 
 # charity donate ----------------------------------------------------------
-## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "CharityDonate_log_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+
+Y = "CharityDonate_log_lead2_z"
 main = "Log Annual Charity Donatations (annual SD)"
 ylab = "Log Annual Charity Donatations (annual SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1669,12 +1517,6 @@ round( EValue::evalues.OLS(0.228 , se = 0.044, sd = 1, delta = delta, true = 0),
 
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
-# point lower upper
-# RR       1.333 1.116 1.593
-# E-values 2.000 1.475    NA
-
-#### SOCIAL CONNECTION
-
 
 
 # GRAPHS ECONOMIC OUTCOMES -------------------------------------------------------
@@ -1705,22 +1547,15 @@ dev.off()
 # 2. Feel like an outsider.
 # 3. Know that people around me share my attitudes and beliefs.
 
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "BELONG_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+
+Y = "BELONG_lead2_z"
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1767,13 +1602,14 @@ out_f = function(formula) {
     )
   )))
 }
+Y = "SUPPORT_lead2_z"
 main = "Social Support"
 ylab = "Social Support (SD)"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1808,24 +1644,15 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # Sense of community
 # I feel a sense of community with others in my local neighbourhood.
 
-## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "community_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+
+Y = "community_lead2_z"
 main = "Community"
 ylab = "Community (SD)"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1864,17 +1691,7 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 # The social conditions in New Zealand.
 # Business in New Zealand.
 
-## fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "NWI_lead2_z~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
-
+Y = "NWI_lead2_z"
 main = "National Well Being"
 ylab = "National Well Being (SD)"
 # clean oven
@@ -1882,7 +1699,7 @@ rm(out_m)
 
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1933,22 +1750,14 @@ dev.off()
 
 # scripture ---------------------------------------------------------------
 #### RELIGIOUS OUTCOMES
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Religion.Scripture_lead2_log_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "Religion.Scripture_lead2_log_z"
 main = "Log weekly Scripture Reading (SD)"
 ylab = "Log weekly Scripture Reading (SD)"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -1966,8 +1775,9 @@ scripture_t <- out_ct %>%
   kable_styling() %>%
   row_spec(c(6), bold = T, color = "white", background = "dodgerblue") |>
   kable_minimal(full_width = F)
-scripture_t
+
 scripture_p <- ggplot_stglm(out_ct, ylim = ylim8, main, xlab, ylab, min = min, p=p, r= 1)
+scripture_t
 scripture_p
 round( EValue::evalues.OLS( 0.315, se = 0.039, sd = 1, delta = delta, true = 0), 3) |>
   kbl(caption = main,
@@ -1978,15 +1788,8 @@ round( EValue::evalues.OLS( 0.315, se = 0.039, sd = 1, delta = delta, true = 0),
 round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # log prayer --------------------------------------------------------------
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Religion.Prayer_lead2_log_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+
+Y = "Religion.Prayer_lead2_log_z"
 main = "Log Weekly Prayer  (SD)"
 ylab = "Log Weekly Prayer (SD)"
 # clean oven
@@ -1994,7 +1797,7 @@ rm(out_m)
 
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -2040,13 +1843,14 @@ out_f = function(formula) {
     )
   )))
 }
+Y = "Religion.Church_lead2_log_z"
 main = "Log Monthly Church  (SD)"
 ylab = "Log Monthly Church (SD)"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -2072,22 +1876,14 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 
 # Religious ---------------------------------------------------------------
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Relid_lead2_z ~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  )))
-}
+Y = "Relid_lead2_z"
 main = "Religious Identification (SD)"
 ylab = "Religious Identification (SD)"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_gaussian(df = df, X = X, Y = Y)
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -2114,23 +1910,16 @@ round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # believe God -------------------------------------------------------------
 # fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Believe.God_lead2~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  ), family = "poisson"))
-}
+Y = "Believe.God_lead2"
+family = "poisson" # outcome not rare
 main = "God Belief Rate"
 ylab = "God Belief Rate"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_generalised(df = df, X = X, Y = Y, family = family)
+
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -2153,8 +1942,6 @@ god_p<- ggplot_stglm(out_ct, ylim =c(.9,1.1), main, xlab, ylab, min = min, p=p, 
 god_p
 
 round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
-
-
 round( EValue::evalues.RR( , lo =  , hi = , true = 1), 4) |>
   kbl(caption = main,
       digits = 3,
@@ -2166,23 +1953,15 @@ round( EValue::evalues.RR( , lo =  , hi = , true = 1), 4) |>
 
 # believe spirit -------------------------------------------------------------
 # fit
-out_f = function(formula) {
-  with(df, glm(as.formula(
-    paste(
-      "Believe.Spirit_lead2~ bs(Religion.CongregationSize_lead1_log) +",
-      paste(baselinevars,
-            collapse = "+")
-    )
-  ), family = "poisson"))
-}
+Y = "Believe.Spirit_lead2"
 main = "Believe Spirit Rate"
 ylab = "Believe Spirit Rate"
+family = "poisson"
 # clean oven
 rm(out_m)
-
 rm(out_ct)
 # fit regression model
-out_m <- out_f()
+out_m <- mice_generalised(df = df, X = X, Y = Y, family = family )
 # g-computation - contrasts
 out_ct <- pool_stglm_contrast_ratio(out_m, df = df, m = 10,  X = X, x = c, r= r)
 #table
@@ -2206,7 +1985,6 @@ spirit_p
 
 round( EValue::evalues.OLS( , se = , sd = 1, delta = delta, true = 0), 3)
 
-
 round( EValue::evalues.RR( , lo =  , hi = , true = 1), 4) |>
   kbl(caption = main,
       digits = 3,
@@ -2217,25 +1995,9 @@ round( EValue::evalues.RR( , lo =  , hi = , true = 1), 4) |>
 
 
 
-# PLOTS OF RELIGIOUS WELL-BEING -------------------------------------------
-
-religion_plots <- prayer_p +  religious_p  + scripture_p +
-  god_p + spirit_p + church_p  + plot_annotation(title = "Causal effects of congregation size on religious behaviour", tag_levels = "A") +
-  plot_layout(guides = 'collect')  # plot_layout(nrow = 1, byrow = FALSE)
 
 
-religion_plots
-ggsave(
-  religion_plots,
-  path = here::here(here::here("figs", "congregation")),
-  width = 16,
-  height = 9,
-  units = "in",
-  filename = "religion_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
 
-religion_plots
-dev.off()
+
+
+

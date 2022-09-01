@@ -628,7 +628,7 @@ ggplot_stglm(pool_m, ylim, main, xlab, ylab, c=c)
 # 1.061555 * number  # t/10th standard deviation
 # 60 * number)
 
-# ;smoker ------------------------------------------------------------------
+# smoker ------------------------------------------------------------------
 
 # fit
 out_f = function(formula) {

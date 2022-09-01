@@ -2,7 +2,7 @@
 # set science digits
 options(scipen = 999)
 library(fs)
-
+dff$Census.Religion.L3
 # import libraries (jb)
 pull_path <-
   fs::path_expand(
@@ -480,6 +480,10 @@ w_m <- readh("w_m")
 # needed only to get information about the data for interpreting models.
 w_f <- readh("w_f")
 
+saveRDS(w_f, here::here("data_raw","bella", "data_long"))
+saveRDS(w_m, here::here("data_raw", "bella","data_imputed"))
+saveRDS(df_wk, here::here("data_raw","bella", "data_raw"))
+
 
 # example of a descriptive table ------------------------------------------
 library(ggplot2)
@@ -933,7 +937,7 @@ out_m
 out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 out_ct
 # graph of contrasts
-ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab, s = 1)
 
 # table
 out_ct %>%
@@ -1053,7 +1057,7 @@ out_m
 out_ct <- pool_stglm_contrast(out_m, df = df, m = m,  X = X, x = c, r= r)
 out_ct
 # graph of contrasts
-ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab)
+ggplot_stglm_contrast(out_ct, ylim, main, xlab, ylab, s=0)
 
 # table
 out_ct %>%

@@ -3,13 +3,18 @@
 # set science digits
 options(scipen = 999)
 
+# Does congregation size cause changes in well-being
+# set science digits
+# read libraries
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
+
+# read functions
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
 
 # df %>%
 #   filter(Wave == 2020 &  YearMeasured == 1) %>%
 #   n_distinct("Id")
-
-source(here::here("scripts", "funs.R"))
-source(here::here("scripts", "libs.R"))
 
 # table for participant N
 tab_in <- dat %>%
@@ -302,7 +307,7 @@ N
 ml <- ml %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(income_log = log(Household.INC + 1)) |>
-  dplyr::mutate(income_log_lead1 = log(Household.INC_lead1 + 1)) |>
+  dplyr::mutate(income_log_lead2 = log(Household.INC_lead2 + 1)) |>
   dplyr::mutate(NZSEI13_lead1_10 = NZSEI13_lead1/10) |>
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
