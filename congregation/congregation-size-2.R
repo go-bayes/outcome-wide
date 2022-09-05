@@ -18,38 +18,45 @@ source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
 
+table <- dff |>
+  filter(YearMeasured ==1) |>
+  filter(Wave == 2018)
+
+table1::table1(~Religious_Group, data = table)
+
 # # read data
 
 dff <- readRDS(here::here("data_raw", "df.Rds"))
 
-dff %>%
-  filter(Wave == 2016 &  YearMeasured == 1) %>%
-  n_distinct("Id")
-
-table(dff$Bigger_Doms)
-# table for participant N
-dc <- dff %>%
-  arrange(Id, Wave) %>%
-  dplyr::mutate(Religion.CongregationSize = ifelse(Religion.Church == 0, 0,  Religion.CongregationSize)) |> #handle missingness
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
-  dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
-                  (Wave == 2017  & YearMeasured  == 1) |
-                  (Wave == 2018 &
-                     YearMeasured != -1)
-  )  %>% # Eligibility criteria
-  # dplyr::filter(Id != 9630) %>% # problematic for income
-  group_by(Id) %>%
-  dplyr::mutate(org2 = ifelse(Wave == 2017 &
-                                YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
-  dplyr::mutate(hold2 = mean(org2, na.rm = TRUE)) %>%  # Hack0
-  dplyr::filter(hold2 > 0) %>% # hack to enable repeat of baseline in 201
-  dplyr::mutate(org1 =  ifelse(Wave == 2016 &
-                                 YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
-  dplyr::mutate(hold1 = mean(org1, na.rm = TRUE)) %>%  # Hack
-  dplyr::filter(hold1 > 0) %>% # hack to enable repeat of baseline
-  ungroup()
-
+# Denominations
+# dff %>%
+#   filter(Wave == 2016 &  YearMeasured == 1) %>%
+#   n_distinct("Id")
+#
+# table(dff$Bigger_Doms)
+# # table for participant N
+# dc <- dff %>%
+#   arrange(Id, Wave) %>%
+#   dplyr::mutate(Religion.CongregationSize = ifelse(Religion.Church == 0, 0,  Religion.CongregationSize)) |> #handle missingness
+#   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
+#   dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
+#   dplyr::filter((Wave == 2016  & YearMeasured  == 1) |
+#                   (Wave == 2017  & YearMeasured  == 1) |
+#                   (Wave == 2018 &
+#                      YearMeasured != -1)
+#   )  %>% # Eligibility criteria
+#   # dplyr::filter(Id != 9630) %>% # problematic for income
+#   group_by(Id) %>%
+#   dplyr::mutate(org2 = ifelse(Wave == 2017 &
+#                                 YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+#   dplyr::mutate(hold2 = mean(org2, na.rm = TRUE)) %>%  # Hack0
+#   dplyr::filter(hold2 > 0) %>% # hack to enable repeat of baseline in 201
+#   dplyr::mutate(org1 =  ifelse(Wave == 2016 &
+#                                  YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
+#   dplyr::mutate(hold1 = mean(org1, na.rm = TRUE)) %>%  # Hack
+#   dplyr::filter(hold1 > 0) %>% # hack to enable repeat of baseline
+#   ungroup()
+#
 
 # increasing rate
 dff %>%
@@ -64,62 +71,61 @@ dcc <- dc |>
     YearMeasured,
     Wave,
     Age,
-    Bigger_Doms,
     Male,
+    Parent,
+    Partner,
+    ChildrenNum,
     Edu,
+    NZdep,
+    NZSEI13,
     Urban,
     EthCat,
+    BornNZ,
+    Edu,
+    Employed,
+    Smoker,
+    retired,
+    Alcohol.Frequency,
+    Alcohol.Intensity,
+    semiretired,
+    HLTH.Disability,
+    National.Identity,
+    NWI,
+    PATRIOT,
+    RWA,
+    SDO,
     AGREEABLENESS,
     CONSCIENTIOUSNESS,
     EXTRAVERSION,
     HONESTY_HUMILITY,
     NEUROTICISM,
     OPENNESS,
-    BELONG,
+    Religion.CongregationSize,
+    HoursCharity,
+    Hours.Exercise,
+    Hours.Work,
+    Pol.Orient,
     Believe.Spirit,
     Believe.God,
-    BornNZ,
-    CharityDonate,
-    ChildrenNum,
-    Edu,
-    Employed,
-    HLTH.Disability,
-    HoursCharity,
-    #  Hours.Exercise,
-    Hours.Work,
-    KESSLER6sum,
-    LIFESAT,
-    National.Identity,
-    NWI,
-    NZdep,
-    NZSEI13,
-    PATRIOT,
-    Parent,
-    Partner,
-    Pol.Orient,
     Relid,
-    Religion.CongregationSize,
+    Bigger_Doms,
     Religion.Church2,
     Religion.Prayer,
     Religion.Scripture,
     Respect.Self,
-    retired,
-    RWA,
-    SDO,
-    semiretired,
+    CharityDonate,
+    KESSLER6sum,
+    BELONG,
+    LIFESAT,
+    SUPPORT,
+    SFHEALTH,
+    Standard.Living,
     SELF.CONTROL,
     SELF.ESTEEM,
-    SFHEALTH,
-    Smoker,
-    Standard.Living,
-    SUPPORT,
     SWB.SoC01,
-    Urban,
     Your.Health,
     Your.Future.Security,
-    Your.Personal.Relationships#,
-    #  Alcohol.Frequency,
-    #  Alcohol.Intensity,
+    Your.Personal.Relationships#
   ) |>
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
@@ -140,42 +146,38 @@ dcc <- dc |>
   dplyr::mutate(SUPPORT_lead1 = lead(SUPPORT, n = 1)) %>%
   dplyr::mutate(across(
     c(
+      Religion.Church,
+      Religion.Prayer,
+      Religion.Scripture,
       Believe.Spirit,
       Believe.God,
       BELONG,
       CharityDonate,
-      Employed,
-      #   Household.INC, Highly Skewed
       HoursCharity,
-      #   Hours.Exercise,
       Hours.Work,
+      Employed,
+      SELF.CONTROL,
+      SELF.ESTEEM,
+      SFHEALTH,
+     # Household.INC, #Highly skewed, avoid, use NZSEI
+      Hours.Exercise,
       #  ImpermeabilityGroup,
       KESSLER6sum,
       # LIFEMEANING,
       LIFESAT,
       National.Identity,
-      # NWI,
+      NWI,
       PATRIOT,
-      Relid,
-      Religion.Church,
-      Religion.Prayer,
-      Religion.Scripture,
-      #  Rumination,
-      #   SELF.CONTROL,
-      #   SELF.ESTEEM,
-      #SexualSatisfaction,
-      #  SFHEALTH,
-      #  Smoker,
-      #  Spiritual.Identification,
-      Standard.Living,
       SUPPORT,
       community,
-      # SWB.SoC01,
-      #  Urban,
-      #  VENGEFUL.RUMIN,
+      Relid,
+      # Rumination,
+      #SexualSatisfaction,
+      Standard.Living,
       Your.Health,
       Your.Future.Security,
       Your.Personal.Relationships,
+
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
@@ -193,7 +195,7 @@ dcc <- dc |>
   droplevels() |>
   arrange(Id)
 
-table(dcc$Bigger_Doms)
+#table(is.na(dcc$NZSEI13))
 
 # inspect data
 skim(dcc) %>%
@@ -370,12 +372,12 @@ cc_l2 <- cc_l %>%
   dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
   #  plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
   dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
-  #  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
+  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
   dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2 + 1)) %>%
   dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
   dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
-  #  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
-  #  dplyr::mutate(Hours.Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
+  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
+  dplyr::mutate(Hours.Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
   dplyr::mutate(Believe.God = Believe.God - 1) %>%  # so that start is at zero
   dplyr::mutate(Believe.God_lead2 = Believe.God_lead2 - 1) %>%  # so that start is at zero
   dplyr::mutate(Believe.Spirit = Believe.Spirit - 1) %>% # so that start is at zero
@@ -469,6 +471,7 @@ saveh(ccf, "ccf")
 saveh(ccu, "ccu")
 
 
+
 skimr::skim(ccf)
 
 ###### READ THIS DATA IN   #########
@@ -477,7 +480,7 @@ ccu <- readh("ccu")
 
 
 # model equations ---------------------------------------------------------
-baselinevars = c(
+cvars = c(
   "Religion.CongregationSize_log",
   "Bigger_Doms",
   # additive interaction
@@ -504,7 +507,7 @@ baselinevars = c(
   "Employed_z",
   # "income_log_z", Skewed
   "Volunteers_z",
-  # "Hours.Exercise_log_z",
+   "Hours.Exercise_log_z",
   "Hours.Work_10_z",
   "KESSLER6sum_z",
   "LIFESAT_z",
@@ -606,7 +609,7 @@ ylab = "Religious Identification (SD)"
 sub = "Do you identify with a religion and/or spiritual group?\nWhat religion or spiritual group?\nHow important is your religion to how you see yourself?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -674,7 +677,7 @@ sub = "Know that people in my life accept and value me.\nFeel like an outsider.\
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -737,7 +740,7 @@ ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -804,7 +807,7 @@ sub = 'There are people I can depend on to help me if I really need it.\nThere i
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -871,7 +874,7 @@ ylab = "Charity Donations (annual)"
 sub = "How much money have you donated to charity in the last year?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -943,7 +946,8 @@ rm(out_ct)
 out_m <- mice_generalised(df = df,
                           X = X,
                           Y = Y,
-                          family = family)
+                          family = family,
+                          cvars = cvars)
 # g-computation - contrasts
 out_ct <-
   pool_stglm_contrast_ratio(
@@ -1007,7 +1011,7 @@ volunteers_p
 # sub = "I feel a great pride in the land that is our New Zealand.\nAlthough at times I may not agree with the government, my commitment to\nNew Zealand always remains strong."
 #
 # # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y)
+# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 #
 # ## g-computation
 # out_ct <-
@@ -1072,7 +1076,7 @@ main = "National Identity"
 ylab = "National Identity (SD)"
 sub = "I identify with New Zealand."
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1142,7 +1146,7 @@ national_p
 # ylab = "National Well Being (SD)"
 #
 # # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y)
+# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 #
 # ## g-computation
 # out_ct <-
@@ -1202,11 +1206,11 @@ national_p
 # TABLE SOCIAL WELLBEING --------------------------------------------------
 main = "Social connection estimands / Evalues"
 social_tab <- rbind(relid_c,
+                    belong_c,
+                    community_c,
                     support_c,
                     charity_c,
                     volunteers_c,
-                    belong_c,
-                    community_c,
                     national_c)
 
 social_tab |>
@@ -1214,7 +1218,7 @@ social_tab |>
       digits = 3,
       "html") |>
   kable_styling() %>%
-  row_spec(c(1:4),
+  row_spec(c(1:6),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -1223,13 +1227,13 @@ social_tab |>
 social_tab
 
 # GRAPH SOCIAL ------------------------------------------------------------
-social_fig <- relid_p +
-  support_p +
-  charity_p +
-  volunteers_p +
-  belong_p +
-  community_p +
-  national_p +
+social_fig <-   relid_p +
+belong_p+
+community_p+
+support_p+
+charity_p+
+volunteers_p+
+national_p+
   plot_annotation(title = "Causal effects of religious community size on religious identity & cooperation") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
 
@@ -1257,7 +1261,7 @@ main = "Log weekly Scripture Reading (SD)"
 ylab = "Log weekly Scripture Reading (SD)"
 sub = "How many times did you read religious scripture in the last week?"
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1318,7 +1322,7 @@ main = "Log Weekly Prayer  (SD)"
 ylab = "Log Weekly Prayer (SD)"
 sub = "How many times did you pray in the last week?"
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1381,9 +1385,9 @@ prayer_p
 Y = "Religion.Church_lead2_log_z"
 main = "Log Monthly Church  (SD)"
 ylab = "Log Monthly Church (SD)"
-sub = "How many times did you attend a church or place of worship in the last month?"
+sub = "How many times did you attend a church\nor place of worship in the last month?"
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y)
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
 ## g-computation
 out_ct <-
   pool_stglm_contrast(
@@ -1452,7 +1456,8 @@ sub = "Do you believe in a God?"
 out_m <- mice_generalised(df = df,
                           X = X,
                           Y = Y,
-                          family = family)
+                          family = family,
+                          cvars = cvars)
 # g-computation - contrasts
 out_ct <-
   pool_stglm_contrast_ratio(
@@ -1514,7 +1519,8 @@ sub = "Do you believe in some form of spirit or lifeforce?"
 out_m <- mice_generalised(df = df,
                           X = X,
                           Y = Y,
-                          family = family)
+                          family = family,
+                          cvars = cvars)
 # g-computation - contrasts
 out_ct <-
   pool_stglm_contrast_ratio(
@@ -1565,6 +1571,69 @@ spirit_p <-
 spirit_p
 
 
+
+# negative control  spirit -------------------------------------------------------------
+# Do you believe in some form of spirit or lifeforce?
+Y = "Hours.Exercise_log_lead2_z"
+main = "Log Hours Excercise (SD)"
+ylab = "Log Hours Excercise (SD)"
+sub = "Hours spent … exercising/physical activity"
+# fit regression model
+out_m <- mice_gaussian(df = df,
+                          X = X,
+                          Y = Y,
+                          cvars = cvars)
+# g-computation - contrasts
+out_ct <-
+  pool_stglm_contrast(
+    out_m,
+    df = df,
+    m = 10,
+    X = X,
+    x = c,
+    r = r + 1  # church zero ill defined
+  )
+#table
+# coef + estimate
+excercise_c <- vanderweelevalue_ols(out_ct, f, delta = delta)
+excercise_c
+
+excercise_t <- out_ct %>%
+  slice(1:max) |>
+  tibble() |>
+  rename(
+    Contrast = row,
+    Estimate = est,
+    std_error = se,
+    CI_hi = ui,
+    CI_lo = li
+  ) |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  kable_styling() %>%
+  row_spec(c(f + 1 - min),
+           bold = T,
+           color = "white",
+           background = "dodgerblue") |>
+  kable_minimal(full_width = F)
+excercise_t
+excercise_p <-
+  ggplot_stglm(
+    out_ct,
+    ylim = ylim,
+    main,
+    xlab,
+    ylab,
+    min = min,
+    p = p,
+    sub = sub
+  ) #+  expand_limits(x = 0, y = 0)
+excercise_p
+
+
+
+
 # PIETY TAB ---------------------------------------------------------------
 
 main = "Religious Piety estimands / Evalues"
@@ -1572,8 +1641,8 @@ piety_tab <- rbind(scripture_c,
                    prayer_c,
                    church_c,
                    god_c,
-                   spirit_c)
-
+                   spirit_c,
+                     excercise_c)
 piety_tab |>
   kbl(caption = main,
       digits = 3,
@@ -1586,8 +1655,8 @@ piety_tab |>
   kable_minimal(full_width = F)
 
 
-
-
+exp(1)
+log(2.71)
 
 # piety graph ------------------------------------------------
 
@@ -1596,13 +1665,14 @@ piety_fig <-
   prayer_p +
   church_p +
   god_p +
-  spirit_p +
+  spirit_p + excercise_p +
   plot_annotation(title = "Causal effects of religious community size on religious piety") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
 
 # view
 piety_fig
 
+log(8)
 
 ggsave(
   piety_fig,
@@ -1615,4 +1685,3 @@ ggsave(
   limitsize = FALSE,
   dpi = 1200
 )
-
