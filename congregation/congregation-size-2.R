@@ -198,7 +198,7 @@ dcc <- dc |>
 #table(is.na(dcc$NZSEI13))
 
 # inspect data
-skim(dcc) %>%
+skim(da) %>%
   arrange(n_missing)
 
 table(!is.na(dcc$Religion.CongregationSize))

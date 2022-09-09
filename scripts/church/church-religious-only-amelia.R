@@ -2,6 +2,9 @@
 # set digits = 3
 options(scipen = 999)
 
+
+NOT WORKING
+
 #libraries and functions
 # read libraries
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
@@ -10,7 +13,7 @@ source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
 conflict_prefer("pool", "mice")
-conflict_prefer("cbind", "base")
+
 # for saving models
 push_mods <-
   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
@@ -28,12 +31,12 @@ dat <- readRDS(pull_path)
 
 # table for participant N
 
-tab_in <- dat %>%
+tab_a <- dat %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
-  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
+  dplyr::filter((Wave == 2018  & YearMeasured  == 1 & !is.na(Religion.Church)) |
                   (Wave == 2019  &
-                     YearMeasured  == 1) |
+                     YearMeasured  == 1 & !is.na(Religion.Church)) |
                   (Wave == 2020))  %>% # Eligibility criteria
   dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
   # dplyr::filter(Id != 9630) %>% # problematic for income
@@ -51,19 +54,11 @@ tab_in <- dat %>%
   arrange(Id, Wave)
 # check n # 34782
 
-length(unique(tab_in$Id)) # 34783
+length(unique(tab_a$Id)) # 34783
 
-
-
-# increasing rate
-dat %>%
-  group_by(Wave) %>%
-  summarise(mean(Religion.Church2, na.rm = TRUE))
-
-# Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
 ## select vars
-df_cr <- tab_in %>%
+da <- tab_a %>%
   #dplyr::filter(Id != 9630) %>% # problematic income
   select(
     Id,
@@ -88,7 +83,7 @@ df_cr <- tab_in %>%
     SDO,
     RWA,
     Urban,
-    Household.INC,
+  #  Household.INC,
     Parent,
     Relid,
     Religious,
@@ -158,11 +153,11 @@ df_cr <- tab_in %>%
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-#  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
+  #  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-  dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
   dplyr::mutate(Edu = as.numeric(Edu),
+                wave = as.numeric(Wave) -1,
                 #   Volunteers = if_else(HoursCharity == 1, 1, 0),
                 # Depressed = (as.numeric(
                 #   cut(
@@ -173,16 +168,91 @@ df_cr <- tab_in %>%
                 #   )
                 # ) - 1),
                 # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
-  arrange(Id, Wave)  %>% #
-  dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
-  # inc_prop = (income_log / (income_log_lead1) - 1),
+                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) |>
+  dplyr::mutate(Retiredp = if_else((retired == 1 |
+                                      semiretired == 1), 1, 0)) %>%
+  dplyr::filter(Religious == 1) |>
+  select(-c(retired, semiretired, Religion.Church,
+            Religious,
+            retired,
+            semiretired))|>
+  dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
+  arrange(Id, Wave) |>
+  droplevels() |>
+  data.frame()
+
+library(Amelia)
+# match NZSEI3
+match("NZSEI13", names(da))
+nrow(da)
+bds <-
+  matrix(c(8, 10, 90), nrow = 1, ncol = 3) # bounds for Kessler6
+nrow(da)
+
+imputed_m <- amelia(
+  set.seed = 0,
+  da,
+  #dataset to impute
+  cs = c("Id"),
+  ts = c("wave"),
+  m = 10,
+  # number of imputations
+  # ords = "Ys",    # used for published analysis , must use numeric because values have been jittered
+  # leads="Ys",
+  noms = c("EthCat",
+           "Partner",
+           "Parent",
+           "Urban",
+           "partnerlost_job",
+           "lost_job",
+           "Smoker",
+           "BornNZ",
+           "Believe.God",
+           "Believe.Spirit",
+           "HomeOwner",
+           "Employed",
+           "Retiredp"),
+  idvars = c("Wave", "YearMeasured","Church"),
+  logs = c(
+    "Hours.Exercise",
+    "CharityDonate",
+    "ChildrenNum",
+    "HoursCharity",
+    "KESSLER6sum"
+  ),
+  #polytime = 2, # Allow polynomial?
+  intercs = F,
+  # too many vars
+  bounds = bds,
+  # lower upper bounds to Mus Prej
+  empri = .05 * nrow(da),
+  parallel = "multicore"
+)
+
+saveh(imputed_m, "church-amelia-imputed_m")
+
+library(miceadds)
+#imputed_mlist <- list(imputed_m$imputations)
+acmice <- miceadds::datlist2mids( imputed_m$imputations )
+#head(amice$loggedEvents, 10)
+a_mice<- mice::complete(acmice, action = 'long', include = TRUE)
+skim(a_mice)
+
+out_mice <- a_mice |>
+  droplevels() |>
+  group_by(Id) |>
+  dplyr::mutate(across(
+    c(Church),
+    ~ lead(.x, n = 1),
+    .names = "{col}_lead1"
+  )) %>% # make leads
   dplyr::mutate(across(
     c(
       NZSEI13,
       NZdep,
       Employed,
-      Household.INC,
+   #   Household.INC,
+      Emp.WorkLifeBalance,
       community,
       Hours.Work,
       HLTH.Disability,
@@ -233,113 +303,156 @@ df_cr <- tab_in %>%
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
   )) %>% # make leads
+  ungroup |>
   dplyr::filter(Wave == 2018) %>%
-  dplyr::mutate(Retiredp = if_else((retired == 1 |
-                                      semiretired == 1), 1, 0)) %>%
-  dplyr::filter(!is.na(Church)) %>%
-  dplyr::filter(!is.na(Church_lead1)) %>%
-  dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
-  dplyr::filter(Religious == 1) %>%
-  dplyr::select(
-    -c(
-      Religion.Church,
-      # EthCat,
-      Religious,
-      #  HoursCharity,
-      Respect.Self_lead2,
-      #  org2018,
-      #  not_euro,
-      #  not_euro_lead2,
-      # hold18,
-      #   Euro,
-      retired,
-      semiretired,
-      Emp.WorkLifeBalance,
-      YearMeasured
-      #HLTH.Disability_lead1,
-      # org2019,
-      # hold19,
-      # retired,
-      # semiretired,
-    )) %>%
-  #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
-  arrange(Id, Wave) %>%
-  droplevels() %>%
-  data.frame() %>%
-  mutate(across(where(is.double), as.numeric)) %>%
-  arrange(Id)
+  # dplyr::filter(!is.na(Church)) %>%
+  # dplyr::filter(!is.na(Church_lead1)) %>%
+  dplyr::select(-Emp.WorkLifeBalance) |>
+  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
+  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
+  plyr::mutate(Alcohol.Intensity = if_else(Alcohol.Intensity < 0, 0, round(Alcohol.Intensity))) %>%
+  dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0)) |>
+  dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
+  dplyr::mutate(Alcohol.Intensity_lead2 = if_else(Alcohol.Intensity_lead2 < 0, 0, round(Alcohol.Intensity_lead2))) %>%
+  dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
+  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0)) %>%
+  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1)) %>%
+  dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
+  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
+  dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2 + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2 + 1)) %>%
+  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
+  dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity + 1)) %>%
+  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) + 1)) %>%
+  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
+  dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
+  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0))) %>%
+  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
+  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0))) %>%
+  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(
+    Your.Personal.Relationships_lead2, digits = 0
+  ) + 1)) %>%
+  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0))) %>%
+  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0) +
+                                                     1)) %>%
+  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
+  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) +
+                                                          1)) %>%
+  dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0))) %>%
+  dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
+  dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
+  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
+  dplyr::mutate(Church = if_else(Church < 0, 0, Church)) %>%
+  dplyr::mutate(Church_lead1 = if_else(Church_lead1 < 0, 0, Church_lead1)) %>%
+  dplyr::mutate(Church = round(Church,1)) %>%
+  dplyr::mutate(Church_lead1 = round(Church_lead1,1)) %>%
+  dplyr::mutate(Partner = round(if_else(Church < 0, 0, Church_lead1))) %>%
+  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
+  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
+  dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
+  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2 / 10)) %>%
+  dplyr::mutate(Smoker = round(Smoker, 1)) |>
+  group_by(Id) |>
+  dplyr::mutate(PWI = mean(
+    c(
+      Your.Future.Security,
+      Your.Personal.Relationships,
+      Your.Health,
+      Standard.Living
+    ),
+    na.rm = TRUE
+  )) |>
+  dplyr::mutate(PWI_lead2 = mean(
+    c(
+      Your.Future.Security_lead2,
+      Your.Personal.Relationships_lead2,
+      Your.Health_lead2,
+      Standard.Living_lead2
+    ),
+    na.rm = TRUE
+  )) |>
+  ungroup() |>
+  arrange(Id) |>
+  droplevels() |>
+  # dplyr::mutate(K
+  dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z"))
 
 
-table1::table1(~ Church + SDO +  factor(Retiredp) |
+# conver to mice (mids)
+
+# # Get data into shape
+aml <- out_mice %>% mutate_if(is.matrix, as.vector)
+aml <- mice::as.mids(aml)
+amf <- mice::complete(aml, "long", inc = FALSE)
+
+
+table1::table1(~ Church + Church_lead1 + Smoker + HLTH.BMI_z + (Retiredp_z) |
                  Wave ,
-               data = df_cr,
+               data = amf,
                overall = FALSE)#11953
+
+
 
 
 # Filtering retirement -- consistency and positivity assumptions
 # number of ids
-N <- length(unique(df_cr$Id))
-N  #11945
-
-# inspect data
-skim(df_cr) |>
-  arrange(n_missing)
-
-
-## tables
-df_cr$EthCat
-
-df_crr <-  df_cr |>
-  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0))
-
-df_crr <- df_cr |> dplyr::group_by(Id) |> mutate(PWI = mean(
-  c(
-    Your.Future.Security,
-    Your.Personal.Relationships,
-    Your.Health,
-    Standard.Living
-  ),
-  na.rm = TRUE
-))
-
-df_crr$Male <- factor(df_cr$Male, labels = c("No", "Yes"))
-df_crr$EthnicIdentification <-
-  factor(df_cr$EthCat, labels = c("Euro", "Maori", "Pacific", "Asian"))
-df_crr$Believe.Spirit <-
-  factor(df_cr$Believe.Spirit, labels = c("No", "Yes"))
-df_crr$Believe.God <-
-  factor(df_cr$Believe.God, labels = c("No", "Yes"))
-df_crr$Employed <- factor(df_cr$Employed, labels = c("No", "Yes"))
-df_crr$Volunteers <-
-  factor(df_crr$Volunteers, labels = c("No", "Yes"))
-df_crr$Parent <- factor(df_cr$Parent, labels = c("No", "Yes"))
-df_crr$Partner <- factor(df_cr$Partner, labels = c("No", "Yes"))
-df_crr$Urban <- factor(df_cr$Urban, labels = c("No", "Yes"))
-df_crr$Retired_partialorfull <-
-  factor(df_cr$Retiredp, labels = c("No", "Yes"))
-df_crr$LostJob <-  factor(df_cr$lost_job, labels = c("No", "Yes"))
-df_crr$PartnerLostJob <-
-  factor(df_cr$partnerlost_job, labels = c("No", "Yes"))
-df_crr$ReligiousIdentification <-  df_cr$Relid
-df_crr$PoliticalOrientationRight <-  df_cr$Pol.Orient
-df_crr$RightWingAuthoritarian <-  df_cr$RWA
-df_crr$SocialDominanceOrientation <- df_cr$SDO
-df_crr$RespectSelf_baseline <-  df_cr$Respect.Self
-df_crr$Disability <-
-  factor(df_cr$HLTH.Disability, labels = c("No", "Yes"))
-df_crr$HomeOwner <- factor(df_cr$HomeOwner, labels = c("No", "Yes"))
-df_crr$SpiritualIdentification <-  df_cr$Spiritual.Identification
-df_crr$OccupationalPrestige <-  df_cr$NZSEI13
-
-
-
-
-# df_crt$BigDoms <-
-#   factor(df_cr$BigDoms,
-#          labels = c("Buddhist", "Christian", "Muslim", "TheOthers"))
-df_crr$NeighbourhoodCommunity <- df_cr$community
-#df_crt$MajorDenominations <- df_cr$BigDoms
-
+N <- length(unique(amf$Id))
+N
+# ## tables
+# df_cr$EthCat
+#
+# df_crr <-  df_cr |>
+#   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0))
+#
+# df_crr <- df_cr |> dplyr::group_by(Id) |> mutate(PWI = mean(
+#   c(
+#     Your.Future.Security,
+#     Your.Personal.Relationships,
+#     Your.Health,
+#     Standard.Living
+#   ),
+#   na.rm = TRUE
+# ))
+#
+# df_crr$Male <- factor(df_cr$Male, labels = c("No", "Yes"))
+# df_crr$EthnicIdentification <-
+#   factor(df_cr$EthCat, labels = c("Euro", "Maori", "Pacific", "Asian"))
+# df_crr$Believe.Spirit <-
+#   factor(df_cr$Believe.Spirit, labels = c("No", "Yes"))
+# df_crr$Believe.God <-
+#   factor(df_cr$Believe.God, labels = c("No", "Yes"))
+# df_crr$Employed <- factor(df_cr$Employed, labels = c("No", "Yes"))
+# df_crr$Volunteers <-
+#   factor(df_crr$Volunteers, labels = c("No", "Yes"))
+# df_crr$Parent <- factor(df_cr$Parent, labels = c("No", "Yes"))
+# df_crr$Partner <- factor(df_cr$Partner, labels = c("No", "Yes"))
+# df_crr$Urban <- factor(df_cr$Urban, labels = c("No", "Yes"))
+# df_crr$Retired_partialorfull <-
+#   factor(df_cr$Retiredp, labels = c("No", "Yes"))
+# df_crr$LostJob <-  factor(df_cr$lost_job, labels = c("No", "Yes"))
+# df_crr$PartnerLostJob <-
+#   factor(df_cr$partnerlost_job, labels = c("No", "Yes"))
+# df_crr$ReligiousIdentification <-  df_cr$Relid
+# df_crr$PoliticalOrientationRight <-  df_cr$Pol.Orient
+# df_crr$RightWingAuthoritarian <-  df_cr$RWA
+# df_crr$SocialDominanceOrientation <- df_cr$SDO
+# df_crr$RespectSelf_baseline <-  df_cr$Respect.Self
+# df_crr$Disability <-
+#   factor(df_cr$HLTH.Disability, labels = c("No", "Yes"))
+# df_crr$HomeOwner <- factor(df_cr$HomeOwner, labels = c("No", "Yes"))
+# df_crr$SpiritualIdentification <-  df_cr$Spiritual.Identification
+# df_crr$OccupationalPrestige <-  df_cr$NZSEI13
+#
+#
+#
+#
+# # df_crt$BigDoms <-
+# #   factor(df_cr$BigDoms,
+# #          labels = c("Buddhist", "Christian", "Muslim", "TheOthers"))
+# df_crr$NeighbourhoodCommunity <- df_cr$community
+# #df_crt$MajorDenominations <- df_cr$BigDoms
+#
 
 
 
@@ -365,7 +478,7 @@ table1::table1(
     Parent +
     Partner +
     PoliticalOrientationRight +
-   # PartnerLostJob +
+    # PartnerLostJob +
     Spiritual.Identification +
     RespectSelf_baseline +
     Retiredp +
@@ -423,148 +536,16 @@ table1::table1(
 
 # Social variables
 
-table1::table1(
-  ~ BELONG +
-    NeighbourhoodCommunity,
-    # SUPPORT +
-    # National.Identity +
-    # PATRIOT,
-  data = df_crr,
-  transpose = F
-)
+table1::table1( ~ BELONG +
+                  NeighbourhoodCommunity +
+                  # SUPPORT +
+                  # National.Identity +
+                  # PATRIOT,
+                  data = df_crr,
+                transpose = F)
 
 
 
-# mice model  -------------------------------------------------------------
-library(mice)
-
-mice_cr <- df_cr %>%
-  dplyr::select(-c(Wave, Id))  # won't otherwise run
-
-
-library(naniar)
-naniar::gg_miss_var(mice_cr)
-vis_miss(mice_cr,
-         warn_large_data = FALSE)
-
-# any colinear vars?
-mice:::find.collinear(mice_cr)
-
-# impute
-cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
-
-# save
-saveh(cr_mice, "cr_mice2")
-
-
-# read
-cr_mice <- readh("cr_mice2")
-# checks
-outlist2 <-
-  row.names(cr_mice)[cr_mice$outflux < 0.5]
-length(outlist2)
-
-# checks
-head(cr_mice$loggedEvents, 10)
-
-# data warangling
-# we create two completed data sets -- the one without the missing data will be useful for
-# determing causal contrasts -- which we'll describe below.
-
-ml <- mice::complete(cr_mice, "long", inc = TRUE)
-
-
-# inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
-skimr::skim(ml)
-
-# create variables in z score
-N <- length(unique(df_cr$Id))
-N
-dat$Household.INC
-ml <- ml %>%
-  dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
-  # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
- # dplyr::mutate(income_log = log(Household.INC + 1)) |>
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
-  plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
-  dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0)) |>
-  dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
-  dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
-  dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
-  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0)) %>%
-  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1)) %>%
-  dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
-  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
-  dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2 + 1)) %>%
-  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2 + 1)) %>%
-  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
-  dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
-  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity + 1)) %>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) + 1)) %>%
-  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
-  dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
-  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0))) %>%
-  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
-  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0))) %>%
-  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(
-    Your.Personal.Relationships_lead2, digits = 0
-  ) + 1)) %>%
-  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0))) %>%
-  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0) +
-                                                     1)) %>%
-  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) +
-                                                          1)) %>%
-  dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0))) %>%
-  dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
-  dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
-  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
-  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
-  dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
-  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2 / 10)) %>%
-  dplyr::group_by(id) |>
-  dplyr::mutate(PWI = mean(
-    c(
-      Your.Future.Security,
-      Your.Personal.Relationships,
-      Your.Health,
-      Standard.Living
-    ),
-    na.rm = TRUE
-  )) |>
-  dplyr::mutate(PWI_lead2 = mean(
-    c(
-      Your.Future.Security_lead2,
-      Your.Personal.Relationships_lead2,
-      Your.Health_lead2,
-      Standard.Living_lead2
-    ),
-    na.rm = TRUE
-  )) |>
-  ungroup() |>
-  # dplyr::mutate(K
-  dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z)) |>
-  dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
-
-
-# Get data into shape
-ml <- ml %>% mutate_if(is.matrix, as.vector)
-
-ml <- mice::as.mids(ml)
-mf <- mice::complete(ml, "long", inc = F)
-
-
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
-
-
-
-###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
 
 # model equations ---------------------------------------------------------
 
@@ -599,7 +580,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-  "income_log_z",
+ # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -616,12 +597,13 @@ cvars = c(
   "POWERDEPENDENCE2_z",
   "Relid_z",
   "Respect.Self_z",
-  "Retiredp_z",
+  "Retired_z",
   "Rumination_z",
   "RWA_z",
   "SDO_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
+  "semiretired",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -642,8 +624,7 @@ cvars = c(
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
 
-df <- ml
-
+df <- aml
 ############### SET YOUR EXPOSURE VARIABLE, ###############  ###############  ###############
 
 ## HERE WE USE THE EXAMPLE OF HOURS WORK / 10
@@ -667,7 +648,6 @@ max = 6
 # set full range of X
 x =  min:max
 
-
 # range for some graphs
 minmax <- paste(c(x), sep = ",")
 
@@ -690,7 +670,7 @@ p = c(r, f) #
 delta = abs(r - f)
 
 ylim = c(-.25, .4)  # SET AS YOU LIKE -- here, how much movement across a standard deviation unit of the outcome
-ylim_contrast = c(.5,2)# SET AS YOU LIKE (FOR CONTRASTS )
+ylim_contrast = c(0, 3)  # SET AS YOU LIKE (FOR CONTRASTS )
 
 # mice imputed data
 ## THIS IS KEY, NAME THE DATA I GAVE YOU "DF"
@@ -742,7 +722,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-#  "income_log_z",
+ # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -832,20 +812,31 @@ cvars = c(
 
 ################# BELOW THE MANY OUTCOMES!  ########################################
 
-
 # HEALTH  INDICATORS ------------------------------------------------------------------
 # alcohol freq ------------------------------------------------------------
 #How often do you have a drink containing alcohol?
-Y = "Alcohol.Frequency_lead2ord_z"
+Y = "Alcohol.Frequency_lead2_z"
 main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
 sub = "How often do you have a drink containing alcohol?"
 # regression
-out_m <- mice_gaussian(df = df,
+# mice_generalised_lin = function(df, X, Y, cvars, family) {
+#   require("splines")
+#   require("mice")
+#   out <- with(df, glm(as.formula(paste(
+#     paste(Y,"~", X,"+"),
+#     paste(cvars,collapse = "+")
+#   )), family = family))
+#   out
+# }
+
+out_m <- mice_generalised(df = df,
                        X = X,
                        Y = Y,
+                       family = "gaussian",
                        cvars = cvars)
 
+conflict_prefer("cbind", "base")
 summary(pool(out_m))
 ## g-computation
 
@@ -914,6 +905,16 @@ main = "Alcohol Intensity"
 ylab = "Alcohol Intensity (SD)"
 sub = "How many drinks containing alcohol do you have on a typical day when drinking?"
 
+mice_gaussian = function(df, X, Y, cvars) {
+  require("splines")
+  require("mice")
+  out <- with(df, glm(as.formula(paste(
+    paste(Y, "~ bs(", X , ")+"),
+    paste(cvars,
+          collapse = "+")
+  ))))
+  out
+}
 # regression
 out_m <- mice_gaussian(df = df,
                        X = X,
@@ -1433,7 +1434,7 @@ out_ct %>%
 # coef + estimate
 distress_c <- vanderweelevalue_ols(out_ct, f - min, delta, sd)
 distress_c
-
+distress_p
 
 distress_t <- out_ct %>%
   #slice(1:max) |>
@@ -2232,7 +2233,7 @@ pwi_p <-
     sub = sub
   )
 pwi_p
-pwi_c
+
 
 
 # power dependence 1 ------------------------------------------------------
@@ -2585,7 +2586,7 @@ worklife_p <-
     sub = sub
   )
 worklife_p
-worklife_c
+
 
 # SOCIAL CONNECTION AND BELONGING -----------------------------------------
 
@@ -2600,7 +2601,7 @@ worklife_c
 Y = "BELONG_lead2_z"
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
-sub = "Know that people in my life accept and value me.\nFeel like an outsider.\nKnow that people around me share my attitudes and beliefs."
+sub = " Know that people in my life accept and value me.\nFeel like an outsider.\nKnow that people around me share my attitudes and beliefs."
 
 
 # regression
@@ -2667,7 +2668,7 @@ belong_p
 # community ----------------------------------------------------------
 #I feel a sense of community with others in my local neighbourhood.
 Y = "community_lead2_z"
-main = "Neighbourhood Community"
+main = "Community"
 ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
@@ -3046,10 +3047,8 @@ out_ct <-
     r = r
   )
 #table
-out_ct
-# coef + estimate
 
-# Create risk ratio table
+# coef + estimate
 volunteers_c <- vanderweelevalue_rr(out_ct, f)
 volunteers_c
 
@@ -3086,6 +3085,7 @@ volunteers_p <-
     sub = sub
   ) +  expand_limits(x = 0, y = 0)
 volunteers_p
+
 
 #
 # # log household income --------------------------------------------------------------
@@ -3438,6 +3438,7 @@ yourfuturesecurity_p
 
 # Your Health -------------------------------------------------------------
 
+df_crr$Your.Health_lead2
 
 
 Y = "Your.Health_lead2_z"
@@ -3505,6 +3506,7 @@ yourhealth_p
 
 
 # Your Personal Relationships ---------------------------------------------
+df_cr$Your.Personal.Relationships_lead2
 
 Y = "Your.Personal.Relationships_lead2_z"
 main = "YourPersonal Relationships"
@@ -3603,9 +3605,11 @@ main = "Embodied wellbeing / Evalues"
 embody_tab <- rbind(
   bodysat_c,
   distress_c,
+  exercise_c,
   fatigue_c,
   rumination_c,
   selfcontrol_c,
+  sleep_c,
   sexualsat_c
 )
 
@@ -3645,7 +3649,7 @@ reflect_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(5, 7,  11),
+  row_spec(c(5, 7, 10, 11),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -3702,6 +3706,7 @@ embody_plots <-
   fatigue_p +
   rumination_p +
   selfcontrol_p +
+  sleep_p +
   sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
                                 tag_levels = "A") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
@@ -3717,7 +3722,7 @@ ggsave(
   filename = "embody_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 
@@ -3745,7 +3750,7 @@ ggsave(
   filename = "health_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 dev.off()
@@ -3782,7 +3787,7 @@ ggsave(
   filename = "reflective_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
@@ -3804,7 +3809,7 @@ ggsave(
   filename = "social_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 social_plots
@@ -3832,7 +3837,7 @@ ggsave(
   filename = "econ_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 dev.off()
@@ -4245,8 +4250,7 @@ k_lmer <- lme4::lmer(
 
 k_ml <- plot(ml_tab <-
                ggeffects::ggpredict(k_lmer, terms = c("Church[0:6]"), facet = F)) + scale_y_continuous(limits = ylim) +
-  theme_classic() + labs(title = "Predicted values of Kessler 6 Distress using multi-level analysis",
-  subtitle = "No temporal ordering in variables")
+  theme_classic()
 
 d_p + k_ml
 
@@ -4275,6 +4279,10 @@ k_ml_tab
 # STATEMENT OF EVALUE -----------------------------------------------------
 
 # “With an observed risk ratio of RR=0.28, an unmeasured confounder that was associated with both the outcome and the exposure by a risk ratio of 6.6-fold each, above and beyond the measured confounders, could explain away the estimate, but weaker joint confounder associations could not; to move the confidence interval to include the null, an unmeasured confounder that was associated with the outcome and the exposure by a risk ratio of 3.1-fold each could do so, but weaker joint confounder associations could not.”
+
+
+
+
 
 
 #COVID19.Timeline
@@ -4400,913 +4408,6 @@ k_ml_tab
 # Parental warmth Purpose/Meaning Big five personality
 
 # NOTE: WE USE MORE VARIABLES
-
-
-
-# BRMS --------------------------------------------------------------------
-
-
-
-# create list of data frames
-
-out_c <-
-  complete(ctrim,
-           action = "long",
-           include = FALSE,
-           mild = TRUE)
-m <- 10
-listdat <- list()
-for (i in 1:m) {
-  listdat[[i]] <- as.data.frame(out_c[[i]])
-}
-
-# create list of data frames
-
-out_c2 <-
-  complete(ctrim2,
-           action = "long",
-           include = FALSE,
-           mild = TRUE)
-
-m <- 10
-listdat2 <- list()
-for (i in 1:m) {
-  listdat2[[i]] <- as.data.frame(out_c2[[i]])
-}
-
-
-# enable memory
-options(future.globals.maxSize = 8000 * 1024 ^ 2)  # needed
-
-
-
-# BRMS MODELS forms -------------------------------------------------------------
-
-bf_HLTH.BMI_lead2_z <-
-  bf(HLTH.BMI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_SFHEALTH_lead2_z <-
-  bf(SFHEALTH_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Hours.Exercise_lead2 <-
-  bf(Hours.Exercise_lead2 |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Smoker_lead2 <-
-  bf(Smoker_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_HLTH.Fatigue_lead2ord <-
-  bf(HLTH.Fatigue_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Alcohol.Frequency_lead2ord <-
-  bf(Alcohol.Frequency_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Alcohol.Intensity_lead2 <-
-  bf(as.integer(Alcohol.Intensity_lead2) |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Bodysat_lead2_z <-
-  bf(Bodysat_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_PWI_lead2_z <-
-  bf(PWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_Rumination_lead2ord <-
-  bf(Rumination_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_SexualSatisfaction_lead2_z <-
-  bf(SexualSatisfaction_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PWI_lead2_z <-
-  bf(PWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation1_lead2_z <-
-  bf(EmotionRegulation1_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation2_lead2_z <-
-  bf(EmotionRegulation2_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_EmotionRegulation3_lead2_z <-
-  bf(EmotionRegulation3_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_KESSLER6sum_lead2 <-
-  bf(KESSLER6sum_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_LIFESAT_lead2ord <-
-  bf(LIFESAT_lead2ord | weights(weights) ~ Standard.Living_lead1_z)
-bf_POWERDEPENDENCE_lead2_z <-
-  bf(POWERDEPENDENCE_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PERFECTIONISM_lead2_z <-
-  bf(PERFECTIONISM_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_SELF.ESTEEM_lead2_z <-
-  bf(SELF.ESTEEM_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Emp.WorkLifeBalance_lead2_z <-
-  bf(Emp.WorkLifeBalance_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_GRATITUDE_lead2_z <-
-  bf(GRATITUDE_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_VENGEFUL.RUMIN_lead2ord <-
-  bf(VENGEFUL.RUMIN_lead2ord  |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_LIFEMEANING_lead2ord <-
-  bf(LIFEMEANING_lead2ord  |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_HONESTY_HUMILITY_lead2_z <-
-  bf(HONESTY_HUMILITY_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_BELONG_lead2_z <-
-  bf(BELONG_lead2_z  | weights(weights) ~ Standard.Living_lead1_z)
-bf_SUPPORT_lead2ord <-
-  bf(SUPPORT_lead2ord | weights(weights) ~ Standard.Living_lead1_z)
-bf_Volunteers_lead2 <-
-  bf(Volunteers_lead2 | weights(weights) ~ Standard.Living_lead1_z)
-bf_CharityDonate_lead2 <-
-  bf(CharityDonate_lead2 |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_community_lead2_z <-
-  bf(community_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_NWI_lead2_z <-
-  bf(NWI_lead2_z | weights(weights) ~ Standard.Living_lead1_z)
-bf_ImpermeabilityGroup_z <-
-  bf(ImpermeabilityGroup_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_PermeabilityIndividual_z <-
-  bf(PermeabilityIndividual_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-## ADD ONE
-
-bf_Standard.Living_lead2ord <-
-  bf(Standard.Living_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Health_lead2_z <-
-  bf(Your.Health_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Future.Security_lead2 <-
-  bf(Your.Future.Security_lead2 |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Personal.Relationships_lead2ord <-
-  bf(Your.Personal.Relationships_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-
-
-# bmi ---------------------------------------------------------------------
-
-m1_bmi_stome <- brm_multiple(
-  bf_HLTH.BMI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m1_bmi_stome.rds"),
-)
-
-m2__SFHEALTH_lead2_z <- brm_multiple(
-  bf_SFHEALTH_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m2_SFHEALTH_lead2_z.rds"),
-)
-
-
-m3_Hours.Exercise_lead2 <- brm_multiple(
-  bf_Hours.Exercise_lead2 ,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m3_Hours.Exercise_lead2.rds"),
-)
-
-m4_Smoker_lead2 <- brm_multiple(
-  bf_Smoker_lead2,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m4_Smoker_lead2.rds"),
-)
-
-m5_HLTH.Fatigue_lead2ord <- brm_multiple(
-  bf_HLTH.Fatigue_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  # Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m5_HLTH.Fatigue_lead2ord.rds"),
-)
-
-m6_Alcohol.Frequency_lead2ord <- brm_multiple(
-  bf_Alcohol.Frequency_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m6_Alcohol.Frequency_lead2ord.rds"
-  ),
-)
-
-m7_Alcohol.Intensity_lead2 <- brm_multiple(
-  bf_Alcohol.Intensity_lead2 ,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m7_Alcohol.Intensity_lead2.rds"),
-)
-
-m8_Bodysat_lead2_z <- brm_multiple(
-  bf_Bodysat_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m8_Bodysat_lead2_z.rds"),
-)
-
-m9_PWI_lead2_z <- brm_multiple(
-  bf_PWI_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m9_PWI_lead2_z.rds"),
-)
-
-m10_Rumination_lead2ord <- brm_multiple(
-  bf_Rumination_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m10_Rumination_lead2ord.rds"),
-)
-
-m11_SexualSatisfaction_lead2_z <- brm_multiple(
-  bf_SexualSatisfaction_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m11_SexualSatisfaction_lead2_z.rds"
-  ),
-)
-
-
-m12_PWI_lead2_z  <- brm_multiple(
-  bf_PWI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  file = here::here("mods", "standardliving", "m12_PWI_lead2_z.rds"),
-  set_prior('normal(0, 1)', class = 'b')
-)
-
-m13_EmotionRegulation1_lead2_z <- brm_multiple(
-  bf_EmotionRegulation1_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m13_EmotionRegulation1_lead2_z.rds"
-  ),
-)
-
-m14_EmotionRegulation2_lead2_z <- brm_multiple(
-  bf_EmotionRegulation2_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m14_EmotionRegulation2_lead2_z.rds"
-  ),
-)
-
-
-m15_EmotionRegulation3_lead2_z <- brm_multiple(
-  bf_EmotionRegulation3_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m15_EmotionRegulation3_lead2_z.rds"
-  ),
-)
-
-
-m16_KESSLER6sum_lead2 <- brm_multiple(
-  bf_KESSLER6sum_lead2,
-  data = listdat,
-  #  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m16_KESSLER6sum_lead2.rds"),
-)
-
-
-m17_LIFESAT_lead2ord <- brm_multiple(
-  bf_LIFESAT_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m17_LIFESAT_lead2_z.rds"),
-)
-
-
-m18_POWERDEPENDENCE_lead2_z <- brm_multiple(
-  bf_POWERDEPENDENCE_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m18_POWERDEPENDENCE_lead2_z.rds"),
-)
-
-
-m19_PERFECTIONISM_lead2_z <- brm_multiple(
-  bf_PERFECTIONISM_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m19_PERFECTIONISM_lead2_z.rds"),
-)
-
-
-m20_SELF.ESTEEM_lead2_z <- brm_multiple(
-  bf_SELF.ESTEEM_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m20_SELF.ESTEEM_lead2_z.rds"),
-)
-
-
-m21_Emp.WorkLifeBalance_lead2_z <- brm_multiple(
-  bf_Emp.WorkLifeBalance_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m21_Emp.WorkLifeBalance_lead2_z.rds"
-  ),
-)
-
-
-m22_GRATITUDE_lead2_z <- brm_multiple(
-  bf_GRATITUDE_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m22_GRATITUDE_lead2_z.rds"),
-)
-
-
-m23_VENGEFUL.RUMIN_lead2ord <- brm_multiple(
-  bf_VENGEFUL.RUMIN_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m23_VENGEFUL.RUMIN_lead2_z.rds"),
-)
-
-
-m24_LIFEMEANING_lead2ord <- brm_multiple(
-  bf_LIFEMEANING_lead2ord ,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m24_LIFEMEANING_lead2ord"),
-)
-
-
-m25_HONESTY_HUMILITY_lead2_z <- brm_multiple(
-  bf_HONESTY_HUMILITY_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m25_HONESTY_HUMILITY_lead2_z.rds"),
-)
-
-
-m26_BELONG_lead2_z <- brm_multiple(
-  bf_BELONG_lead2_z ,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m26_BELONG_lead2_z.rds"),
-)
-
-
-m27_SUPPORT_lead2_z <- brm_multiple(
-  bf_SUPPORT_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m27_SUPPORT_lead2_z.rds"),
-)
-
-
-m28_Volunteers_lead2 <- brm_multiple(
-  bf_Volunteers_lead2,
-  data = listdat,
-  #family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m28_Volunteers_lead2.rds"),
-)
-
-
-m28_CharityDonate_lead2 <- brm_multiple(
-  bf_CharityDonate_lead2,
-  data = listdat,
-  # family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m28_CharityDonate_lead2.rds"),
-)
-
-
-m29_community_lead2_z <- brm_multiple(
-  bf_community_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m29_community_lead2_z.rds"),
-)
-
-
-m30_NWI_lead2_z <- brm_multiple(
-  bf_NWI_lead2_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m30_NWI_lead2_z.rds"),
-)
-
-
-m31_ImpermeabilityGroup_z <- brm_multiple(
-  bf_ImpermeabilityGroup_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m31_ImpermeabilityGroup_z.rds"),
-)
-
-
-m32_PermeabilityIndividual_z <- brm_multiple(
-  bf_PermeabilityIndividual_z,
-  data = listdat,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m32_PermeabilityIndividual_z.rds"),
-)
-
-## try GEE
-
-library(geepack)
-
-out3 <- with(
-  ctrim,
-  geeglm(
-    PWI_lead2_z  ~ Standard.Living_lead1_z,
-    data = cmodels,
-    id = 1:nrow(cmodels),
-    family = gaussian
-  )
-)
-
-# same result
-output <- pool(out3)
-summary(output, conf.int = TRUE)
-plot(output)
-
-
-# brms pwi follow up ------------------------------------------------------
-
-bf_Standard.Living_lead2_z <-
-  bf(Standard.Living_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Health_lead2_z <-
-  bf(Your.Health_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Future.Security_lead2_z <-
-  bf(Your.Future.Security_lead2_z |
-       weights(weights) ~ Standard.Living_lead1_z)
-bf_Your.Personal.Relationships_lead2ord <-
-  bf(Your.Personal.Relationships_lead2ord |
-       weights(weights) ~ Standard.Living_lead1_z)
-
-
-long2$Standard.Living_lead2_z
-
-
-m33_Standard.Living_lead2_z <- brm_multiple(
-  bf_Standard.Living_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m33_Standard.Living_lead2_z.rds"),
-)
-
-
-
-m34_Your.Health_lead2_z <- brm_multiple(
-  bf_Your.Health_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here("mods", "standardliving", "m34_Your.Health_lead2_z.rds"),
-)
-
-m35_Your.Future.Security_lead2_z <- brm_multiple(
-  bf_Your.Future.Security_lead2_z,
-  data = listdat2,
-  family = "gaussian",
-  #  family = cumulative("probit"),  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m35_Your.Future.Security_lead2_z.rds"
-  ),
-)
-
-
-m36_Your.Personal.Relationships_lead2ord <- brm_multiple(
-  bf_Your.Personal.Relationships_lead2ord,
-  data = listdat,
-  # family = "gaussian",
-  family = cumulative("probit"),
-  Chose family
-  #  family = "poisson",
-  #  family = "negbinomial",
-  #  family = bernoulli(link = "cloglog"),
-  seed = 1234,
-  warmup = 1000,
-  iter = 2000,
-  chains = 4,
-  init = 0,
-  backend = "cmdstanr",
-  set_prior('normal(0, 1)', class = 'b'),
-  file = here::here(
-    "mods",
-    "standardliving",
-    "m36_Your.Personal.Relationships_lead2ord.rds"
-  ),
-)
 
 
 

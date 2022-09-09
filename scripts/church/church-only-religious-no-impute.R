@@ -1,3 +1,5 @@
+religious service with no imputation
+
 # church-use R
 # set digits = 3
 options(scipen = 999)
@@ -10,7 +12,7 @@ source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
 conflict_prefer("pool", "mice")
-conflict_prefer("cbind", "base")
+
 # for saving models
 push_mods <-
   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
@@ -64,171 +66,162 @@ dat %>%
 
 ## select vars
 df_cr <- tab_in %>%
-  #dplyr::filter(Id != 9630) %>% # problematic income
+  # dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
     YearMeasured,
     Wave,
-    Partner,
-    EthCat,
     Age,
-    Male,
-    NZSEI13,
-    CONSCIENTIOUSNESS,
-    OPENNESS,
-    HONESTY_HUMILITY,
-    EXTRAVERSION,
-    NEUROTICISM,
     AGREEABLENESS,
-    Edu,
-    NZdep,
-    Employed,
-    HomeOwner,
-    Pol.Orient,
-    SDO,
-    RWA,
-    Urban,
-    Household.INC,
-    Parent,
-    Relid,
-    Religious,
-    Religion.Church,
+    CONSCIENTIOUSNESS,
+    EXTRAVERSION,
+    HONESTY_HUMILITY,
+    NEUROTICISM,
+    OPENNESS,
+    Alcohol.Frequency,
+    Alcohol.Intensity,
+    began_relationship,
+    BELONG,
     Believe.Spirit,
     Believe.God,
-    Spiritual.Identification,
-    SWB.SoC01,
+    Bodysat,
+    BornNZ,
+    CharityDonate,
+    ChildrenNum,
+    Edu,
+    # Emp.JobSecure, Not relevant for retired
+    Euro,
+    EthCat,
     EmotionRegulation1,
     EmotionRegulation2,
     EmotionRegulation3,
-    Bodysat,
-    VENGEFUL.RUMIN,
-    retired,
-    semiretired,
-    BornNZ,
-    KESSLER6sum,
-    HLTH.Fatigue,
-    Rumination,
-    Smoker,
-    ChildrenNum,
-    NWI,
-    BELONG,
-    SUPPORT,
-    CharityDonate,
-    HoursCharity,
+    Employed,
+    Emp.WorkLifeBalance,
+    #  GenCohort,
     GRATITUDE,
-    Hours.Work,
-    HLTH.SleepHours,
+    HLTH.BMI,
+    HLTH.Fatigue,
     HLTH.Disability,
+    HLTH.SleepHours,
+    HomeOwner,
+    Household.INC,
+    HoursCharity,
     Hours.Exercise,
+    Hours.Work,
+    HoursCharity,
+    ImpermeabilityGroup,
+    KESSLER6sum,
     LIFEMEANING,
     LIFESAT,
-    # PWI,  ##  we use the individual
-    NWI,
-    SFHEALTH,
-    SELF.CONTROL,
-    SFHEALTH,
-    SELF.ESTEEM,
-    Respect.Self,
-    #  GenCohort,
-    SELF.ESTEEM,
-    SELF.CONTROL,
-    Emp.WorkLifeBalance,
-    Alcohol.Frequency,
-    Alcohol.Intensity,
-    HLTH.BMI,
-    Smoker,
-    ChildrenNum,
-    # GenCohort,
-    partnerlost_job,
     lost_job,
-    began_relationship,
-    Alcohol.Intensity,
-    Alcohol.Frequency,
-    SexualSatisfaction,
-    POWERDEPENDENCE1,
-    POWERDEPENDENCE2,
-    Your.Future.Security,
-    Your.Personal.Relationships,
-    Your.Health,
-    Standard.Living,
+    Male,
+    NWI,
+    NZdep,
+    NZSEI13,
+    Parent,
+    Partner,
+    partnerlost_job,
     PERFECTIONISM,
     PermeabilityIndividual,
-    ImpermeabilityGroup,
-    SWB.SoC01
+    Pol.Orient,
+    POWERDEPENDENCE1,
+    POWERDEPENDENCE2,
+    Relid,
+    Religion.Church2,
+    Religion.Prayer2,
+    Religion.Scripture2,
+    Religious,
+    Respect.Self,
+    retired,
+    RWA,
+    Rumination,
+    SDO,
+    semiretired,
+    SELF.CONTROL,
+    SELF.ESTEEM,
+    SexualSatisfaction,
+    SFHEALTH,
+    Smoker,
+    Spiritual.Identification,
+    Standard.Living,
+    SUPPORT,
+    SWB.SoC01,
+    Urban,
+    VENGEFUL.RUMIN,
+    Your.Health,
+    Your.Future.Security,
+    Your.Personal.Relationships,
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-#  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
-  dplyr::mutate(Edu = as.numeric(Edu)) %>%
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
-  dplyr::mutate(Edu = as.numeric(Edu),
-                #   Volunteers = if_else(HoursCharity == 1, 1, 0),
-                # Depressed = (as.numeric(
-                #   cut(
-                #     KESSLER6sum,
-                #     breaks = c(-Inf, 13, Inf),
-                #     labels = c("0", "1"),
-                #     right = FALSE
-                #   )
-                # ) - 1),
-                # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
+  dplyr::mutate(
+    Edu = as.numeric(Edu),
+    # Volunteers = if_else(HoursCharity == 1, 1, 0),
+    # Depressed = (as.numeric(
+    #   cut(
+    #     KESSLER6sum,
+    #     breaks = c(-Inf, 13, Inf),
+    #     labels = c("0", "1"),
+    #     right = FALSE
+    #   )
+    # ) - 1),
+    # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+    Church = ifelse(Religion.Church2 > 8, 8, Religion.Church2),
+    income_log = log(Household.INC + 1),
+  ) %>%
   arrange(Id, Wave)  %>% #
   dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
     c(
-      NZSEI13,
-      NZdep,
-      Employed,
-      Household.INC,
-      community,
-      Hours.Work,
-      HLTH.Disability,
-      EmotionRegulation1,
-      EmotionRegulation2,
-      EmotionRegulation3,
-      Bodysat,
-      VENGEFUL.RUMIN,
-      KESSLER6sum,
       HLTH.Fatigue,
       Rumination,
-      Smoker,
-      HLTH.BMI,
-      BELONG,
-      SUPPORT,
-      CharityDonate,
-      HoursCharity,
-      GRATITUDE,
-      Hours.Work,
-      HLTH.SleepHours,
-      HLTH.Disability,
-      Hours.Exercise,
+      KESSLER6sum,
+      community,
+      SFHEALTH,
       LIFEMEANING,
       LIFESAT,
-      # PWI, can reconstruct later
-      NWI,
-      SFHEALTH,
-      SELF.CONTROL,
-      SFHEALTH,
+      Hours.Work,
       SELF.ESTEEM,
+      SELF.CONTROL,
       Respect.Self,
-      SELF.ESTEEM,
-      SELF.CONTROL,
-      Emp.WorkLifeBalance,
       Alcohol.Frequency,
-      Alcohol.Intensity,
+      HLTH.SleepHours,
+      Hours.Exercise,
+      HoursCharity,
+      HLTH.BMI,
+      HLTH.Disability,
+      Smoker,
+      NWI,
+      BELONG,
+      SUPPORT,
+      #   Volunteers,
+      GRATITUDE,
       SexualSatisfaction,
       POWERDEPENDENCE1,
       POWERDEPENDENCE2,
+      CharityDonate,
+      Alcohol.Intensity,
+      PERFECTIONISM,
+      Bodysat,
+      VENGEFUL.RUMIN,
+      community,
+      HONESTY_HUMILITY,
+      # EmotionRegulation1,
+      # EmotionRegulation2,
+      # EmotionRegulation3, Every high missingness
+      Emp.WorkLifeBalance,
+      PermeabilityIndividual,
+      ImpermeabilityGroup,
       Your.Future.Security,
       Your.Personal.Relationships,
       Your.Health,
       Standard.Living,
-      PERFECTIONISM,
       PermeabilityIndividual,
       ImpermeabilityGroup,
+      NZSEI13
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
@@ -242,26 +235,26 @@ df_cr <- tab_in %>%
   dplyr::filter(Religious == 1) %>%
   dplyr::select(
     -c(
-      Religion.Church,
+      Religion.Church2,
       # EthCat,
       Religious,
-      #  HoursCharity,
+      #   HoursCharity,
       Respect.Self_lead2,
+      Household.INC,
       #  org2018,
       #  not_euro,
       #  not_euro_lead2,
       # hold18,
       #   Euro,
-      retired,
-      semiretired,
       Emp.WorkLifeBalance,
-      YearMeasured
+      YearMeasured,
       #HLTH.Disability_lead1,
       # org2019,
       # hold19,
       # retired,
       # semiretired,
-    )) %>%
+    )
+  ) %>%
   #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
   arrange(Id, Wave) %>%
   droplevels() %>%
@@ -270,16 +263,17 @@ df_cr <- tab_in %>%
   arrange(Id)
 
 
-table1::table1(~ Church + SDO +  factor(Retiredp) |
-                 Wave ,
-               data = df_cr,
-               overall = FALSE)#11953
+
+table1::table1( ~ Church + SDO +  factor(Retiredp) |
+                  Wave ,
+                data = df_cr,
+                overall = FALSE)#11953
 
 
 # Filtering retirement -- consistency and positivity assumptions
 # number of ids
 N <- length(unique(df_cr$Id))
-N  #11945
+N  #11953
 
 # inspect data
 skim(df_cr) |>
@@ -287,20 +281,100 @@ skim(df_cr) |>
 
 
 ## tables
-df_cr$EthCat
+
 
 df_crr <-  df_cr |>
-  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0))
+  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
+  dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0))
 
-df_crr <- df_cr |> dplyr::group_by(Id) |> mutate(PWI = mean(
-  c(
-    Your.Future.Security,
-    Your.Personal.Relationships,
-    Your.Health,
-    Standard.Living
-  ),
-  na.rm = TRUE
-))
+
+df_crr <- df_crr |> dplyr::group_by(Id) |>
+  mutate(PWI = mean(
+    c(
+      Your.Future.Security,
+      Your.Personal.Relationships,
+      Your.Health,
+      Standard.Living
+    ),
+    na.rm = TRUE
+  )) |>
+  mutate(PWI_lead2 = mean(
+    c(
+      Your.Future.Security_lead2,
+      Your.Personal.Relationships_lead2,
+      Your.Health_lead2,
+      Standard.Living_lead2
+    ),
+    na.rm = TRUE
+  )) |>
+  ungroup() |>
+  dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
+  #  dplyr::mutate(Volunteers = if_else(HoursCharity > 1, 1, 0)) |>
+  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
+  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
+  dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity + 1)) %>%
+  dplyr::mutate(Exercise_log = log(Hours.Exercise + 1)) %>%
+  dplyr::mutate(Rumination_ord = as.integer(round(Rumination, digits = 0) + 1)) %>%  # needs to start at 1
+  dplyr::mutate(SUPPORT_ord = as.integer(round(SUPPORT, digits = 0))) %>%
+  dplyr::mutate(PERFECTIONISM_ord = as.integer(round(PERFECTIONISM, digits = 0))) %>%
+  dplyr::mutate(VENGEFUL.RUMIN_ord = as.integer(round(VENGEFUL.RUMIN, digits = 0))) %>%
+  dplyr::mutate(Standard.Living_ord = as.integer(round(Standard.Living, digits = 0))) %>%
+  dplyr::mutate(Euro = ifelse(EthCat == 0, 1, 0)) |>
+  dplyr::mutate(Retiredp = if_else((retired == 1 |
+                                      semiretired == 1), 1, 0)) %>%
+  dplyr::mutate(Your.Personal.Relationships_ord = as.integer(round(Your.Personal.Relationships, digits = 0) + 1)) %>%
+  dplyr::mutate(LIFEMEANING_ord = as.integer(round(LIFEMEANING, digits = 0))) %>%
+  dplyr::mutate(HLTH.Fatigue_ord = as.integer(round(HLTH.Fatigue, digits = 0) + 1)) %>%
+  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
+  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1 / 10)) %>%
+  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1))) %>%
+  dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
+  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) |>
+  droplevels() |>
+  dplyr::mutate(KESSLER6sum = round(as.integer(KESSLER6sum, 0))) %>%
+  dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
+  dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
+  dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
+  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0)) %>%
+  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1)) %>%
+  plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
+  dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
+  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
+  dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2 + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2 + 1)) %>%
+  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
+  dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
+  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity + 1)) %>%
+  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
+  dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
+  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0))) %>%
+  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
+  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0))) %>%
+  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(
+    Your.Personal.Relationships_lead2, digits = 0
+  ) + 1)) %>%
+  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0))) %>%
+  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0) +
+                                                     1)) %>%
+  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
+  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) +
+                                                          1)) %>%
+  dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0))) %>%
+  dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
+  dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
+  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
+  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
+  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
+  dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
+  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2 / 10)) %>%
+  dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of
+  dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) #%>%
+
+
+
+
 
 df_crr$Male <- factor(df_cr$Male, labels = c("No", "Yes"))
 df_crr$EthnicIdentification <-
@@ -314,9 +388,12 @@ df_crr$Volunteers <-
   factor(df_crr$Volunteers, labels = c("No", "Yes"))
 df_crr$Parent <- factor(df_cr$Parent, labels = c("No", "Yes"))
 df_crr$Partner <- factor(df_cr$Partner, labels = c("No", "Yes"))
+df_crr$Retired <- factor(df_cr$retired, labels = c("No", "Yes"))
+df_crr$SemiRetired <-
+  factor(df_cr$semiretired, labels = c("No", "Yes"))
 df_crr$Urban <- factor(df_cr$Urban, labels = c("No", "Yes"))
 df_crr$Retired_partialorfull <-
-  factor(df_cr$Retiredp, labels = c("No", "Yes"))
+  factor(df_cr$Retiredp labels = c("No", "Yes"))
 df_crr$LostJob <-  factor(df_cr$lost_job, labels = c("No", "Yes"))
 df_crr$PartnerLostJob <-
   factor(df_cr$partnerlost_job, labels = c("No", "Yes"))
@@ -365,12 +442,13 @@ table1::table1(
     Parent +
     Partner +
     PoliticalOrientationRight +
-   # PartnerLostJob +
+    PartnerLostJob +
     Spiritual.Identification +
     RespectSelf_baseline +
-    Retiredp +
+    Retired +
     RightWingAuthoritarian +
     SocialDominanceOrientation +
+    SemiRetired +
     SpiritualIdentification +
     Urban +
     AGREEABLENESS +
@@ -425,148 +503,17 @@ table1::table1(
 
 table1::table1(
   ~ BELONG +
-    NeighbourhoodCommunity,
-    # SUPPORT +
-    # National.Identity +
-    # PATRIOT,
+    NeighbourhoodCommunity +
+    SUPPORT +
+    National.Identity +
+    PATRIOT,
   data = df_crr,
   transpose = F
 )
 
 
 
-# mice model  -------------------------------------------------------------
-library(mice)
-
-mice_cr <- df_cr %>%
-  dplyr::select(-c(Wave, Id))  # won't otherwise run
-
-
-library(naniar)
-naniar::gg_miss_var(mice_cr)
-vis_miss(mice_cr,
-         warn_large_data = FALSE)
-
-# any colinear vars?
-mice:::find.collinear(mice_cr)
-
-# impute
-cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
-
-# save
-saveh(cr_mice, "cr_mice2")
-
-
-# read
-cr_mice <- readh("cr_mice2")
-# checks
-outlist2 <-
-  row.names(cr_mice)[cr_mice$outflux < 0.5]
-length(outlist2)
-
-# checks
-head(cr_mice$loggedEvents, 10)
-
-# data warangling
-# we create two completed data sets -- the one without the missing data will be useful for
-# determing causal contrasts -- which we'll describe below.
-
-ml <- mice::complete(cr_mice, "long", inc = TRUE)
-
-
-# inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
-skimr::skim(ml)
-
-# create variables in z score
-N <- length(unique(df_cr$Id))
-N
-dat$Household.INC
-ml <- ml %>%
-  dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
-  # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
- # dplyr::mutate(income_log = log(Household.INC + 1)) |>
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
-  plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
-  dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0)) |>
-  dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
-  dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
-  dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
-  dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0)) %>%
-  dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1)) %>%
-  dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
-  dplyr::mutate(Hours.Exercise = round(Hours.Exercise, 0)) %>%
-  dplyr::mutate(CharityDonate_log_lead2 = log(CharityDonate_lead2 + 1)) %>%
-  dplyr::mutate(Alcohol.Intensity_log_lead2 = log(Alcohol.Intensity_lead2 + 1)) %>%
-  dplyr::mutate(Exercise_log_lead2 = log(Hours.Exercise_lead2 + 1)) %>%
-  dplyr::mutate(CharityDonate_log = log(CharityDonate + 1)) %>%
-  dplyr::mutate(Alcohol.Intensity_log = log(Alcohol.Intensity + 1)) %>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) + 1)) %>%
-  dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
-  dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
-  dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0))) %>%
-  dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
-  dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0))) %>%
-  dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(
-    Your.Personal.Relationships_lead2, digits = 0
-  ) + 1)) %>%
-  dplyr::mutate(LIFEMEANING_lead2ord = as.integer(round(LIFEMEANING_lead2, digits = 0))) %>%
-  dplyr::mutate(HLTH.Fatigue_lead2ord = as.integer(round(HLTH.Fatigue_lead2, digits = 0) +
-                                                     1)) %>%
-  dplyr::mutate(Hours.Exercise_log = log(Hours.Exercise + 1)) %>%
-  dplyr::mutate(Alcohol.Frequency_lead2ord = as.integer(round(Alcohol.Frequency_lead2, 0) +
-                                                          1)) %>%
-  dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0))) %>%
-  dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
-  dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
-  dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
-  # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
-  # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
-  dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
-  dplyr::mutate(NZSEI13_lead2_10 =  as.integer(NZSEI13_lead2 / 10)) %>%
-  dplyr::group_by(id) |>
-  dplyr::mutate(PWI = mean(
-    c(
-      Your.Future.Security,
-      Your.Personal.Relationships,
-      Your.Health,
-      Standard.Living
-    ),
-    na.rm = TRUE
-  )) |>
-  dplyr::mutate(PWI_lead2 = mean(
-    c(
-      Your.Future.Security_lead2,
-      Your.Personal.Relationships_lead2,
-      Your.Health_lead2,
-      Standard.Living_lead2
-    ),
-    na.rm = TRUE
-  )) |>
-  ungroup() |>
-  # dplyr::mutate(K
-  dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z)) |>
-  dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
-
-
-# Get data into shape
-ml <- ml %>% mutate_if(is.matrix, as.vector)
-
-ml <- mice::as.mids(ml)
-mf <- mice::complete(ml, "long", inc = F)
-
-
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
-
-
-
-###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
-
-# model equations ---------------------------------------------------------
+# cvars model  -------------------------------------------------------------
 
 cvars = c(
   "AGREEABLENESS_z",
@@ -599,7 +546,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-  "income_log_z",
+ # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -642,7 +589,7 @@ cvars = c(
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
 
-df <- ml
+df <- df_crr
 
 ############### SET YOUR EXPOSURE VARIABLE, ###############  ###############  ###############
 
@@ -690,7 +637,7 @@ p = c(r, f) #
 delta = abs(r - f)
 
 ylim = c(-.25, .4)  # SET AS YOU LIKE -- here, how much movement across a standard deviation unit of the outcome
-ylim_contrast = c(.5,2)# SET AS YOU LIKE (FOR CONTRASTS )
+ylim_contrast = c(0, 3)  # SET AS YOU LIKE (FOR CONTRASTS )
 
 # mice imputed data
 ## THIS IS KEY, NAME THE DATA I GAVE YOU "DF"
@@ -742,7 +689,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-#  "income_log_z",
+ # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -760,10 +707,11 @@ cvars = c(
   "POWERDEPENDENCE2_z",
   "Relid_z",
   "Respect.Self_z",
-  "Retiredp_z",
+  "retired",
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
+  "semiretired",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -829,9 +777,114 @@ cvars = c(
 # round(EValue::evalues.RR(, lo =  , hi = , true = 1), 4)
 #
 
-
 ################# BELOW THE MANY OUTCOMES!  ########################################
 
+# functions ---------------------------------------------------------------
+
+
+
+glm_nomi = function(X, Y, df, cvars, family = family) {
+  # requires that a MATCH THEM dataset is converted to a mice object
+  # weights must be called "weights)
+  require("splines")
+  out_m <- glm(as.formula(paste(
+    paste(Y, "~ bs(", X , ")+"),
+    paste(cvars, collapse = "+")
+  )), family = family, data = df)
+  return(out_m)
+}
+
+vanderweelevalue_ols_nomi = function(out_ct, f, delta, sd) {
+  coef <- round(out_ct, 3)  |>  slice(f + 1)
+  evalout <-
+    as.data.frame(round(
+      EValue::evalues.OLS(
+        coef[1, 1],
+        se = coef[1, 2],
+        sd = 1,
+        delta = delta,
+        true = 0
+      ),
+      3
+    ))
+  evalout2 <- subset(evalout[2, ])
+  evalout2
+  evalout3 <- evalout2 |>
+    select_if( ~ !any(is.na(.)))
+  evalout3
+  colnames(evalout3) <- c("E-value", "threshold")
+  evalout3
+  tab <- round(cbind.data.frame(coef, evalout3), 3)
+  rownames(tab) <- main
+  return(tab)
+}
+
+vanderweelevalue_rr_nomi = function(out_ct, f) {
+  require("EValue")
+  coef <- round(out_ct, 3)  |>  slice(f + 1)
+  evalout <-
+    as.data.frame(round(EValue::evalues.RR(
+      coef[1, 1] ,
+      lo =  coef[1, 4],
+      hi = coef[1, 3],
+      true = 1
+    ), 3))
+  evalout2 <- subset(evalout[2, ])
+  evalout3 <- evalout2 |>
+    select_if( ~ !any(is.na(.)))
+  colnames(evalout3) <- c("E-value", "threshold")
+  tab <- cbind.data.frame(coef, evalout3)
+  rownames(tab) <- c(main)
+  return(tab)
+}
+
+# plots
+ggplot_stglm_nomi <-
+  function(out_ct, ylim, main, xlab, ylab, min, p, sub) {
+    require(ggplot2)
+    out <-  out_ct
+    out$row <- 1:nrow(out)
+    out <- out |> dplyr::rename(est = "Estimate",
+                                li = "lower.0.95",
+                                ui = "upper.0.95",
+                                se = "Std..Error")
+    g1 <- out[match(p, x), ]
+    g1
+    ggplot2::ggplot(out, aes(x = row, y = est)) +
+      geom_point() +
+      geom_pointrange(aes(ymin =  li, ymax = ui), colour = "darkgray")  +
+      scale_y_continuous(limits = ylim) +
+      labs(
+        title = main,
+        subtitle = sub,
+        x = xlab,
+        y = ylab
+      ) +
+      geom_pointrange(data = g1, aes(ymin = li, ymax = ui), colour = "red") +  # highlight contrast
+      theme_classic()
+  }
+
+
+
+
+vanderweelevalue_rr_nomi = function(out_ct, f) {
+  require("EValue")
+  coef <- round(out_ct, 3) |>  slice(f + 1)
+  evalout <-
+    as.data.frame(round(EValue::evalues.RR(
+      coef[1, 1] ,
+      lo =  coef[1, 3],
+      hi = coef[1, 4],
+      true = 1
+    ), 3))
+  evalout2 <- subset(evalout[2, ])
+  evalout3 <- evalout2 |>
+    select_if( ~ !any(is.na(.)))
+  colnames(evalout3) <- c("E-value", "threshold")
+  tab <- cbind.data.frame(coef, evalout3)
+  rownames(tab) <- c(main)
+  return(tab)
+}
 
 # HEALTH  INDICATORS ------------------------------------------------------------------
 # alcohol freq ------------------------------------------------------------
@@ -841,57 +894,26 @@ main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
 sub = "How often do you have a drink containing alcohol?"
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-summary(pool(out_m))
-## g-computation
-
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-# coef + estimate for the contrast of interest # We  will combine the coeffients
-#  into a large table, later.
-alcoholfreq_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+alcoholfreq_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 alcoholfreq_c
-
-
-## table for all contrasts (exploratory )
-alcoholfreq_t <- out_ct %>%
-  # #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-
-# show table
-alcoholfreq_t
 # graph
 alcoholfreq_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
     main,
@@ -903,63 +925,36 @@ alcoholfreq_p <-
   )
 
 alcoholfreq_p
-
-
-
-# Alcohol.Intensity ----------------------------------------------------------
-#How many drinks containing alcohol do you have on a typical day when drinking?
+#-----------------------------------#How many drinks containing alcohol do you have on a typical day when drinking?
 
 Y = "Alcohol.Intensity_log_lead2_z"
 main = "Alcohol Intensity"
 ylab = "Alcohol Intensity (SD)"
 sub = "How many drinks containing alcohol do you have on a typical day when drinking?"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-
 # coef + estimate
-alcoholintensity_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-alcoholintensity_c
 
-alcoholintensity_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-alcoholintensity_t
+out_m <-
+  glm_nomi(
+    df = df,
+    X = X,
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
+  )
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
+
+alcoholintensity_c <-
+  vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
+
+
 # graph
 alcoholintensity_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
     main,
@@ -969,9 +964,8 @@ alcoholintensity_p <-
     p = p,
     sub = sub
   )
+alcoholintensity_c
 alcoholintensity_p
-
-
 
 
 
@@ -986,61 +980,35 @@ ylab = "BMI (SD)"
 sub = "What is your height? (metres)\nWhat is your weight? (kg)\nKg *1/(m*m)"
 
 
-# run model
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-# summary(pool(out_m))
-## contrasts
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = m,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-# g-computation - contrasts
-#table
-bmi_t <- out_ct %>%
-  slice(1:8) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-bmi_t
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
+
+
+bmi_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 bmi_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
-  ) #+ expand_limits(x = 0, y = 0)
+  )
+
 bmi_p
-
-# coef + estimate
-bmi_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-bmi_c
-
 
 # exercise ---------------------------------------------------------------
 # Hours spent … exercising/physical activity
@@ -1049,67 +1017,36 @@ main = "Log Hours Exercise"
 ylab = "Log Hours Exercise (SD)"
 sub = "Hours spent … exercising/physical activity"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-#contrast
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-max
-excercise_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-excercise_t
-# graph
-exercise_p <-
-  ggplot_stglm(
+excercise_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
+excercise_p <-
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-exercise_p
 
-# coef + estimate
-exercise_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-exercise_c
-
+excercise_p
+excercise_c
 
 # sf-health ---------------------------------------------------------------
 # Short-Form Subjective Health Scale (General Health Perception Subscale)
@@ -1124,65 +1061,35 @@ sub = "In general, would you say your health is...\nI seem to get sick a little 
 
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-sfhealth_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-sfhealth_t
-# graph
+
+sfhealth_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 sfhealth_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-sfhealth_p
-
-# coef + estimate
-sfhealth_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 sfhealth_c
-
+sfhealth_p
 
 # HLTH.Sleep --------------------------------------------------------------
 #During the past month, on average, how many hours of actual sleep did you get per night?
@@ -1192,64 +1099,34 @@ main = "Hours Sleep"
 ylab = "Hours Sleep (SD)"
 sub = "During the past month, on average, how many hours\nof actual sleep did you get per night?"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-sleep_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-sleep_t
-# graph
+sleep_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 sleep_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-sleep_p
 
-# coef + estimate
-sleep_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-sleep_c
+sleep_p
 
 
 # smoker ------------------------------------------------------------------
@@ -1260,52 +1137,30 @@ family = "binomial" # could be binomial if binary utcome is rare
 main = "Smoking (RR)"
 ylab = "Smoking (Risk Ratio)"
 sub = "Do you currently smoke?"
-# clean oven
-rm(out_m)
-rm(out_ct)
-# bake
-out_m <- mice_generalised(
-  df = df,
-  X = X,
-  Y = Y,
-  cvars = cvars,
-  family = family
-)
-out_m
-## contrasts
-out_ct <-
-  pool_stglm_contrast_ratio(
-    out_m,
+
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = m,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "binomial",
+    cvars = cvars
   )
-# g-computation - contrasts
-#table
-smoker_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-smoker_t
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "ratio"
+  )))
+
+
+smoker_c <- vanderweelevalue_rr_nomi(out_ct, f)
+smoker_c
+
+
+# graph
 smoker_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim_contrast,
     main,
@@ -1314,14 +1169,9 @@ smoker_p <-
     min = min,
     p = p,
     sub = sub
-  ) + expand_limits(x = 0, y = 0)
+  )
+
 smoker_p
-
-
-# coef + estimate
-smoker_c <- vanderweelevalue_rr(out_ct, f)
-smoker_c
-
 
 ### EMBODIED WELL BEING ----------------------------------------------------
 
@@ -1333,66 +1183,35 @@ main = "Body Satisfaction"
 ylab = "Body Satisfaction (SD)"
 sub = "Am satisfied with the appearance,\nsize and shape of my body."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-# coef + estimate
-bodysat_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-bodysat_c
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
 
-bodysat_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-bodysat_t
-# graph
+bodysat_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 bodysat_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-bodysat_p
 
+bodysat_p
 
 # kessler 6 ---------------------------------------------------------------
 
@@ -1409,66 +1228,35 @@ main = "Kessler 6 Distress"
 ylab = "Kessler 6 Distress (SD)"
 sub = "During the last 30 days, how often did....\nyou feel hopeless?\nyou feel so depressed that nothing could cheer you up?\nyou feel restless or fidgety?\nyou feel that everything was an effort?\nyou feel worthless?\nyou feel nervous?"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-summary(pool(out_m))
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-# coef + estimate
-distress_c <- vanderweelevalue_ols(out_ct, f - min, delta, sd)
+distress_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
+distress_p <- ggplot_stglm_nomi(
+  out_ct,
+  ylim = ylim,
+  main = main
+  ,
+  xlab,
+  ylab,
+  min = min,
+  p = p,
+  sub = sub
+)
 distress_c
-
-
-distress_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-distress_t
-# graph
-distress_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  )
 distress_p
+
 
 
 # fatigue -----------------------------------------------------------------
@@ -1479,66 +1267,36 @@ main = "Fatigue"
 ylab = "Fatigue (SD)"
 sub = "During the last 30 days, how often did....\nyou feel exhausted?"
 
-
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-# coef + estimate
-fatigue_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-fatigue_c
-
-
-fatigue_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-fatigue_t
-# graph
+fatigue_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 fatigue_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+fatigue_c
 fatigue_p
+
 
 
 # rumination --------------------------------------------------------------
@@ -1549,64 +1307,36 @@ main = "Rumination"
 ylab = "Rumination (SD)"
 sub = "During the last 30 days, how often did....\nyou have negative thoughts that repeated over and over?"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-
-# coef + estimate
-rumination_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-rumination_c
-
-rumination_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-rumination_t
-# graph
+rumination_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 rumination_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
 rumination_p
+
+rumination_c
 
 
 # self control ------------------------------------------------------------
@@ -1617,65 +1347,36 @@ main = "Self Control"
 ylab = "Self Control (SD)"
 sub = "In general, I have a lot of self-control.\nI wish I had more self-discipline."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-# coef + estimate
-
-selfcontrol_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-selfcontrol_c
-
-selfcontrol_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-selfcontrol_t
-# graph
+selfcontrol_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 selfcontrol_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+selfcontrol_c
 selfcontrol_p
+
 
 
 # sex satisfaction --------------------------------------------------------
@@ -1684,63 +1385,36 @@ Y = "SexualSatisfaction_lead2_z"
 main = "Sexual Satisfaction"
 ylab = "Sexual Satisfaction (SD)"
 sub = "How satisfied are you with your sex life?"
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-# coef + estimate
-sexualsat_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-sexualsat_c
-
-sexualsat_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-sexualsat_t
-# graph
+sexualsat_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 sexualsat_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+sexualsat_c
 sexualsat_p
 
 
@@ -1759,64 +1433,36 @@ main = "Gratitude"
 ylab = "Gratitude (SD)"
 sub = "I have much in my life to be thankful for.\nWhen I look at the world, I don’t see much to be grateful for.\nI am grateful to a wide variety of people."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-# coef + estimate
-gratitude_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-gratitude_c
-
-gratitude_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-gratitude_t
-# graph
+gratitude_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 gratitude_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+gratitude_c
 gratitude_p
+
 
 
 
@@ -1828,63 +1474,34 @@ main = "Impermeability Group"
 ylab = "Impermeability Group (SD)"
 sub = "The current income gap between New Zealand Europeans and\nother ethnic groups would be very hard to change."
 
-
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-groupimperm_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-groupimperm_c
-
-groupimperm_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-groupimperm_t
-# graph
+groupimperm_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 groupimperm_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+groupimperm_c
 groupimperm_p
 
 
@@ -1897,63 +1514,34 @@ ylab = "Permeability of Individual (SD)"
 sub = "I believe I am capable, as an individual,\nof improving my status in society."
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-selfperm_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-selfperm_c
-
-
-selfperm_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-selfperm_t
-# graph
+selfperm_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 selfperm_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+selfperm_c
 selfperm_p
 
 # life sat ----------------------------------------------------------------
@@ -1966,63 +1554,34 @@ main = "Life Satisfaction"
 ylab = "Life Satisfaction (SD)"
 sub = "I am satisfied with my life.\nIn most ways my life is close to ideal."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-lifesat_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-lifesat_c
-
-
-lifesat_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-lifesat_t
-# graph
+lifesat_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 lifesat_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+lifesat_c
 lifesat_p
 
 
@@ -2036,62 +1595,34 @@ main = "Life Meaning"
 ylab = "Life Meaning (SD)"
 sub = "My life has a clear sense of purpose.\nI have a good sense of what makes my life meaningful."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-meaning_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-meaning_c
-
-meaning_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-meaning_t
-# graph
+meaning_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 meaning_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+meaning_c
 meaning_p
 
 # perfectionism  ----------------------------------------------------------
@@ -2105,62 +1636,34 @@ main = "Perfectionism"
 ylab = "Perfectionism (SD)"
 sub = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-perfect_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-perfect_c
-
-perfect_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-perfect_t
-# graph
+perfect_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 perfect_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+perfect_c
 perfect_p
 
 # PWI ---------------------------------------------------------
@@ -2175,64 +1678,37 @@ main = "Person Wellbeing Index"
 ylab = "PWI (SD)"
 sub = "Satisfied with...\nYour health.\nYour standard of living.\nYour future security.\nYour personal relationships."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-pwi_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-pwi_c
-
-pwi_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-pwi_t
-# graph
+pwi_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 pwi_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-pwi_p
+
+
 pwi_c
+pwi_p
+
 
 
 # power dependence 1 ------------------------------------------------------
@@ -2242,65 +1718,35 @@ main = "Power Dependence 1"
 ylab = "Power Dependence 1(SD)"
 sub = "I do not have enough power or control\nover important parts of my life."
 
-
-
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
 powerdependence1_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-powerdependence1_c
-
-powerdependence1_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-powerdependence1_t
-# graph
+  vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 powerdependence1_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+powerdependence1_c
 powerdependence1_p
 
 
@@ -2313,64 +1759,39 @@ main = "Power Dependence 2"
 ylab = "Power Dependence 2(SD)"
 sub = "Other people have too much power or control\nover important parts of my life."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
 powerdependence2_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-powerdependence2_c
-
-powerdependence2_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-powerdependence2_t
-# graph
+  vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 powerdependence2_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+powerdependence2_c
 powerdependence2_p
+
+
+
 
 # self esteem -------------------------------------------------------------
 # Self-esteem
@@ -2385,62 +1806,36 @@ ylab = "Self Esteem (SD)"
 sub = "On the whole am satisfied with myself.\nTake a positive attitude toward myself.\nAm inclined to feel that I am a failure."
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-selfesteem_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-selfesteem_c
-
-selfesteem_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-selfesteem_t
-# graph
+selfesteem_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 selfesteem_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+selfesteem_c
 selfesteem_p
 
 
@@ -2456,62 +1851,36 @@ main = "Vengefulness (anti-Foregiveness)"
 ylab = "Vengefulness (anti-Foregiveness) (SD)"
 sub = "Sometimes I can't sleep because of thinking about\npast wrongs I have suffered.\nI can usually forgive and forget when someone does me wrong.\nI find myself regularly thinking about past times that I have been wronged."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-veng_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-veng_c
-
-veng_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-veng_t
-# graph
+veng_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 veng_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+veng_c
 veng_p
 
 
@@ -2527,65 +1896,37 @@ ylab = "Work Life Balance (SD)"
 sub = "I have a good balance between work and\nother important things in my life."
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-
-worklife_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-worklife_c
-
-worklife_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show tablet
-worklife_t
-# graph
+worklife_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 worklife_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
-worklife_p
+
 worklife_c
+worklife_p
+
+
 
 # SOCIAL CONNECTION AND BELONGING -----------------------------------------
 
@@ -2600,66 +1941,36 @@ worklife_c
 Y = "BELONG_lead2_z"
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
-sub = "Know that people in my life accept and value me.\nFeel like an outsider.\nKnow that people around me share my attitudes and beliefs."
+sub = " Know that people in my life accept and value me.\nFeel like an outsider.\nKnow that people around me share my attitudes and beliefs."
 
-
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-belong_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-belong_c
-
-
-belong_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-belong_t
-# graph
+belong_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 belong_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+belong_c
 belong_p
 
 
@@ -2667,66 +1978,38 @@ belong_p
 # community ----------------------------------------------------------
 #I feel a sense of community with others in my local neighbourhood.
 Y = "community_lead2_z"
-main = "Neighbourhood Community"
+main = "Community"
 ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-community_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-community_c
-
-community_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-community_t
-# graph
+community_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 community_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+community_c
 community_p
 
 
@@ -2743,64 +2026,36 @@ main = "National Well Being"
 ylab = "National Well Being (SD)"
 sub = "Satisfied with ...\nThe economic situation in New Zealand.\nThe social conditions in New Zealand.\nBusiness in New Zealand."
 
-
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-nwi_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-nwi_c
-
-nwi_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-nwi_t
-# graph
+nwi_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 nwi_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+nwi_c
 nwi_p
+
 
 # soc support -------------------------------------------------------------
 # Perceived social support
@@ -2814,64 +2069,34 @@ ylab = "Social Support (SD)"
 sub = 'There are people I can depend on to help me if I really need it.\nThere is no one I can turn to for guidance in times of stress.\nI know there are people I can turn to when I need help.'
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-
-support_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-support_c
-
-
-support_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-support_t
-# graph
+support_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 support_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+support_c
 support_p
 
 
@@ -2956,62 +2181,35 @@ main = "Charity Donations (annual)"
 ylab = "Charity Donations (annual)"
 sub = "How much money have you donated to charity in the last year?"
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-charity_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-charity_c
-
-charity_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-charity_t
-# graph
+charity_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 charity_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
-    ylim = c(-.3, .4),
-    main,
+    ylim = ylim,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+charity_c
 charity_p
 
 
@@ -3022,60 +2220,31 @@ charity_p
 Y = "Volunteers_lead2"
 main = "Volunteer (RR)"
 ylab = "Volunteer (Risk Ratio)"
-family = "poisson" # binary outcome not rare
+family = "binomial" # binary outcome  rare
 sub = "Hours spent … voluntary/charitable work"
-# clean oven
-rm(out_m)
-rm(out_ct)
-# fit regression model
-out_m <- mice_generalised(
-  df = df,
-  X = X,
-  Y = Y,
-  cvars = cvars,
-  family = family
-)
-# g-computation - contrasts
-out_ct <-
-  pool_stglm_contrast_ratio(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-#table
-out_ct
-# coef + estimate
 
-# Create risk ratio table
-volunteers_c <- vanderweelevalue_rr(out_ct, f)
+
+out_m <-
+  glm_nomi(
+    df = df,
+    X = X,
+    Y = Y,
+    family = "binomial",
+    cvars = cvars
+  )
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "ratio"
+  )))
+
+out_ct
+volunteers_c <- vanderweelevalue_rr_nomi(out_ct, f)
 volunteers_c
 
-
-volunteers_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-volunteers_t
+# graph
 volunteers_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim_contrast,
     main,
@@ -3084,8 +2253,13 @@ volunteers_p <-
     min = min,
     p = p,
     sub = sub
-  ) +  expand_limits(x = 0, y = 0)
+  )
+
 volunteers_p
+
+volunteers_c
+volunteers_p
+
 
 #
 # # log household income --------------------------------------------------------------
@@ -3232,62 +2406,34 @@ ylab = "Occupational Status/10"
 sub = "NZ Socio-economic index 2013: Occupational Prestige"
 
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-nzsei_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-nzsei_c
-
-nzsei_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-nzsei_t
-# graph
+nzsei_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 nzsei_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+nzsei_c
 nzsei_p
 
 # stand living ------------------------------------------------------------
@@ -3302,63 +2448,38 @@ Y = "Standard.Living_lead2_z"
 main = "Standard Living"
 ylab = "Standard Living (SD)"
 sub  = "Satisfied with ...Your standard of living."
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-standardliving_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-standardliving_c
-
-standardliving_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-standardliving_t
-# graph
+standardliving_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 standardliving_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+
+standardliving_c
 standardliving_p
 
 
@@ -3375,133 +2496,81 @@ Y = "Your.Future.Security_lead2_z"
 main = "Your Future Security"
 ylab = "Your Future Security (SD)"
 sub  = "Satisfied with ...Your Future Security."
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-yourfuturesecurity_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-yourfuturesecurity_c
-
-yourfuturesecurity_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-yourfuturesecurity_t
-# graph
+yourfuturesecurity_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 yourfuturesecurity_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+yourfuturesecurity_c
 yourfuturesecurity_p
+
+
 
 ## TABLE HEALTH
 
 # Your Health -------------------------------------------------------------
 
 
-
 Y = "Your.Health_lead2_z"
 main = "Your Health"
 ylab = "Your Health (SD)"
 sub  = "Satisfied with ...Your Health."
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-yourhealth_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-yourhealth_c
-
-yourhealth_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-yourhealth_t
-# graph
+yourhealth_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 yourhealth_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+yourhealth_c
 yourhealth_p
+
+
 
 
 # Your Personal Relationships ---------------------------------------------
@@ -3510,63 +2579,38 @@ Y = "Your.Personal.Relationships_lead2_z"
 main = "YourPersonal Relationships"
 ylab = "Your Personal Relationships (SD)"
 sub  = "Satisfied with ...Your Personal Relationships"
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
+
+
+out_m <-
+  glm_nomi(
     df = df,
-    m = 10,
     X = X,
-    x = x,
-    r = r
+    Y = Y,
+    family = "gaussian",
+    cvars = cvars
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+out_c <- stdGlm(out_m, df, X, x)
+out_ct <-
+  data.frame(print(summary(
+    out_c, reference = r, contrast = "difference"
+  )))
 
-yourpersonalrelationships_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-yourpersonalrelationships_c
-
-yourpersonalrelationships_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-yourpersonalrelationships_t
-# graph
+yourpersonalrelationships_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 yourpersonalrelationships_p <-
-  ggplot_stglm(
+  ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
-    main,
+    main = main,
     xlab,
     ylab,
     min = min,
     p = p,
     sub = sub
   )
+
+
+yourpersonalrelationships_c
 yourpersonalrelationships_p
 
 
@@ -3575,10 +2619,11 @@ yourpersonalrelationships_p
 
 # TABLE  HEALTH  -----------------------------------------------
 main = "Health behaviours / Evalues"
+
 h_tab <- rbind(alcoholfreq_c,
                alcoholintensity_c,
                bmi_c,
-               exercise_c,
+               excercise_c,
                sfhealth_c,
                sleep_c,
                smoker_c)
@@ -3591,6 +2636,10 @@ h_tab |>
   row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            # color = "black",
+           background = "bold") |>
+  row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+            color = "blue",
            background = "bold") |>
   kable_minimal(full_width = F)
 
@@ -3609,15 +2658,16 @@ embody_tab <- rbind(
   sexualsat_c
 )
 
+
 embody_tab |>
   kbl(caption = main,
       digits = 3,
       "html") |>
-  # kable_styling() %>%
-  # row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-  #          bold = T,
-  #          # color = "black",
-  #          background = "bold")
+  #kable_styling() %>%
+  row_spec(c(4),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold")
   kable_minimal(full_width = F)
 
 
@@ -3702,6 +2752,7 @@ embody_plots <-
   fatigue_p +
   rumination_p +
   selfcontrol_p +
+  sleep_p +
   sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
                                 tag_levels = "A") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
@@ -3710,14 +2761,14 @@ embody_plots
 
 ggsave(
   embody_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_church", "standardised", "noimpute")),
   width = 16,
   height = 12,
   units = "in",
   filename = "embody_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 
@@ -3738,14 +2789,14 @@ health_plots
 
 ggsave(
   health_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_church", "standardised", "noimpute")),
   width = 16,
   height = 12,
   units = "in",
   filename = "health_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 dev.off()
@@ -3775,14 +2826,14 @@ reflective_plots
 
 ggsave(
   reflective_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_church", "standardised", "noimpute")),
   width = 16,
   height = 12,
   units = "in",
   filename = "reflective_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
@@ -3797,14 +2848,14 @@ social_plots
 
 ggsave(
   social_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_church", "standardised", "noimpute")),
   width = 16,
   height = 12,
   units = "in",
   filename = "social_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 social_plots
@@ -3825,14 +2876,14 @@ econ_plots
 
 ggsave(
   econ_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_church", "standardised", "noimpute")),
   width = 16,
   height = 12,
   units = "in",
   filename = "econ_plots.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 1200
 )
 
 dev.off()
@@ -4213,7 +3264,7 @@ cov <- paste(cvars_ml, collapse = "+")
 
 
 
-table1::table1(~ KESSLER6sum_z | Wave, data = data_ml)
+table1::table1( ~ KESSLER6sum_z | Wave, data = data_ml)
 
 k_lmer <- lme4::lmer(
   KESSLER6sum_z ~ wave * bs(Church) +
@@ -4245,8 +3296,7 @@ k_lmer <- lme4::lmer(
 
 k_ml <- plot(ml_tab <-
                ggeffects::ggpredict(k_lmer, terms = c("Church[0:6]"), facet = F)) + scale_y_continuous(limits = ylim) +
-  theme_classic() + labs(title = "Predicted values of Kessler 6 Distress using multi-level analysis",
-  subtitle = "No temporal ordering in variables")
+  theme_classic()
 
 d_p + k_ml
 
@@ -4275,6 +3325,10 @@ k_ml_tab
 # STATEMENT OF EVALUE -----------------------------------------------------
 
 # “With an observed risk ratio of RR=0.28, an unmeasured confounder that was associated with both the outcome and the exposure by a risk ratio of 6.6-fold each, above and beyond the measured confounders, could explain away the estimate, but weaker joint confounder associations could not; to move the confidence interval to include the null, an unmeasured confounder that was associated with the outcome and the exposure by a risk ratio of 3.1-fold each could do so, but weaker joint confounder associations could not.”
+
+
+
+
 
 
 #COVID19.Timeline
@@ -4414,6 +3468,7 @@ out_c <-
            action = "long",
            include = FALSE,
            mild = TRUE)
+
 m <- 10
 listdat <- list()
 for (i in 1:m) {
