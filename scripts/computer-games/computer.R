@@ -73,7 +73,7 @@ length(unique(tab_in$Id)) # 34783
 # increasing rate
 dat %>%
   group_by(Wave) %>%
-  summarise(mean(Religion.Church2, na.rm = TRUE))
+  summarise(mean(Hours.CompGames, na.rm = TRUE))
 
 # Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
@@ -144,7 +144,6 @@ df_cr <- tab_in %>%
     HoursCharity,
     HLTH.SleepHours,
     HLTH.Disability,
-    Hours.Exercise,
     LIFEMEANING,
     LIFESAT,
     # PWI,  ##  we use the individual
@@ -259,24 +258,12 @@ df_cr <- tab_in %>%
   dplyr::select(
     -c(
       Religion.Church2,
-      # EthCat,
       Religious,
-      #  HoursCharity,
       Respect.Self_lead2,
-      #  org2018,
-      #  not_euro,
-      #  not_euro_lead2,
-      # hold18,
-      #   Euro,
       retired,
       semiretired,
       Emp.WorkLifeBalance,
       YearMeasured
-      #HLTH.Disability_lead1,
-      # org2019,
-      # hold19,
-      # retired,
-      # semiretired,
     )) %>%
   #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
   arrange(Id, Wave) %>%
@@ -286,25 +273,31 @@ df_cr <- tab_in %>%
   arrange(Id)
 
 
-table1::table1(~ Church + Church +  factor(Retiredp) |
-                 Wave ,
-               data = df_cr,
-               overall = FALSE)#11953
+# #table1::table1(~ Church + factor(games_cat) +  factor(Retiredp) |
+#                  Wave ,
+#                data = df_cr,
+#                overall = FALSE)#11953
 
 
 # Filtering retirement -- consistency and positivity assumptions
 # number of ids
 N <- length(unique(df_cr$Id))
-N  #11945
+N  #33148
 
 # inspect data
 skim(df_cr) |>
   arrange(n_missing)
 
+skim(df_cr)
 
 ## tables
 df_cr$EthCat
 
+hist(df_cr$Hours.CompGames, breaks =100)
+
+hist(df_cr$Hours.CompGames)
+
+hist((df_cr$Hours.CompGames/10),breaks = 20)
 df_crr <-  df_cr |>
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0))
 
@@ -473,7 +466,7 @@ saveh(cr_mice, "hours_computergames")
 
 
 # read
-cr_mice <- readh("hours_computergames")
+#cr_mice <- readh("hours_computergames")
 # checks
 outlist2 <-
   row.names(cr_mice)[cr_mice$outflux < 0.5]
@@ -499,14 +492,30 @@ ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   # dplyr::mutate(income_log = log(Household.INC + 1)) |>
-  dplyr::mutate(Church_bin = if_else(Church > 0, 1, 0)) |>
-  dplyr::mutate(Church_lead1_bin = if_else(Church_lead1  > 0, 1, 0)) |>
+ # dplyr::mutate(Church_bin = if_else(Church > 0, 1, 0)) |>
+ # dplyr::mutate(Church_lead1_bin = if_else(Church_lead1  > 0, 1, 0)) |>
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
   dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0)) |>
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
+  dplyr::mutate(
+    Hours.CompGames_lead1_log = log(Hours.CompGames_lead1 + 1),
+    Hours.CompGames_log = log(Hours.CompGames + 1),
+    Hours.Children_log = log(Hours.Children + 1),
+    Hours.Commute_log = log(Hours.Commute + 1),
+    Hours.Exercise_log = log(Hours.Exercise + 1),
+    Hours.Housework_log = log(Hours.Housework + 1),
+    Hours.Internet_log = log(Hours.Internet + 1),
+    Hours.News_log = log( Hours.News + 1),
+    Hours.SocialMedia_log = log(Hours.SocialMedia + 1),
+    Hours.TV_log = log( Hours.TV + 1),
+    Hours.Work_log = log(Hours.Work + 1),
+    HoursCharity_log = log(HoursCharity + 1),
+  ) |>
+  dplyr::mutate(Hours.CompGames_logR = if_else(Hours.CompGames_log > 3,3, Hours.CompGames_log)) %>%
+  dplyr::mutate(Hours.CompGames_lead1_logR = if_else(Hours.CompGames_lead1_log > 3,3, Hours.CompGames_lead1_log)) %>%
   dplyr::mutate(CharityDonate_lead2 = round(CharityDonate_lead2, 0)) %>%
   dplyr::mutate(Hours.Exercise_lead2 = round(Hours.Exercise_lead2, 0)) %>%
   dplyr::mutate(Hours.Exercise_lead2_log = log(Hours.Exercise_lead2 + 1)) %>%
@@ -537,7 +546,7 @@ ml <- ml %>%
   dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
   dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
   dplyr::mutate(Hours.CompGames_10 =  Hours.CompGames / 10) %>%
-  dplyr::mutate(Hours.CompGames_lead1_10 =  Hours.CompGames_lead1_10 / 10) %>%
+  dplyr::mutate(Hours.CompGames_lead1_10 =  Hours.CompGames_lead1/ 10) %>%
   # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
   # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
   dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
@@ -561,11 +570,34 @@ ml <- ml %>%
     ),
     na.rm = TRUE
   )) |>
+  dplyr::mutate(
+    games_cat = (as.numeric(
+      cut(
+        Hours.CompGames,
+        breaks = c(-Inf, 0, 1, 7, Inf),
+        labels = c("0", "1", "1-7",">7"),
+        right = FALSE
+      )
+    ) - 1),
+  ) |>
+  dplyr::mutate(
+    games_cat_lead1 = (as.numeric(
+      cut(
+        Hours.CompGames_lead1,
+        breaks = c(-Inf, 0, 1, 7, Inf),
+        labels = c("0", "1", "1-7",">7"),
+        right = FALSE
+      )
+    ) - 1),
+  ) |>
   ungroup() |>
   # dplyr::mutate(K
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) |>
-  dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
+  dplyr::mutate(id = as.factor(rep(1:N, 11))) |>
+  dplyr::mutate(EthCat = as.factor(EthCat),
+                SexualOrientation = as.factor(SexualOrientation),
+                Gender3 = as.factor(Gender3))# needed for g-comp# Respect for Self is fully missing
 
 
 # Get data into shape
@@ -575,18 +607,30 @@ ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = F)
 nrow(mf)/10
 
-saveh(ml, "churchl_all")
-saveh(mf, "churchf_all")
-
+saveh(ml, "games_ml")
+saveh(mf, "games_mf")
+hist(mf$Hours.CompGames_log)
 
 
 ###### READ THIS DATA IN   #########
-ml <- readh("churchl_all")
-mf <- readh("churchf_all")
+ml <- readh("games_ml")
+mf <- readh("games_mf")
 
 # model equations ---------------------------------------------------------
 
 cvars = c(
+ # "games_cat_z",
+  "Hours.CompGames_logR_z",
+  "Hours.Children_log_z",
+  "Hours.Commute_log_z",
+  "Hours.Exercise_log_z",
+  "Hours.Housework_log_z",
+  "Hours.Internet_log_z",
+  'Hours.News_log_z',
+  "Hours.SocialMedia_log_z",
+  "Hours.TV_log_z",
+  "Hours.Work_log_z",
+  "HoursCharity_log_z",
   "AGREEABLENESS_z",
   "CONSCIENTIOUSNESS_z",
   "EXTRAVERSION_z",
@@ -603,26 +647,28 @@ cvars = c(
   "BELONG_z",
   "CharityDonate_log_z",
   "ChildrenNum_z",
-  # "Church_z",
-  "Church_bin_z",
+  "Church_z",
+ # "Church_bin_z",
   "community",
   "Edu_z",
   "Employed_z",
-  "Euro_z",
+ # "Euro_z",
+  "EthCat",
+   "Gender3",
   "GRATITUDE_z",
   "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_z",
+  "Hours.Children_z",
+  "Hours.Commute_z",
+  "HLTH.SleepHours_z",
   "HLTH.BMI_z",
   "HLTH.Disability_z",
   "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-  "income_log_z",
+ # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
-  "Male_z",
+ # "Male_z",
   "NZdep_z",
   "NWI_z",
   "NZSEI13_z",
@@ -641,6 +687,7 @@ cvars = c(
   "SDO_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
+  "SexualOrientation",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -668,19 +715,18 @@ df <- ml
 ## HERE WE USE THE EXAMPLE OF HOURS WORK / 10
 ###############   IMPORTANT SET YOUR EXPOSURE VARIABLE
 
-X = "Church_lead1_bin"
+X = "Hours.CompGames_lead1_logR"
 
 
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
 
-xlab = "Church_lead1_bin"  ## Monthly Church
-
+xlab = "Hours.CompGames_lead1_logR"  ## Monthly Church
 
 # SET THE RANGE OF religious service FROM ZERO TO 80
 min = 0
-max = 1
+max = 2
 
 
 # set full range of X
@@ -695,7 +741,7 @@ minmax <- paste(c(x), sep = ",")
 r = 0
 
 # focal contrast for X  Someone who goes from 20 to 60 hours of work.
-f = 1
+f = 2
 
 # REQUIRED for certain model model functions
 c = x
@@ -708,7 +754,7 @@ p = c(r, f) #
 #delta = 4 #
 delta = abs(r - f)
 
-ylim = c(-.25, .4)  # SET AS YOU LIKE -- here, how much movement across a standard deviation unit of the outcome
+ylim = c(-.2, .2)  # SET AS YOU LIKE -- here, how much movement across a standard deviation unit of the outcome
 ylim_contrast = c(.5,2)# SET AS YOU LIKE (FOR CONTRASTS )
 
 # mice imputed data
@@ -725,81 +771,7 @@ sd = 1
 #family
 family = "gaussian"
 
-##### BASELINE VARIABLES
-
-cvars = c(
-  "AGREEABLENESS_z",
-  "CONSCIENTIOUSNESS_z",
-  "EXTRAVERSION_z",
-  "HONESTY_HUMILITY_z",
-  "NEUROTICISM_z",
-  "OPENNESS_z",
-  "Age_z",
-  "Alcohol.Frequency_z",
-  "Alcohol.Intensity_log_z",
-  "Bodysat_z",
-  "BornNZ_z",
-  "Believe.God_z",
-  "Believe.Spirit_z",
-  "BELONG_z",
-  "CharityDonate_log_z",
-  "ChildrenNum_z",
-  #"Church_z",
-  "Church_bin_z",
-  "community",
-  "Edu_z",
-  "Employed_z",
-  #"Emp.JobSecure_z",
-  # "EmotionRegulation1_z",
-  # "EmotionRegulation2_z",
-  # "EmotionRegulation3_z",
-  #"Euro_z",
-  "EthCat",
-  "GRATITUDE_z",
-  "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_10_z",
-  "HLTH.BMI_z",
-  "HLTH.Disability_z",
-  "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
-  "ImpermeabilityGroup_z",
-  #  "income_log_z",
-  "KESSLER6sum_z",
-  "LIFEMEANING_z",
-  "LIFESAT_z",
-  "lost_job_z",
-  "Male_z",
-  "NZdep_z",
-  "NWI_z",
-  "NZSEI13_z",
-  "Parent_z",
-  "Partner_z",
-  "PERFECTIONISM_z",
-  "PermeabilityIndividual_z",
-  "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  "Relid_z",
-  "Respect.Self_z",
-  "Retiredp_z",
-  "Rumination_z",
-  "SELF.CONTROL_z",
-  "SELF.ESTEEM_z",
-  "SexualSatisfaction_z",
-  "SFHEALTH_z",
-  "Smoker_z",
-  "Spiritual.Identification_z",
-  "Standard.Living_z",
-  "SUPPORT_z",
-  "Urban_z",
-  "VENGEFUL.RUMIN_z",
-  "Volunteers_z",
-  "Your.Health_z",
-  "Your.Future.Security_z",
-  "Your.Personal.Relationships_z"
-)
-
+##### BASELINE VARIABLE
 
 #
 # ### BASELINE for ML models
@@ -863,7 +835,7 @@ main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
 sub = "How often do you have a drink containing alcohol?"
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -940,13 +912,9 @@ ylab = "Alcohol Intensity (SD)"
 sub = "How many drinks containing alcohol do you have on a typical day when drinking?"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
 ## g-computation
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1010,14 +978,14 @@ sub = "What is your height? (metres)\nWhat is your weight? (kg)\nKg *1/(m*m)"
 
 
 # run model
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
   cvars = cvars,
   family = family
 )
-# summary(pool(out_m))
+summary(pool(out_m))
 ## contrasts
 out_ct <-
   pool_stglm_contrast(
@@ -1062,7 +1030,6 @@ bmi_p <-
     sub = sub
   ) #+ expand_limits(x = 0, y = 0)
 bmi_p
-
 # coef + estimate
 bmi_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 bmi_c
@@ -1076,7 +1043,7 @@ ylab = "Log Hours Exercise (SD)"
 sub = "Hours spent … exercising/physical activity"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1154,7 +1121,7 @@ sub = "In general, would you say your health is...\nI seem to get sick a little 
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1225,7 +1192,7 @@ ylab = "Hours Sleep (SD)"
 sub = "During the past month, on average, how many hours\nof actual sleep did you get per night?"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1298,7 +1265,7 @@ sub = "Do you currently smoke?"
 rm(out_m)
 rm(out_ct)
 # bake
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1368,7 +1335,7 @@ ylab = "Body Satisfaction (SD)"
 sub = "Am satisfied with the appearance,\nsize and shape of my body."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1447,7 +1414,7 @@ ylab = "Kessler 6 Distress (SD)"
 sub = "During the last 30 days, how often did....\nyou feel hopeless?\nyou feel so depressed that nothing could cheer you up?\nyou feel restless or fidgety?\nyou feel that everything was an effort?\nyou feel worthless?\nyou feel nervous?"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1521,7 +1488,7 @@ sub = "During the last 30 days, how often did....\nyou feel exhausted?"
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1593,7 +1560,7 @@ ylab = "Rumination (SD)"
 sub = "During the last 30 days, how often did....\nyou have negative thoughts that repeated over and over?"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1664,13 +1631,9 @@ ylab = "Self Control (SD)"
 sub = "In general, I have a lot of self-control.\nI wish I had more self-discipline."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
 ## g-computation
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1728,14 +1691,9 @@ Y = "SexualSatisfaction_lead2_z"
 main = "Sexual Satisfaction"
 ylab = "Sexual Satisfaction (SD)"
 sub = "How satisfied are you with your sex life?"
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
 ## g-computation
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1801,14 +1759,9 @@ main = "Gratitude"
 ylab = "Gratitude (SD)"
 sub = "I have much in my life to be thankful for.\nWhen I look at the world, I don’t see much to be grateful for.\nI am grateful to a wide variety of people."
 
-# regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
 
 ## g-computation
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1861,6 +1814,7 @@ gratitude_p
 
 
 
+
 # perm group ------------------------------------------------------------
 #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
 Y = "ImpermeabilityGroup_lead2_z"
@@ -1870,7 +1824,7 @@ sub = "The current income gap between New Zealand Europeans and\nother ethnic gr
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -1941,7 +1895,7 @@ sub = "I believe I am capable, as an individual,\nof improving my status in soci
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2013,7 +1967,7 @@ ylab = "Life Satisfaction (SD)"
 sub = "I am satisfied with my life.\nIn most ways my life is close to ideal."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2079,14 +2033,14 @@ lifesat_p
 # Meaning in Life
 # My life has a clear sense of purpose.
 # I have a good sense of what makes my life meaningful.
-
+X = "Hours.CompGames_lead1_10"
 Y = "LIFEMEANING_lead2_z"
 main = "Life Meaning"
 ylab = "Life Meaning (SD)"
 sub = "My life has a clear sense of purpose.\nI have a good sense of what makes my life meaningful."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2158,7 +2112,7 @@ ylab = "Perfectionism (SD)"
 sub = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2232,7 +2186,7 @@ ylab = "PWI (SD)"
 sub = "Satisfied with...\nYour health.\nYour standard of living.\nYour future security.\nYour personal relationships."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2304,7 +2258,7 @@ sub = "I do not have enough power or control\nover important parts of my life."
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2379,7 +2333,7 @@ ylab = "Power Dependence 2(SD)"
 sub = "Other people have too much power or control\nover important parts of my life."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2454,7 +2408,7 @@ sub = "On the whole am satisfied with myself.\nTake a positive attitude toward m
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2528,7 +2482,7 @@ ylab = "Vengefulness (anti-Foregiveness) (SD)"
 sub = "Sometimes I can't sleep because of thinking about\npast wrongs I have suffered.\nI can usually forgive and forget when someone does me wrong.\nI find myself regularly thinking about past times that I have been wronged."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2602,7 +2556,7 @@ sub = "I have a good balance between work and\nother important things in my life
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2680,7 +2634,7 @@ sub = "Know that people in my life accept and value me.\nFeel like an outsider.\
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2751,7 +2705,7 @@ ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2827,7 +2781,7 @@ sub = "Satisfied with ...\nThe economic situation in New Zealand.\nThe social co
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2905,7 +2859,7 @@ sub = 'There are people I can depend on to help me if I really need it.\nThere i
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -2983,7 +2937,7 @@ support_p
 #
 #
 # # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+# out_m <- mice_generalised(df = df, X = X, Y = Y, cvars = cvars)
 #
 # ## g-computation
 # out_ct <-
@@ -3048,7 +3002,7 @@ ylab = "Charity Donations (annual)"
 sub = "How much money have you donated to charity in the last year?"
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3121,7 +3075,7 @@ sub = "Hours spent … voluntary/charitable work"
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3188,7 +3142,7 @@ volunteers_p
 # ylab = "Log Income (SD)"
 # sub = "Please estimate your total household income (before tax) for the last year."
 # # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+# out_m <- mice_generalised(df = df, X = X, Y = Y, cvars = cvars)
 #
 # ## g-computation
 # out_ct <-
@@ -3326,7 +3280,7 @@ sub = "NZ Socio-economic index 2013: Occupational Prestige"
 
 
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3399,7 +3353,7 @@ main = "Standard Living"
 ylab = "Standard Living (SD)"
 sub  = "Satisfied with ...Your standard of living."
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3475,7 +3429,7 @@ main = "Your Future Security"
 ylab = "Your Future Security (SD)"
 sub  = "Satisfied with ...Your Future Security."
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3547,7 +3501,7 @@ main = "Your Health"
 ylab = "Your Health (SD)"
 sub  = "Satisfied with ...Your Health."
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3616,7 +3570,7 @@ main = "YourPersonal Relationships"
 ylab = "Your Personal Relationships (SD)"
 sub  = "Satisfied with ...Your Personal Relationships"
 # regression
-out_m <- mice_generalised_lin(
+out_m <- mice_generalised(
   df = df,
   X = X,
   Y = Y,
@@ -3696,17 +3650,15 @@ h_tab |>
       digits = 3,
       "html") |>
   #kable_styling() %>%
-  row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold") |>
-  row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  # row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  #          bold = T,
+  #          # color = "black",
+  #          background = "bold") |>
+  row_spec(c(3),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            color = "blue",
            background = "bold") |>
   kable_minimal(full_width = F)
-
-
 
 
 # TABLE EMBODIED ----------------------------------------------------------
@@ -3757,7 +3709,7 @@ reflect_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(5, 7,  11),
+  row_spec(c(4,5,7,10),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -3784,7 +3736,7 @@ social_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(4),
+  row_spec(c(2),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -3795,9 +3747,6 @@ social_tab |>
   kable_minimal(full_width = F)
 
 
-#NOTE  these two tables differ!
-support_t
-belong_t
 
 # TABLE ECONOMIC WELLBEING and Charity ------------------------------------------------
 
@@ -3815,64 +3764,65 @@ econ_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 5),
+  row_spec(c(0),
            bold = T,
            color = "black",
            background = "bold") |>
   kable_minimal(full_width = F)
 
 # # GRAPHS EMBODIED --------------------------------------------
-# embody_plots <-
-#   bodysat_p +
-#   distress_p +
-#   fatigue_p +
-#   rumination_p +
-#   selfcontrol_p +
-#   sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
-#                                 tag_levels = "A") +
-#   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+embody_plots <-
+  bodysat_p +
+  distress_p +
+  fatigue_p +
+  rumination_p +
+  selfcontrol_p +
+  sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
+                                tag_levels = "A") +
+  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+
+embody_plots
+dev.off()
 #
-# embody_plots
-#
-# ggsave(
-#   embody_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
-#   width = 16,
-#   height = 12,
-#   units = "in",
-#   filename = "embody_plots_all.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-#
-#
+ggsave(
+  embody_plots,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "embody_plots_all.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
 # # GRAPHS HEALTH -----------------------------------------------------------
-#
-# health_plots <- alcoholfreq_p +
-#   alcoholintensity_p +
-#   bmi_p +
-#   exercise_p +
-#   smoker_p +
-#   sfhealth_p +
-#   plot_annotation(title = "Causal effects of religious service on health outcomes",
-#                   # subtitle = "xyz",
-#                   tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-#
-# # view
-# health_plots
-#
-# ggsave(
-#   health_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
-#   width = 16,
-#   height = 12,
-#   units = "in",
-#   filename = "health_plots_all.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
+
+health_plots <- alcoholfreq_p +
+  alcoholintensity_p +
+  bmi_p +
+  exercise_p +
+  smoker_p +
+  sfhealth_p +
+  plot_annotation(title = "Causal effects of religious service on health outcomes",
+                  # subtitle = "xyz",
+                  tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+
+# view
+health_plots
+
+ggsave(
+  health_plots,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "health_plots_all.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
 #
 # dev.off()
 #
@@ -3880,28 +3830,28 @@ econ_tab |>
 #
 #
 # # GRAPHS REFLECTIVE WELL-BEING ------------------------------------------------
-#
-# reflective_plots <- gratitude_p +
-#   groupimperm_p +
-#   selfperm_p +
-#   lifesat_p +
-#   meaning_p +
-#   perfect_p +
-#   pwi_p +
-#   powerdependence1_p +
-#   powerdependence2_p +
-#   selfesteem_p +
-#   veng_p +
-#   plot_annotation(title = "Causal effects of religious service on reflective wellbeing") +
-#   plot_layout(guides = 'collect')
-#
-# reflective_plots
-#
-# # save
-#
+
+reflective_plots <- gratitude_p +
+  groupimperm_p +
+  selfperm_p +
+  lifesat_p +
+  meaning_p +
+  perfect_p +
+  pwi_p +
+  powerdependence1_p +
+  powerdependence2_p +
+  selfesteem_p +
+  veng_p +
+  plot_annotation(title = "Causal effects of religious service on reflective wellbeing") +
+  plot_layout(guides = 'collect')
+
+reflective_plots
+
+# save
+
 # ggsave(
 #   reflective_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   path = here::here(here::here("figs", "figs_games", "standardised")),
 #   width = 16,
 #   height = 12,
 #   units = "in",
@@ -3913,27 +3863,27 @@ econ_tab |>
 #
 # # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
 #
-# social_plots <- belong_p +
-#   community_p +
-#   nwi_p +
-#   support_p + plot_annotation(title = "Causal effects of religious service on social wellbeing") +
-#   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-#
-# social_plots
-#
-# ggsave(
-#   social_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
-#   width = 16,
-#   height = 12,
-#   units = "in",
-#   filename = "social_plots_all.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-#
-# social_plots
+social_plots <- belong_p +
+  community_p +
+  nwi_p +
+  support_p + plot_annotation(title = "Causal effects of religious service on social wellbeing") +
+  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+
+social_plots
+
+ggsave(
+  social_plots,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "social_plots_all.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+social_plots
 # dev.off()
 #
 #
@@ -3951,7 +3901,7 @@ econ_tab |>
 #
 # ggsave(
 #   econ_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   path = here::here(here::here("figs", "figs_games", "standardised")),
 #   width = 16,
 #   height = 12,
 #   units = "in",
@@ -3983,7 +3933,7 @@ econ_tab |>
 #
 # ggsave(
 #   pwi_plots,
-#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   path = here::here(here::here("figs", "figs_games", "standardised")),
 #   width = 16,
 #   height = 12,
 #   units = "in",
@@ -4156,75 +4106,75 @@ ungroup() |>
 
 
 # cvars multilevel --------------------------------------------------------
-
-
-cvars_ml = c(
-  "Church_z",
-  "AGREEABLENESS_z",
-  "CONSCIENTIOUSNESS_z",
-  "EXTRAVERSION_z",
-  "HONESTY_HUMILITY_z",
-  "NEUROTICISM_z",
-  "OPENNESS_z",
-  "Age_z",
-  "Alcohol.Frequency_z",
-  "Alcohol.Intensity_log_z",
-  "Bodysat_z",
-  "BornNZ_z",
-  "Believe.God_z",
-  "Believe.Spirit_z",
-  "BELONG_z",
-  "CharityDonate_log_z",
-  "ChildrenNum_z",
-  "community",
-  "Edu_z",
-  "Employed_z",
-  "Euro_z",
-  "GRATITUDE_z",
-  "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_z",
-  "HLTH.BMI_z",
-  "HLTH.Disability_z",
-  "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
-  "ImpermeabilityGroup_z",
-  "KESSLER6sum_z",
-  "LIFEMEANING_z",
-  "LIFESAT_z",
-  "Male_z",
-  "NZdep_z",
-  "NWI_z",
-  "NZSEI13_z",
-  "Parent_z",
-  "Partner_z",
-  "PERFECTIONISM_z",
-  "PermeabilityIndividual_z",
-  "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  "Relid_z",
-  "Respect.Self_z",
-  "retired",
-  "Rumination_z",
-  "RWA_z",
-  "SDO_z",
-  "SELF.CONTROL_z",
-  "SELF.ESTEEM_z",
-  "semiretired",
-  "SexualSatisfaction_z",
-  "SFHEALTH_z",
-  "Smoker_z",
-  "Spiritual.Identification_z",
-  "Standard.Living_z",
-  "SUPPORT_z",
-  "Urban_z",
-  "VENGEFUL.RUMIN_z",
-  "Volunteers_z",
-  "Your.Health_z",
-  "Your.Future.Security_z",
-  "Your.Personal.Relationships_z"
-) # "income_log_z",
+#
+#
+# cvars_ml = c(
+#   "Church_z",
+#   "AGREEABLENESS_z",
+#   "CONSCIENTIOUSNESS_z",
+#   "EXTRAVERSION_z",
+#   "HONESTY_HUMILITY_z",
+#   "NEUROTICISM_z",
+#   "OPENNESS_z",
+#   "Age_z",
+#   "Alcohol.Frequency_z",
+#   "Alcohol.Intensity_log_z",
+#   "Bodysat_z",
+#   "BornNZ_z",
+#   "Believe.God_z",
+#   "Believe.Spirit_z",
+#   "BELONG_z",
+#   "CharityDonate_log_z",
+#   "ChildrenNum_z",
+#   "community",
+#   "Edu_z",
+#   "Employed_z",
+#   "Euro_z",
+#   "GRATITUDE_z",
+#   "HomeOwner_z",
+#   "Hours.Exercise_log_z",
+#   "Hours.Work_z",
+#   "HLTH.BMI_z",
+#   "HLTH.Disability_z",
+#   "HLTH.Fatigue_z",
+#   "HLTH.SleepHours_z",
+#   "ImpermeabilityGroup_z",
+#   "KESSLER6sum_z",
+#   "LIFEMEANING_z",
+#   "LIFESAT_z",
+#   "Male_z",
+#   "NZdep_z",
+#   "NWI_z",
+#   "NZSEI13_z",
+#   "Parent_z",
+#   "Partner_z",
+#   "PERFECTIONISM_z",
+#   "PermeabilityIndividual_z",
+#   "Pol.Orient_z",
+#   "POWERDEPENDENCE1_z",
+#   "POWERDEPENDENCE2_z",
+#   "Relid_z",
+#   "Respect.Self_z",
+#   "retired",
+#   "Rumination_z",
+#   "RWA_z",
+#   "SDO_z",
+#   "SELF.CONTROL_z",
+#   "SELF.ESTEEM_z",
+#   "semiretired",
+#   "SexualSatisfaction_z",
+#   "SFHEALTH_z",
+#   "Smoker_z",
+#   "Spiritual.Identification_z",
+#   "Standard.Living_z",
+#   "SUPPORT_z",
+#   "Urban_z",
+#   "VENGEFUL.RUMIN_z",
+#   "Volunteers_z",
+#   "Your.Health_z",
+#   "Your.Future.Security_z",
+#   "Your.Personal.Relationships_z"
+# ) # "income_log_z",
 
 
 
@@ -4238,7 +4188,7 @@ sub = "During the last 30 days, how often did....\nyou feel ...?"
 
 
 # regression
-out_m <- mice_gaussian(df = df,
+out_m <- mice_generalised(df = df,
                        X = X,
                        Y = Y,
                        cvars = cvars)
@@ -4459,7 +4409,7 @@ k_ml_tab
 #
 #
 # # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+# out_m <- mice_generalised(df = df, X = X, Y = Y, cvars = cvars)
 #
 # ## g-computation
 # out_ct <- pool_stglm_contrast(out_m, df = df, m = 10,  X = X,  x = x,,r= r)
