@@ -10,6 +10,12 @@ source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs
 
 # read functions
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+# for saving models
+push_mods <-
+  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
+push_figs <-
+  fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+
 
 
 # df %>%
@@ -397,6 +403,8 @@ source(here::here("scripts", "funs.R"))
 # imputed data
 ml <- readh("ml_amy")
 mf <- readh("mf_amy")
+
+mf$NZSEI13_lead1_10_z
 
 
 # example of a descriptive table ------------------------------------------

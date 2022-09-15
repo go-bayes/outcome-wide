@@ -47,9 +47,90 @@ tab_in <- dat %>%
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
   dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
   ungroup() %>%
-  droplevels() %>%
-  arrange(Id, Wave)
-# check n # 34782
+  droplevels()
+
+
+
+# how many non-reliigous people change to church attendance (positivity)
+tab_in2 <- tab_in |>
+  filter((Wave == 2018 &  Religious != 1)| Wave == 2019) |>
+  dplyr::mutate(church_test1 = if_else(Religion.Church2 >0, 1, 0)) |>
+  dplyr::mutate(church_test2 = if_else(Religion.Church2 <4, 0, 1)) |>
+  dplyr::mutate(church_test3 = if_else(Religion.Church2 == 0,0, if_else(Religion.Church2 < 4  &  Religion.Church2 > 0, 1, 2)))
+
+
+table1::table1(~ factor(church_test1) |Wave , data = tab_in2)
+table1::table1(~ factor(church_test2) |Wave , data = tab_in2)
+table1::table1(~ factor(church_test2) |Wave , data = tab_in2)
+table1::table1(~ factor(church_test3) |Wave , data = tab_in2)
+
+
+library(tab_in$church_test)
+
+msm::statetable.msm(church_test1, Id, data=tab_in2) |>
+  kbl() %>%
+  kable_paper(full_width = F)
+
+#  .08% of the population changed from not religious to religious
+175/21009
+
+
+msm::statetable.msm(church_test2, Id, data=tab_in2) |>
+  kbl() %>%
+  kable_paper(full_width = F)
+
+
+msm::statetable.msm(church_test3, Id, data=tab_in2)|>
+  kbl() %>%
+  kable_paper(full_width = F)
+
+
+tab_in2a <- tab_in |>
+  filter((Wave == 2018 &  Religious == 1)| Wave == 2019) |>
+  dplyr::mutate(church_test1 = if_else(Religion.Church2 >0, 1, 0)) |>
+  dplyr::mutate(church_test2 = if_else(Religion.Church2 <4, 0, 1)) |>
+  dplyr::mutate(church_test3 = if_else(Religion.Church2 == 0,0, if_else(Religion.Church2 < 4  &  Religion.Church2 > 0, 1, 2)))
+
+msm::statetable.msm(church_test2, Id, data=tab_in2a) |>
+  kbl() %>%
+  kable_paper(full_width = F)
+
+785/2224
+
+# TEST ONLY NON RELIIGIOUS IN 2018
+tab_in3 <- tab_in |>
+  filter((Wave == 2018 & Religious ==0) | Wave == 2019) |>
+  dplyr::mutate(church_test1 = if_else(Religion.Church2 > 0, 1, 0)) |>
+  dplyr::mutate(church_test2 = if_else(Religion.Church2 < 4, 0, 1)) |>
+  dplyr::mutate(church_test3 = if_else(Religion.Church2 < 1, 0, if_else(Religion.Church2 < 4, 1, 2))) |>
+  dplyr::mutate(church = if_else(Religion.Church2 > 8, 8, Religion.Church2))
+
+
+
+msm::statetable.msm(church_test3, Id, data=tab_in3) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+msm::statetable.msm(church_test3, Id, data=tab_in3) |>
+  kbl() |>
+  kable_paper(full_width = F)
+
+
+msm::statetable.msm(church_test1, Id, data=tab_in3) |>
+kbl() %>%
+  kable_paper(full_width = F)
+
+
+
+all <- tab_in |>
+  filter((Wave == 2018) | Wave == 2019) |>
+  dplyr::mutate(church_test3 = if_else(Religion.Church2 <1, 0, if_else(Religion.Church2 < 4, 1, 2)))
+
+msm::statetable.msm(church_test3, Id, data=all) |>
+  kbl() %>%
+  kable_paper(full_width = F)
+
+
 
 length(unique(tab_in$Id)) # 34783
 
@@ -62,6 +143,7 @@ dat %>%
 
 # Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
 
+tab_in$Religion.Church2
 ## select vars
 df_cr <- tab_in %>%
   #dplyr::filter(Id != 9630) %>% # problematic income
@@ -158,23 +240,13 @@ df_cr <- tab_in %>%
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-#  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
+  #  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
-  dplyr::mutate(Edu = as.numeric(Edu),
-                #   Volunteers = if_else(HoursCharity == 1, 1, 0),
-                # Depressed = (as.numeric(
-                #   cut(
-                #     KESSLER6sum,
-                #     breaks = c(-Inf, 13, Inf),
-                #     labels = c("0", "1"),
-                #     right = FALSE
-                #   )
-                # ) - 1),
-                # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
-  arrange(Id, Wave)  %>% #
+  dplyr::mutate(Edu = as.numeric(Edu))|>
+  arrange(Id, Wave)  %>%
+  dplyr::mutate(Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
   dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
@@ -238,8 +310,8 @@ df_cr <- tab_in %>%
                                       semiretired == 1), 1, 0)) %>%
   dplyr::filter(!is.na(Church)) %>%
   dplyr::filter(!is.na(Church_lead1)) %>%
-  dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
-  dplyr::filter(Religious == 1) %>%
+#  dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
+#dplyr::filter(Religious == 1) %>%
   dplyr::select(
     -c(
       Religion.Church,
@@ -255,14 +327,8 @@ df_cr <- tab_in %>%
       retired,
       semiretired,
       Emp.WorkLifeBalance,
-      YearMeasured
-      #HLTH.Disability_lead1,
-      # org2019,
-      # hold19,
-      # retired,
-      # semiretired,
-    )) %>%
-  #  dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
+      YearMeasured)) %>%
+# dplyr::mutate(across(!c(Id,Wave), ~ scale(.x)))%>%  # standarise vars for easy computing-- do this after imputation
   arrange(Id, Wave) %>%
   droplevels() %>%
   data.frame() %>%
@@ -270,10 +336,16 @@ df_cr <- tab_in %>%
   arrange(Id)
 
 
-table1::table1(~ Church + SDO +  factor(Retiredp) |
+table1::table1(~ Church + Church_lead1 +  factor(Retiredp) |
                  Wave ,
                data = df_cr,
                overall = FALSE)#11953
+
+
+
+
+
+
 
 
 # Filtering retirement -- consistency and positivity assumptions
@@ -333,7 +405,6 @@ df_crr$OccupationalPrestige <-  df_cr$NZSEI13
 
 
 
-
 # df_crt$BigDoms <-
 #   factor(df_cr$BigDoms,
 #          labels = c("Buddhist", "Christian", "Muslim", "TheOthers"))
@@ -365,7 +436,7 @@ table1::table1(
     Parent +
     Partner +
     PoliticalOrientationRight +
-   # PartnerLostJob +
+    # PartnerLostJob +
     Spiritual.Identification +
     RespectSelf_baseline +
     Retiredp +
@@ -426,9 +497,9 @@ table1::table1(
 table1::table1(
   ~ BELONG +
     NeighbourhoodCommunity,
-    # SUPPORT +
-    # National.Identity +
-    # PATRIOT,
+  # SUPPORT +
+  # National.Identity +
+  # PATRIOT,
   data = df_crr,
   transpose = F
 )
@@ -440,7 +511,6 @@ library(mice)
 
 mice_cr <- df_cr %>%
   dplyr::select(-c(Wave, Id))  # won't otherwise run
-
 
 library(naniar)
 naniar::gg_miss_var(mice_cr)
@@ -454,11 +524,10 @@ mice:::find.collinear(mice_cr)
 cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
 
 # save
-saveh(cr_mice, "cr_mice2")
-
+saveh(cr_mice, "church_all_mice")
 
 # read
-cr_mice <- readh("cr_mice2")
+cr_mice <- readh("church_all_mice")
 # checks
 outlist2 <-
   row.names(cr_mice)[cr_mice$outflux < 0.5]
@@ -473,22 +542,19 @@ head(cr_mice$loggedEvents, 10)
 
 ml <- mice::complete(cr_mice, "long", inc = TRUE)
 
-
 # inspect data -- what do we care about?  Note that the moderate distress category doesn't look useful
 skimr::skim(ml)
-
 # create variables in z score
 N <- length(unique(df_cr$Id))
 N
-dat$Household.INC
 ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
-  dplyr::mutate(ChurchBin = if_else(Church <4, 0, 1)) |>
-  dplyr::mutate(ChurchBin_lead1 = if_else(Church_lead1 <4, 0, 1)) |>
-  dplyr::mutate(ChurchTri = if_else(Church == 0,0, if_else(Church < 4  &  Church > 0, 1, 2))) |>
-  dplyr::mutate(ChurchTri_lead1 = if_else(Church_lead1 == 0,0, if_else(Church_lead1 < 4  &  Church_lead1 > 0, 1, 2))) |>
+  # dplyr::mutate(Church_bin = if_else(Church <4, 0, 1)) |>
+  # dplyr::mutate(Church_lead1_bin = if_else(Church_lead1 < 4, 0,1)) |>
+  # dplyr::mutate(ChurchTri = if_else(Church == 0, 0, if_else(Church < 4 & Church  > 0,  1, 2))) |>
+  # dplyr::mutate(ChurchTri_lead1 = if_else(Church_lead1== 0, 0, if_else(Church_lead1 < 4 & Church_lead1  > 0,  1, 2))) |>
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
- # dplyr::mutate(income_log = log(Household.INC + 1)) |>
+  # dplyr::mutate(income_log = log(Household.INC + 1)) |>
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
@@ -552,96 +618,24 @@ ml <- ml %>%
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
   select(-c(.imp_z, .id_z)) |>
   dplyr::mutate(id = as.factor(rep(1:N, 11)))# needed for g-comp# Respect for Self is fully missing
+# needed for g-comp# Respect for Self is fully missing
 
 
 # Get data into shape
 ml <- ml %>% mutate_if(is.matrix, as.vector)
 
 ml <- mice::as.mids(ml)
+
 mf <- mice::complete(ml, "long", inc = F)
 
-
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
+saveh(ml, "churchl_all")
+saveh(mf, "churchf_all")
 
 
 
 ###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
-
-# model equations ---------------------------------------------------------
-
-cvars = c(
-  "AGREEABLENESS_z",
-  "CONSCIENTIOUSNESS_z",
-  "EXTRAVERSION_z",
-  "HONESTY_HUMILITY_z",
-  "NEUROTICISM_z",
-  "OPENNESS_z",
-  "Age_z",
-  "Alcohol.Frequency_z",
-  "Alcohol.Intensity_log_z",
-  "Bodysat_z",
-  "BornNZ_z",
-  "Believe.God_z",
-  "Believe.Spirit_z",
-  "BELONG_z",
-  "CharityDonate_log_z",
-  "ChildrenNum_z",
-  "Church_z",
-  "community",
-  "Edu_z",
-  "Employed_z",
-  "Euro_z",
-  "GRATITUDE_z",
-  "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_z",
-  "HLTH.BMI_z",
-  "HLTH.Disability_z",
-  "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
-  "ImpermeabilityGroup_z",
-  "income_log_z",
-  "KESSLER6sum_z",
-  "LIFEMEANING_z",
-  "LIFESAT_z",
-  "Male_z",
-  "NZdep_z",
-  "NWI_z",
-  "NZSEI13_z",
-  "Parent_z",
-  "Partner_z",
-  "PERFECTIONISM_z",
-  "PermeabilityIndividual_z",
-  "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  "Relid_z",
-  "Respect.Self_z",
-  "Retiredp_z",
-  "Rumination_z",
-  "RWA_z",
-  "SDO_z",
-  "SELF.CONTROL_z",
-  "SELF.ESTEEM_z",
-  "SexualSatisfaction_z",
-  "SFHEALTH_z",
-  "Smoker_z",
-  "Spiritual.Identification_z",
-  "Standard.Living_z",
-  "SUPPORT_z",
-  "Urban_z",
-  "VENGEFUL.RUMIN_z",
-  "Volunteers_z",
-  "Your.Health_z",
-  "Your.Future.Security_z",
-  "Your.Personal.Relationships_z"
-)
-
-
-
+ml <- readh("churchl_all")
+mf <- readh("churchf_all")
 
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
@@ -727,7 +721,7 @@ cvars = c(
   "BELONG_z",
   "CharityDonate_log_z",
   "ChildrenNum_z",
-  "ChurchTri_z",
+  "Church_z",
   "community",
   "Edu_z",
   "Employed_z",
@@ -746,7 +740,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-#  "income_log_z",
+  #  "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -832,7 +826,6 @@ cvars = c(
 # ), 3)
 # round(EValue::evalues.RR(, lo =  , hi = , true = 1), 4)
 #
-
 
 ################# BELOW THE MANY OUTCOMES!  ########################################
 
@@ -2167,6 +2160,7 @@ perfect_p <-
   )
 perfect_p
 
+
 # PWI ---------------------------------------------------------
 #Your health.
 #Your standard of living.
@@ -2600,7 +2594,6 @@ worklife_c
 # Feel like an outsider.
 # Know that people around me share my attitudes and beliefs.
 
-
 Y = "BELONG_lead2_z"
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
@@ -2812,6 +2805,11 @@ nwi_p
 # There is no one I can turn to for guidance in times of stress.
 # I know there are people I can turn to when I need help.
 ## fit
+
+
+table(mf$BELONG_lead2 == mf$SUPPORT_lead2_z)
+
+
 Y = "SUPPORT_lead2_z"
 main = "Social Support"
 ylab = "Social Support (SD)"
@@ -2863,7 +2861,6 @@ support_t <- out_ct %>%
            background = "dodgerblue") |>
   kable_minimal(full_width = F)
 # show table
-support_t
 # graph
 support_p <-
   ggplot_stglm(
@@ -3596,6 +3593,10 @@ h_tab |>
            bold = T,
            # color = "black",
            background = "bold") |>
+  row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           color = "blue",
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3617,11 +3618,11 @@ embody_tab |>
   kbl(caption = main,
       digits = 3,
       "html") |>
-  # kable_styling() %>%
-  # row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-  #          bold = T,
-  #          # color = "black",
-  #          background = "bold")
+ # kable_styling() %>%
+  row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           color = "blue",
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3653,6 +3654,10 @@ reflect_tab |>
            bold = T,
            color = "black",
            background = "bold") |>
+  row_spec(c(10),
+           bold = T,
+           color = "blue",
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3664,6 +3669,8 @@ social_tab <- rbind(belong_c,
                     community_c,
                     nwi_c,
                     support_c)
+belong_c
+support_c
 
 social_tab |>
   kbl(caption = main,
@@ -3676,6 +3683,10 @@ social_tab |>
            background = "bold") |>
   kable_minimal(full_width = F)
 
+
+#NOTE  these two tables differ!
+support_t
+belong_t
 
 # TABLE ECONOMIC WELLBEING and Charity ------------------------------------------------
 
@@ -3693,7 +3704,7 @@ econ_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 5),
+  row_spec(c(1,4, 5),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -3718,7 +3729,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "embody_plots.jpg",
+  filename = "embody_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3746,7 +3757,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "health_plots.jpg",
+  filename = "health_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3783,7 +3794,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "reflective_plots.jpg",
+  filename = "reflective_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3805,7 +3816,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "social_plots.jpg",
+  filename = "social_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3833,7 +3844,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "econ_plots.jpg",
+  filename = "econ_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3865,7 +3876,7 @@ ggsave(
   width = 16,
   height = 12,
   units = "in",
-  filename = "pwi_plots.jpg",
+  filename = "pwi_plots_all.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 1200
@@ -4250,7 +4261,7 @@ k_lmer <- lme4::lmer(
 k_ml <- plot(ml_tab <-
                ggeffects::ggpredict(k_lmer, terms = c("Church[0:6]"), facet = F)) + scale_y_continuous(limits = ylim) +
   theme_classic() + labs(title = "Predicted values of Kessler 6 Distress using multi-level analysis",
-  subtitle = "No temporal ordering in variables")
+                         subtitle = "No temporal ordering in variables")
 
 d_p + k_ml
 

@@ -27,10 +27,25 @@ pull_path <-
 dat <- readRDS(pull_path)
 
 # table for participant N
+dat$Hours.CompGames
+dat$Hours.Children
+dat$Hours.Commute
+dat$Hours.Exercise
+dat$Hours.Housework
+dat$Hours.Internet
+dat$Hours.News
+dat$Hours.SocialMedia
+dat$Hours.TV
+dat$Hours.Work
+dat$HoursCharity
+dat$HLTH.SleepHours
 
 tab_in <- dat %>%
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
+  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0),
+                SexualOrientation = as.factor(if_else(SexualOrientationL1 == 1,
+                                                      "Heterosexual",
+                                                      if_else(SexualOrientationL1==2, "Homosexual", "OtherSexuality" )))) %>%
+  dplyr::mutate(Gender3 = as.factor(ifelse(GendAll == 0, "Female", if_else(GendAll == 1, "Male", "GenderDiverse")))) %>%
   dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
                   (Wave == 2019  &
                      YearMeasured  == 1) |
@@ -72,7 +87,8 @@ df_cr <- tab_in %>%
     Partner,
     EthCat,
     Age,
-    Male,
+    Gender3,
+    SexualOrientation,
     NZSEI13,
     CONSCIENTIOUSNESS,
     OPENNESS,
@@ -92,7 +108,7 @@ df_cr <- tab_in %>%
     Parent,
     Relid,
     Religious,
-    Religion.Church,
+    Religion.Church2,
     Believe.Spirit,
     Believe.God,
     Spiritual.Identification,
@@ -114,9 +130,18 @@ df_cr <- tab_in %>%
     BELONG,
     SUPPORT,
     CharityDonate,
-    HoursCharity,
     GRATITUDE,
+    Hours.CompGames,
+    Hours.Children,
+    Hours.Commute,
+    Hours.Exercise,
+    Hours.Housework,
+    Hours.Internet,
+    Hours.News,
+    Hours.SocialMedia,
+    Hours.TV,
     Hours.Work,
+    HoursCharity,
     HLTH.SleepHours,
     HLTH.Disability,
     Hours.Exercise,
@@ -158,24 +183,14 @@ df_cr <- tab_in %>%
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-#  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
+  #  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-  dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
+  dplyr::mutate(across(!c(Id, Wave, Gender3, SexualOrientation), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
   dplyr::mutate(Edu = as.numeric(Edu),
-                #   Volunteers = if_else(HoursCharity == 1, 1, 0),
-                # Depressed = (as.numeric(
-                #   cut(
-                #     KESSLER6sum,
-                #     breaks = c(-Inf, 13, Inf),
-                #     labels = c("0", "1"),
-                #     right = FALSE
-                #   )
-                # ) - 1),
-                # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
+                Church = ifelse(Religion.Church2 > 8, 8, Religion.Church2)) %>%
   arrange(Id, Wave)  %>% #
-  dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
+  dplyr::mutate(Hours.CompGames_lead1 = lead(Hours.CompGames, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
     c(
@@ -185,6 +200,7 @@ df_cr <- tab_in %>%
       Household.INC,
       community,
       Hours.Work,
+      Hours.CompGames,
       HLTH.Disability,
       EmotionRegulation1,
       EmotionRegulation2,
@@ -236,13 +252,13 @@ df_cr <- tab_in %>%
   dplyr::filter(Wave == 2018) %>%
   dplyr::mutate(Retiredp = if_else((retired == 1 |
                                       semiretired == 1), 1, 0)) %>%
-  dplyr::filter(!is.na(Church)) %>%
-  dplyr::filter(!is.na(Church_lead1)) %>%
-  dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
-  dplyr::filter(Religious == 1) %>%
+  dplyr::filter(!is.na(Hours.CompGames)) %>%
+  dplyr::filter(!is.na(Hours.CompGames_lead1)) %>%
+  #  dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
+  #dplyr::filter(Religious == 1) %>%
   dplyr::select(
     -c(
-      Religion.Church,
+      Religion.Church2,
       # EthCat,
       Religious,
       #  HoursCharity,
@@ -270,7 +286,7 @@ df_cr <- tab_in %>%
   arrange(Id)
 
 
-table1::table1(~ Church + SDO +  factor(Retiredp) |
+table1::table1(~ Church + Church +  factor(Retiredp) |
                  Wave ,
                data = df_cr,
                overall = FALSE)#11953
@@ -365,7 +381,7 @@ table1::table1(
     Parent +
     Partner +
     PoliticalOrientationRight +
-   # PartnerLostJob +
+    # PartnerLostJob +
     Spiritual.Identification +
     RespectSelf_baseline +
     Retiredp +
@@ -382,7 +398,6 @@ table1::table1(
   data = df_crr,
   transpose = F
 )
-
 
 table1::table1(
   ~ AGREEABLENESS +
@@ -426,9 +441,9 @@ table1::table1(
 table1::table1(
   ~ BELONG +
     NeighbourhoodCommunity,
-    # SUPPORT +
-    # National.Identity +
-    # PATRIOT,
+  # SUPPORT +
+  # National.Identity +
+  # PATRIOT,
   data = df_crr,
   transpose = F
 )
@@ -454,11 +469,11 @@ mice:::find.collinear(mice_cr)
 cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
 
 # save
-saveh(cr_mice, "cr_mice2")
+saveh(cr_mice, "hours_computergames")
 
 
 # read
-cr_mice <- readh("cr_mice2")
+cr_mice <- readh("hours_computergames")
 # checks
 outlist2 <-
   row.names(cr_mice)[cr_mice$outflux < 0.5]
@@ -480,15 +495,12 @@ skimr::skim(ml)
 # create variables in z score
 N <- length(unique(df_cr$Id))
 N
-dat$Household.INC
 ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
-  dplyr::mutate(ChurchBin = if_else(Church <4, 0, 1)) |>
-  dplyr::mutate(ChurchBin_lead1 = if_else(Church_lead1 <4, 0, 1)) |>
-  dplyr::mutate(ChurchTri = if_else(Church == 0,0, if_else(Church < 4  &  Church > 0, 1, 2))) |>
-  dplyr::mutate(ChurchTri_lead1 = if_else(Church_lead1 == 0,0, if_else(Church_lead1 < 4  &  Church_lead1 > 0, 1, 2))) |>
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
- # dplyr::mutate(income_log = log(Household.INC + 1)) |>
+  # dplyr::mutate(income_log = log(Household.INC + 1)) |>
+  dplyr::mutate(Church_bin = if_else(Church > 0, 1, 0)) |>
+  dplyr::mutate(Church_lead1_bin = if_else(Church_lead1  > 0, 1, 0)) |>
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
@@ -524,6 +536,8 @@ ml <- ml %>%
   dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
   dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
   dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
+  dplyr::mutate(Hours.CompGames_10 =  Hours.CompGames / 10) %>%
+  dplyr::mutate(Hours.CompGames_lead1_10 =  Hours.CompGames_lead1_10 / 10) %>%
   # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
   # dplyr::mutate(Hours.Work_lead1_sqrt =  as.integer(sqrt(Hours.Work_lead1)))%>%
   dplyr::mutate(NZSEI13_10 =  NZSEI13 / 10) %>%
@@ -559,16 +573,16 @@ ml <- ml %>% mutate_if(is.matrix, as.vector)
 
 ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = F)
+nrow(mf)/10
 
-
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
+saveh(ml, "churchl_all")
+saveh(mf, "churchf_all")
 
 
 
 ###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
+ml <- readh("churchl_all")
+mf <- readh("churchf_all")
 
 # model equations ---------------------------------------------------------
 
@@ -589,7 +603,8 @@ cvars = c(
   "BELONG_z",
   "CharityDonate_log_z",
   "ChildrenNum_z",
-  "Church_z",
+  # "Church_z",
+  "Church_bin_z",
   "community",
   "Edu_z",
   "Employed_z",
@@ -653,19 +668,19 @@ df <- ml
 ## HERE WE USE THE EXAMPLE OF HOURS WORK / 10
 ###############   IMPORTANT SET YOUR EXPOSURE VARIABLE
 
-X = "Church_lead1"
+X = "Church_lead1_bin"
 
 
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
 
-xlab = "Church_lead1"  ## Monthly Church
+xlab = "Church_lead1_bin"  ## Monthly Church
 
 
 # SET THE RANGE OF religious service FROM ZERO TO 80
 min = 0
-max = 6
+max = 1
 
 
 # set full range of X
@@ -680,7 +695,7 @@ minmax <- paste(c(x), sep = ",")
 r = 0
 
 # focal contrast for X  Someone who goes from 20 to 60 hours of work.
-f = 4
+f = 1
 
 # REQUIRED for certain model model functions
 c = x
@@ -707,6 +722,8 @@ m = 10
 sd = 1
 
 
+#family
+family = "gaussian"
 
 ##### BASELINE VARIABLES
 
@@ -727,7 +744,8 @@ cvars = c(
   "BELONG_z",
   "CharityDonate_log_z",
   "ChildrenNum_z",
-  "ChurchTri_z",
+  #"Church_z",
+  "Church_bin_z",
   "community",
   "Edu_z",
   "Employed_z",
@@ -746,7 +764,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-#  "income_log_z",
+  #  "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -845,10 +863,13 @@ main = "Alcohol Frequency"
 ylab = "Alcohol Frequency (SD)"
 sub = "How often do you have a drink containing alcohol?"
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 summary(pool(out_m))
 ## g-computation
@@ -925,15 +946,13 @@ out_m <- mice_gaussian(df = df,
                        cvars = cvars)
 
 ## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 # coef + estimate
 alcoholintensity_c <-
@@ -991,10 +1010,13 @@ sub = "What is your height? (metres)\nWhat is your weight? (kg)\nKg *1/(m*m)"
 
 
 # run model
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 # summary(pool(out_m))
 ## contrasts
 out_ct <-
@@ -1054,10 +1076,13 @@ ylab = "Log Hours Exercise (SD)"
 sub = "Hours spent … exercising/physical activity"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1129,10 +1154,13 @@ sub = "In general, would you say your health is...\nI seem to get sick a little 
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1197,10 +1225,13 @@ ylab = "Hours Sleep (SD)"
 sub = "During the past month, on average, how many hours\nof actual sleep did you get per night?"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1260,7 +1291,6 @@ sleep_c
 #Do you currently smoke?
 
 Y = "Smoker_lead2"
-family = "binomial" # could be binomial if binary utcome is rare
 main = "Smoking (RR)"
 ylab = "Smoking (Risk Ratio)"
 sub = "Do you currently smoke?"
@@ -1268,12 +1298,12 @@ sub = "Do you currently smoke?"
 rm(out_m)
 rm(out_ct)
 # bake
-out_m <- mice_generalised(
+out_m <- mice_generalised_lin(
   df = df,
   X = X,
   Y = Y,
   cvars = cvars,
-  family = family
+  family = "binomial"
 )
 out_m
 ## contrasts
@@ -1338,10 +1368,13 @@ ylab = "Body Satisfaction (SD)"
 sub = "Am satisfied with the appearance,\nsize and shape of my body."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1414,10 +1447,13 @@ ylab = "Kessler 6 Distress (SD)"
 sub = "During the last 30 days, how often did....\nyou feel hopeless?\nyou feel so depressed that nothing could cheer you up?\nyou feel restless or fidgety?\nyou feel that everything was an effort?\nyou feel worthless?\nyou feel nervous?"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 summary(pool(out_m))
 ## g-computation
 out_ct <-
@@ -1485,10 +1521,13 @@ sub = "During the last 30 days, how often did....\nyou feel exhausted?"
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1554,10 +1593,13 @@ ylab = "Rumination (SD)"
 sub = "During the last 30 days, how often did....\nyou have negative thoughts that repeated over and over?"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 ## g-computation
 out_ct <-
   pool_stglm_contrast(
@@ -1628,15 +1670,13 @@ out_m <- mice_gaussian(df = df,
                        cvars = cvars)
 
 ## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
@@ -1695,15 +1735,13 @@ out_m <- mice_gaussian(df = df,
                        cvars = cvars)
 
 ## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
@@ -1770,15 +1808,13 @@ out_m <- mice_gaussian(df = df,
                        cvars = cvars)
 
 ## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
@@ -1834,10 +1870,13 @@ sub = "The current income gap between New Zealand Europeans and\nother ethnic gr
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1902,10 +1941,13 @@ sub = "I believe I am capable, as an individual,\nof improving my status in soci
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -1971,10 +2013,13 @@ ylab = "Life Satisfaction (SD)"
 sub = "I am satisfied with my life.\nIn most ways my life is close to ideal."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2041,10 +2086,13 @@ ylab = "Life Meaning (SD)"
 sub = "My life has a clear sense of purpose.\nI have a good sense of what makes my life meaningful."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2110,10 +2158,13 @@ ylab = "Perfectionism (SD)"
 sub = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2167,6 +2218,7 @@ perfect_p <-
   )
 perfect_p
 
+
 # PWI ---------------------------------------------------------
 #Your health.
 #Your standard of living.
@@ -2180,10 +2232,13 @@ ylab = "PWI (SD)"
 sub = "Satisfied with...\nYour health.\nYour standard of living.\nYour future security.\nYour personal relationships."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2249,10 +2304,13 @@ sub = "I do not have enough power or control\nover important parts of my life."
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2264,9 +2322,12 @@ out_ct <-
     x = x,
     r = r
   )
+
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
+
+
 
 powerdependence1_c <-
   vanderweelevalue_ols(out_ct, f - min, delta, sd)
@@ -2318,10 +2379,13 @@ ylab = "Power Dependence 2(SD)"
 sub = "Other people have too much power or control\nover important parts of my life."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2390,10 +2454,13 @@ sub = "On the whole am satisfied with myself.\nTake a positive attitude toward m
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2461,10 +2528,13 @@ ylab = "Vengefulness (anti-Foregiveness) (SD)"
 sub = "Sometimes I can't sleep because of thinking about\npast wrongs I have suffered.\nI can usually forgive and forget when someone does me wrong.\nI find myself regularly thinking about past times that I have been wronged."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2532,10 +2602,13 @@ sub = "I have a good balance between work and\nother important things in my life
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2600,7 +2673,6 @@ worklife_c
 # Feel like an outsider.
 # Know that people around me share my attitudes and beliefs.
 
-
 Y = "BELONG_lead2_z"
 main = "Social Belonging"
 ylab = "Social Belonging (SD)"
@@ -2608,10 +2680,13 @@ sub = "Know that people in my life accept and value me.\nFeel like an outsider.\
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2676,10 +2751,13 @@ ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2749,10 +2827,13 @@ sub = "Satisfied with ...\nThe economic situation in New Zealand.\nThe social co
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -2812,6 +2893,11 @@ nwi_p
 # There is no one I can turn to for guidance in times of stress.
 # I know there are people I can turn to when I need help.
 ## fit
+
+
+table(mf$BELONG_lead2 == mf$SUPPORT_lead2_z)
+
+
 Y = "SUPPORT_lead2_z"
 main = "Social Support"
 ylab = "Social Support (SD)"
@@ -2819,11 +2905,13 @@ sub = 'There are people I can depend on to help me if I really need it.\nThere i
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
-
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 ## g-computation
 out_ct <-
   pool_stglm_contrast(
@@ -2863,7 +2951,6 @@ support_t <- out_ct %>%
            background = "dodgerblue") |>
   kable_minimal(full_width = F)
 # show table
-support_t
 # graph
 support_p <-
   ggplot_stglm(
@@ -2961,10 +3048,13 @@ ylab = "Charity Donations (annual)"
 sub = "How much money have you donated to charity in the last year?"
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3026,18 +3116,17 @@ charity_p
 Y = "Volunteers_lead2"
 main = "Volunteer (RR)"
 ylab = "Volunteer (Risk Ratio)"
-family = "poisson" # binary outcome not rare
 sub = "Hours spent … voluntary/charitable work"
 # clean oven
 rm(out_m)
 rm(out_ct)
 # fit regression model
-out_m <- mice_generalised(
+out_m <- mice_generalised_lin(
   df = df,
   X = X,
   Y = Y,
   cvars = cvars,
-  family = family
+  family = "poisson"
 )
 # g-computation - contrasts
 out_ct <-
@@ -3237,10 +3326,13 @@ sub = "NZ Socio-economic index 2013: Occupational Prestige"
 
 
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3307,10 +3399,13 @@ main = "Standard Living"
 ylab = "Standard Living (SD)"
 sub  = "Satisfied with ...Your standard of living."
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3380,10 +3475,13 @@ main = "Your Future Security"
 ylab = "Your Future Security (SD)"
 sub  = "Satisfied with ...Your Future Security."
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3449,10 +3547,13 @@ main = "Your Health"
 ylab = "Your Health (SD)"
 sub  = "Satisfied with ...Your Health."
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3515,10 +3616,13 @@ main = "YourPersonal Relationships"
 ylab = "Your Personal Relationships (SD)"
 sub  = "Satisfied with ...Your Personal Relationships"
 # regression
-out_m <- mice_gaussian(df = df,
-                       X = X,
-                       Y = Y,
-                       cvars = cvars)
+out_m <- mice_generalised_lin(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 
 ## g-computation
 out_ct <-
@@ -3596,6 +3700,10 @@ h_tab |>
            bold = T,
            # color = "black",
            background = "bold") |>
+  row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           color = "blue",
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3618,10 +3726,10 @@ embody_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  # row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-  #          bold = T,
-  #          # color = "black",
-  #          background = "bold")
+  row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           color = "blue",
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3653,6 +3761,10 @@ reflect_tab |>
            bold = T,
            color = "black",
            background = "bold") |>
+  # row_spec(c(10),
+  #          bold = T,
+  #          color = "blue",
+  #          background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3664,18 +3776,28 @@ social_tab <- rbind(belong_c,
                     community_c,
                     nwi_c,
                     support_c)
+belong_c
+support_c
 
 social_tab |>
   kbl(caption = main,
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 4),
+  row_spec(c(4),
            bold = T,
            color = "black",
            background = "bold") |>
+  # row_spec(c(1),
+  #          bold = T,
+  #          color = "blue",
+  #          background = "bold") |>
   kable_minimal(full_width = F)
 
+
+#NOTE  these two tables differ!
+support_t
+belong_t
 
 # TABLE ECONOMIC WELLBEING and Charity ------------------------------------------------
 
@@ -3699,178 +3821,178 @@ econ_tab |>
            background = "bold") |>
   kable_minimal(full_width = F)
 
-# GRAPHS EMBODIED --------------------------------------------
-embody_plots <-
-  bodysat_p +
-  distress_p +
-  fatigue_p +
-  rumination_p +
-  selfcontrol_p +
-  sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
-                                tag_levels = "A") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-embody_plots
-
-ggsave(
-  embody_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "embody_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-# GRAPHS HEALTH -----------------------------------------------------------
-
-health_plots <- alcoholfreq_p +
-  alcoholintensity_p +
-  bmi_p +
-  exercise_p +
-  smoker_p +
-  sfhealth_p +
-  plot_annotation(title = "Causal effects of religious service on health outcomes",
-                  # subtitle = "xyz",
-                  tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-# view
-health_plots
-
-ggsave(
-  health_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "health_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-dev.off()
-
-
-
-
-# GRAPHS REFLECTIVE WELL-BEING ------------------------------------------------
-
-reflective_plots <- gratitude_p +
-  groupimperm_p +
-  selfperm_p +
-  lifesat_p +
-  meaning_p +
-  perfect_p +
-  pwi_p +
-  powerdependence1_p +
-  powerdependence2_p +
-  selfesteem_p +
-  veng_p +
-  plot_annotation(title = "Causal effects of religious service on reflective wellbeing") +
-  plot_layout(guides = 'collect')
-
-reflective_plots
-
-# save
-
-ggsave(
-  reflective_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "reflective_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-# GRAPHS SOCIAL WELL-BEING ------------------------------------------------
-
-social_plots <- belong_p +
-  community_p +
-  nwi_p +
-  support_p + plot_annotation(title = "Causal effects of religious service on social wellbeing") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-social_plots
-
-ggsave(
-  social_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "social_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-social_plots
-dev.off()
-
-
-### GRAPHS ECONOMIC_SUCCESS GRAPHS ------------------------------------------------
-
-econ_plots <- charity_p +
-  nzsei_p +
-  standardliving_p +
-  volunteers_p +  worklife_p +
-  plot_annotation(title = "Causal effects of religious service on economic wellbeing") +
-  plot_layout(guides = 'collect') + plot_layout(ncol = 2)
-
-# view
-econ_plots
-
-ggsave(
-  econ_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "econ_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-dev.off()
-
-
-
-# PWI COMPARE -------------------------------------------------------------
-
-
-pwi_plots <-
-  pwi_p +
-  yourhealth_p +
-  standardliving_p  +
-  yourfuturesecurity_p  +
-  yourpersonalrelationships_p +
-  plot_annotation(title = "Causal effects of religious service on PWI dimensions") +
-  plot_layout(guides = 'collect') +  plot_layout(nrow = 1)
-
-pwi_plots
-
-# save
-
-ggsave(
-  pwi_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "pwi_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
+# # GRAPHS EMBODIED --------------------------------------------
+# embody_plots <-
+#   bodysat_p +
+#   distress_p +
+#   fatigue_p +
+#   rumination_p +
+#   selfcontrol_p +
+#   sexualsat_p + plot_annotation(title = "Causal effects of religious service on embodied wellbeing", #subtitle = "xyz",
+#                                 tag_levels = "A") +
+#   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+#
+# embody_plots
+#
+# ggsave(
+#   embody_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "embody_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+#
+#
+# # GRAPHS HEALTH -----------------------------------------------------------
+#
+# health_plots <- alcoholfreq_p +
+#   alcoholintensity_p +
+#   bmi_p +
+#   exercise_p +
+#   smoker_p +
+#   sfhealth_p +
+#   plot_annotation(title = "Causal effects of religious service on health outcomes",
+#                   # subtitle = "xyz",
+#                   tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+#
+# # view
+# health_plots
+#
+# ggsave(
+#   health_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "health_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+#
+# dev.off()
+#
+#
+#
+#
+# # GRAPHS REFLECTIVE WELL-BEING ------------------------------------------------
+#
+# reflective_plots <- gratitude_p +
+#   groupimperm_p +
+#   selfperm_p +
+#   lifesat_p +
+#   meaning_p +
+#   perfect_p +
+#   pwi_p +
+#   powerdependence1_p +
+#   powerdependence2_p +
+#   selfesteem_p +
+#   veng_p +
+#   plot_annotation(title = "Causal effects of religious service on reflective wellbeing") +
+#   plot_layout(guides = 'collect')
+#
+# reflective_plots
+#
+# # save
+#
+# ggsave(
+#   reflective_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "reflective_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+#
+# # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
+#
+# social_plots <- belong_p +
+#   community_p +
+#   nwi_p +
+#   support_p + plot_annotation(title = "Causal effects of religious service on social wellbeing") +
+#   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
+#
+# social_plots
+#
+# ggsave(
+#   social_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "social_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+#
+# social_plots
+# dev.off()
+#
+#
+# ### GRAPHS ECONOMIC_SUCCESS GRAPHS ------------------------------------------------
+#
+# econ_plots <- charity_p +
+#   nzsei_p +
+#   standardliving_p +
+#   volunteers_p +  worklife_p +
+#   plot_annotation(title = "Causal effects of religious service on economic wellbeing") +
+#   plot_layout(guides = 'collect') + plot_layout(ncol = 2)
+#
+# # view
+# econ_plots
+#
+# ggsave(
+#   econ_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "econ_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
+#
+# dev.off()
+#
+#
+#
+# # PWI COMPARE -------------------------------------------------------------
+#
+#
+# pwi_plots <-
+#   pwi_p +
+#   yourhealth_p +
+#   standardliving_p  +
+#   yourfuturesecurity_p  +
+#   yourpersonalrelationships_p +
+#   plot_annotation(title = "Causal effects of religious service on PWI dimensions") +
+#   plot_layout(guides = 'collect') +  plot_layout(nrow = 1)
+#
+# pwi_plots
+#
+# # save
+#
+# ggsave(
+#   pwi_plots,
+#   path = here::here(here::here("figs", "figs_church", "standardised")),
+#   width = 16,
+#   height = 12,
+#   units = "in",
+#   filename = "pwi_plots_all.jpg",
+#   device = 'jpeg',
+#   limitsize = FALSE,
+#   dpi = 1200
+# )
+#
 
 # MULTILEVEL COMPARE ------------------------------------------------------
 
@@ -4250,7 +4372,7 @@ k_lmer <- lme4::lmer(
 k_ml <- plot(ml_tab <-
                ggeffects::ggpredict(k_lmer, terms = c("Church[0:6]"), facet = F)) + scale_y_continuous(limits = ylim) +
   theme_classic() + labs(title = "Predicted values of Kessler 6 Distress using multi-level analysis",
-  subtitle = "No temporal ordering in variables")
+                         subtitle = "No temporal ordering in variables")
 
 d_p + k_ml
 

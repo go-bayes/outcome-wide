@@ -1,3 +1,5 @@
+# CHURCH6
+
 # church-use R
 # set digits = 3
 options(scipen = 999)
@@ -92,7 +94,7 @@ df_cr <- tab_in %>%
     Parent,
     Relid,
     Religious,
-    Religion.Church,
+    Religion.Church2,
     Believe.Spirit,
     Believe.God,
     Spiritual.Identification,
@@ -158,7 +160,7 @@ df_cr <- tab_in %>%
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-#  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
+  #  dplyr::mutate(Volunteers = if_else(HoursCharity == 1, 1, 0),
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of processing
   arrange(Id, Wave) %>%
@@ -173,7 +175,7 @@ df_cr <- tab_in %>%
                 #   )
                 # ) - 1),
                 # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
+                Church = as.integer(Religion.Church2) )%>%
   arrange(Id, Wave)  %>% #
   dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
@@ -242,7 +244,7 @@ df_cr <- tab_in %>%
   dplyr::filter(Religious == 1) %>%
   dplyr::select(
     -c(
-      Religion.Church,
+      Religion.Church2,
       # EthCat,
       Religious,
       #  HoursCharity,
@@ -270,11 +272,12 @@ df_cr <- tab_in %>%
   arrange(Id)
 
 
-table1::table1(~ Church + SDO +  factor(Retiredp) |
+table1::table1(~ Church + Church_lead1 + SDO +  factor(Retiredp) |
                  Wave ,
                data = df_cr,
                overall = FALSE)#11953
 
+table(df_cr$Church)
 
 # Filtering retirement -- consistency and positivity assumptions
 # number of ids
@@ -365,7 +368,7 @@ table1::table1(
     Parent +
     Partner +
     PoliticalOrientationRight +
-   # PartnerLostJob +
+    # PartnerLostJob +
     Spiritual.Identification +
     RespectSelf_baseline +
     Retiredp +
@@ -426,9 +429,9 @@ table1::table1(
 table1::table1(
   ~ BELONG +
     NeighbourhoodCommunity,
-    # SUPPORT +
-    # National.Identity +
-    # PATRIOT,
+  # SUPPORT +
+  # National.Identity +
+  # PATRIOT,
   data = df_crr,
   transpose = F
 )
@@ -454,11 +457,11 @@ mice:::find.collinear(mice_cr)
 cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
 
 # save
-saveh(cr_mice, "cr_mice2")
+saveh(cr_mice, "cr_mice6")
 
 
 # read
-cr_mice <- readh("cr_mice2")
+#cr_mice <- readh("cr_mice6")
 # checks
 outlist2 <-
   row.names(cr_mice)[cr_mice$outflux < 0.5]
@@ -483,12 +486,14 @@ N
 dat$Household.INC
 ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
+  dplyr::mutate(Church = ifelse(Church > 4, 4, Church)) |>
+  dplyr::mutate(Church_lead1 = ifelse(Church_lead1 > 4, 4, Church_lead1)) |>
   dplyr::mutate(ChurchBin = if_else(Church <4, 0, 1)) |>
   dplyr::mutate(ChurchBin_lead1 = if_else(Church_lead1 <4, 0, 1)) |>
   dplyr::mutate(ChurchTri = if_else(Church == 0,0, if_else(Church < 4  &  Church > 0, 1, 2))) |>
   dplyr::mutate(ChurchTri_lead1 = if_else(Church_lead1 == 0,0, if_else(Church_lead1 < 4  &  Church_lead1 > 0, 1, 2))) |>
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
- # dplyr::mutate(income_log = log(Household.INC + 1)) |>
+  # dplyr::mutate(income_log = log(Household.INC + 1)) |>
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
   plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
@@ -561,85 +566,16 @@ ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = F)
 
 
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
+saveh(ml, "churchl6")
+saveh(mf, "churchf6")
 
 
 
 ###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
+ml <- readh("churchl6")
+mf <- readh("churchf6")
 
 # model equations ---------------------------------------------------------
-
-cvars = c(
-  "AGREEABLENESS_z",
-  "CONSCIENTIOUSNESS_z",
-  "EXTRAVERSION_z",
-  "HONESTY_HUMILITY_z",
-  "NEUROTICISM_z",
-  "OPENNESS_z",
-  "Age_z",
-  "Alcohol.Frequency_z",
-  "Alcohol.Intensity_log_z",
-  "Bodysat_z",
-  "BornNZ_z",
-  "Believe.God_z",
-  "Believe.Spirit_z",
-  "BELONG_z",
-  "CharityDonate_log_z",
-  "ChildrenNum_z",
-  "Church_z",
-  "community",
-  "Edu_z",
-  "Employed_z",
-  "Euro_z",
-  "GRATITUDE_z",
-  "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_z",
-  "HLTH.BMI_z",
-  "HLTH.Disability_z",
-  "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
-  "ImpermeabilityGroup_z",
-  "income_log_z",
-  "KESSLER6sum_z",
-  "LIFEMEANING_z",
-  "LIFESAT_z",
-  "Male_z",
-  "NZdep_z",
-  "NWI_z",
-  "NZSEI13_z",
-  "Parent_z",
-  "Partner_z",
-  "PERFECTIONISM_z",
-  "PermeabilityIndividual_z",
-  "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  "Relid_z",
-  "Respect.Self_z",
-  "Retiredp_z",
-  "Rumination_z",
-  "RWA_z",
-  "SDO_z",
-  "SELF.CONTROL_z",
-  "SELF.ESTEEM_z",
-  "SexualSatisfaction_z",
-  "SFHEALTH_z",
-  "Smoker_z",
-  "Spiritual.Identification_z",
-  "Standard.Living_z",
-  "SUPPORT_z",
-  "Urban_z",
-  "VENGEFUL.RUMIN_z",
-  "Volunteers_z",
-  "Your.Health_z",
-  "Your.Future.Security_z",
-  "Your.Personal.Relationships_z"
-)
-
 
 
 
@@ -665,7 +601,7 @@ xlab = "Church_lead1"  ## Monthly Church
 
 # SET THE RANGE OF religious service FROM ZERO TO 80
 min = 0
-max = 6
+max = 4
 
 
 # set full range of X
@@ -746,7 +682,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-#  "income_log_z",
+  #  "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -4250,7 +4186,7 @@ k_lmer <- lme4::lmer(
 k_ml <- plot(ml_tab <-
                ggeffects::ggpredict(k_lmer, terms = c("Church[0:6]"), facet = F)) + scale_y_continuous(limits = ylim) +
   theme_classic() + labs(title = "Predicted values of Kessler 6 Distress using multi-level analysis",
-  subtitle = "No temporal ordering in variables")
+                         subtitle = "No temporal ordering in variables")
 
 d_p + k_ml
 
@@ -5418,7 +5354,7 @@ data_ml <- tab_in |>
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
   dplyr::mutate(wave = as.numeric(Wave) - 1) |>
   #  dplyr::mutate(income_log = log(Household.INC + 1)) |>
-  dplyr::mutate(Church = as.integer(ifelse(Religion.Church > 8, 8, Religion.Church))) |>
+  dplyr::mutate(Church = as.integer(Religion.Church)) |>
   # dplyr::mutate( inc_prop = (income_log / (income_log_lead1) - 1)) |>
   dplyr::mutate(CharityDonate = round(CharityDonate, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 1, 1, 0)) |>
@@ -5473,3 +5409,4 @@ ungroup() |>
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) #%>%
 # dplyr::mutate(EthCat = as.factor(EthCat))  # labels = c("Euro", "Maori", "Pacific", "Asian")
+

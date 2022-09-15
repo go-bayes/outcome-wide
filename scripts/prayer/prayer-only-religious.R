@@ -61,6 +61,13 @@ dat %>%
   summarise(mean(Religion.Church2, na.rm = TRUE))
 
 # Do you have a health condition or disability that limits you, and that has lasted for 6+ months?
+hist(dat$Religion.Prayer2, breaks = 100)
+
+dat2 <- dat |> filter( Religious == 1)
+npray <- dat2 |> filter(Religion.Prayer2 > 10)
+npray2<- dat2 |> filter(Religion.Prayer2 <= 10)
+
+nrow(npray)/nrow(npray2)
 
 ## select vars
 df_cr <- tab_in %>%
@@ -73,6 +80,7 @@ df_cr <- tab_in %>%
     EthCat,
     Age,
     Male,
+    Religious,
     NZSEI13,
     CONSCIENTIOUSNESS,
     OPENNESS,
@@ -91,8 +99,8 @@ df_cr <- tab_in %>%
     Household.INC,
     Parent,
     Relid,
-    Religious,
-    Religion.Church,
+    Religion.Prayer2,
+    Religion.Church2,
     Believe.Spirit,
     Believe.God,
     Spiritual.Identification,
@@ -172,10 +180,10 @@ df_cr <- tab_in %>%
                 #     right = FALSE
                 #   )
                 # ) - 1),
-                # EthCat = factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-                Church = ifelse(Religion.Church > 8, 8, Religion.Church)) %>%
+                Church = ifelse(Religion.Church2 > 8, 8, Religion.Church2),
+                Prayer = Religion.Prayer2) %>%
   arrange(Id, Wave)  %>% #
-  dplyr::mutate(Church_lead1 = lead(Church, n = 1)) %>%
+  dplyr::mutate(Prayer_lead1 = lead(Prayer, n = 1)) %>%
   # inc_prop = (income_log / (income_log_lead1) - 1),
   dplyr::mutate(across(
     c(
@@ -236,13 +244,14 @@ df_cr <- tab_in %>%
   dplyr::filter(Wave == 2018) %>%
   dplyr::mutate(Retiredp = if_else((retired == 1 |
                                       semiretired == 1), 1, 0)) %>%
-  dplyr::filter(!is.na(Church)) %>%
-  dplyr::filter(!is.na(Church_lead1)) %>%
+  dplyr::filter(!is.na(Prayer)) %>%
+  dplyr::filter(!is.na(Prayer_lead1)) %>%
   dplyr::mutate(Religious = as.numeric(Religious) - 1) |>
   dplyr::filter(Religious == 1) %>%
   dplyr::select(
     -c(
-      Religion.Church,
+      Religion.Church2,
+      Religion.Prayer2,
       # EthCat,
       Religious,
       #  HoursCharity,
@@ -279,7 +288,7 @@ table1::table1(~ Church + SDO +  factor(Retiredp) |
 # Filtering retirement -- consistency and positivity assumptions
 # number of ids
 N <- length(unique(df_cr$Id))
-N  #11945
+N  #11731
 
 # inspect data
 skim(df_cr) |>
@@ -454,11 +463,11 @@ mice:::find.collinear(mice_cr)
 cr_mice <- mice::mice(mice_cr,  seed = 0, m = 10)
 
 # save
-saveh(cr_mice, "cr_mice2")
+saveh(cr_mice, "cr_mice_prayer")
 
 
 # read
-cr_mice <- readh("cr_mice2")
+cr_mice <- readh("cr_mice_prayer")
 # checks
 outlist2 <-
   row.names(cr_mice)[cr_mice$outflux < 0.5]
@@ -483,10 +492,6 @@ N
 dat$Household.INC
 ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
-  dplyr::mutate(ChurchBin = if_else(Church <4, 0, 1)) |>
-  dplyr::mutate(ChurchBin_lead1 = if_else(Church_lead1 <4, 0, 1)) |>
-  dplyr::mutate(ChurchTri = if_else(Church == 0,0, if_else(Church < 4  &  Church > 0, 1, 2))) |>
-  dplyr::mutate(ChurchTri_lead1 = if_else(Church_lead1 == 0,0, if_else(Church_lead1 < 4  &  Church_lead1 > 0, 1, 2))) |>
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
  # dplyr::mutate(income_log = log(Household.INC + 1)) |>
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
@@ -522,6 +527,11 @@ ml <- ml %>%
                                                           1)) %>%
   dplyr::mutate(LIFESAT_lead2ord = as.integer(round(LIFESAT_lead2, digits = 0))) %>%
   dplyr::mutate(alcohol_bin2 = if_else(Alcohol.Frequency > 3, 1, 0)) %>%
+  dplyr::mutate(Prayer_sqrt = sqrt(Prayer)) %>%
+  dplyr::mutate(Prayer_lead1_sqrt = sqrt(Prayer_lead1)) %>%
+  dplyr::mutate(Prayer_ord =  if_else(Prayer == 0, 0,
+                                      if_else(Prayer > 30, ) %>%
+  dplyr::mutate(Prayer_lead1_ord = sqrt(Prayer_lead1)) %>%
   dplyr::mutate(alcohol_bin = if_else(Alcohol.Frequency > 2, 1, 0)) %>%
   dplyr::mutate(Hours.Work_10 =  Hours.Work / 10) %>%
   # dplyr::mutate(Hours.Work_lead1_10 =  as.integer(Hours.Work_lead1/10))%>%
@@ -561,86 +571,14 @@ ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = F)
 
 
-saveh(ml, "churchl_cr2")
-saveh(mf, "churchf_cr2")
+saveh(ml, "ml_prayer_onlyreligious")
+saveh(mf, "mf_prayer_onlyreligious")
 
 
 
 ###### READ THIS DATA IN   #########
-ml <- readh("churchl_cr2")
-mf <- readh("churchf_cr2")
-
-# model equations ---------------------------------------------------------
-
-cvars = c(
-  "AGREEABLENESS_z",
-  "CONSCIENTIOUSNESS_z",
-  "EXTRAVERSION_z",
-  "HONESTY_HUMILITY_z",
-  "NEUROTICISM_z",
-  "OPENNESS_z",
-  "Age_z",
-  "Alcohol.Frequency_z",
-  "Alcohol.Intensity_log_z",
-  "Bodysat_z",
-  "BornNZ_z",
-  "Believe.God_z",
-  "Believe.Spirit_z",
-  "BELONG_z",
-  "CharityDonate_log_z",
-  "ChildrenNum_z",
-  "Church_z",
-  "community",
-  "Edu_z",
-  "Employed_z",
-  "Euro_z",
-  "GRATITUDE_z",
-  "HomeOwner_z",
-  "Hours.Exercise_log_z",
-  "Hours.Work_z",
-  "HLTH.BMI_z",
-  "HLTH.Disability_z",
-  "HLTH.Fatigue_z",
-  "HLTH.SleepHours_z",
-  "ImpermeabilityGroup_z",
-  "income_log_z",
-  "KESSLER6sum_z",
-  "LIFEMEANING_z",
-  "LIFESAT_z",
-  "Male_z",
-  "NZdep_z",
-  "NWI_z",
-  "NZSEI13_z",
-  "Parent_z",
-  "Partner_z",
-  "PERFECTIONISM_z",
-  "PermeabilityIndividual_z",
-  "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  "Relid_z",
-  "Respect.Self_z",
-  "Retiredp_z",
-  "Rumination_z",
-  "RWA_z",
-  "SDO_z",
-  "SELF.CONTROL_z",
-  "SELF.ESTEEM_z",
-  "SexualSatisfaction_z",
-  "SFHEALTH_z",
-  "Smoker_z",
-  "Spiritual.Identification_z",
-  "Standard.Living_z",
-  "SUPPORT_z",
-  "Urban_z",
-  "VENGEFUL.RUMIN_z",
-  "Volunteers_z",
-  "Your.Health_z",
-  "Your.Future.Security_z",
-  "Your.Personal.Relationships_z"
-)
-
-
+ml <- readh("ml_prayer_onlyreligious")
+mf <- readh("mf_prayer_onlyreligious")
 
 
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
@@ -653,14 +591,14 @@ df <- ml
 ## HERE WE USE THE EXAMPLE OF HOURS WORK / 10
 ###############   IMPORTANT SET YOUR EXPOSURE VARIABLE
 
-X = "Church_lead1"
+X = "Prayer_lead1"
 
 
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
 
-xlab = "Church_lead1"  ## Monthly Church
+xlab = "Prayer (square root)"  ## Monthly Church
 
 
 # SET THE RANGE OF religious service FROM ZERO TO 80
@@ -671,7 +609,7 @@ max = 6
 # set full range of X
 x =  min:max
 
-
+sqrt(7)
 # range for some graphs
 minmax <- paste(c(x), sep = ",")
 
@@ -680,7 +618,7 @@ minmax <- paste(c(x), sep = ",")
 r = 0
 
 # focal contrast for X  Someone who goes from 20 to 60 hours of work.
-f = 4
+f = 3
 
 # REQUIRED for certain model model functions
 c = x
@@ -727,7 +665,7 @@ cvars = c(
   "BELONG_z",
   "CharityDonate_log_z",
   "ChildrenNum_z",
-  "ChurchTri_z",
+  "Church_z",
   "community",
   "Edu_z",
   "Employed_z",
@@ -3670,10 +3608,10 @@ social_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 4),
-           bold = T,
-           color = "black",
-           background = "bold") |>
+  # row_spec(c(1, 4),
+  #          bold = T,
+  #          color = "black",
+  #          background = "bold") |>
   kable_minimal(full_width = F)
 
 
@@ -3693,7 +3631,7 @@ econ_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 5),
+   row_spec(c(1),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -3714,11 +3652,11 @@ embody_plots
 
 ggsave(
   embody_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
-  filename = "embody_plots.jpg",
+  filename = "embody_plots_prayer.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3742,11 +3680,11 @@ health_plots
 
 ggsave(
   health_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
-  filename = "health_plots.jpg",
+  filename = "health_plots_prayer.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3779,11 +3717,11 @@ reflective_plots
 
 ggsave(
   reflective_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
-  filename = "reflective_plots.jpg",
+  filename = "reflective_plots_prayer.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3801,11 +3739,11 @@ social_plots
 
 ggsave(
   social_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
-  filename = "social_plots.jpg",
+  filename = "social_plots_prayer.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -3829,7 +3767,7 @@ econ_plots
 
 ggsave(
   econ_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -3861,7 +3799,7 @@ pwi_plots
 
 ggsave(
   pwi_plots,
-  path = here::here(here::here("figs", "figs_church", "standardised")),
+  path = here::here(here::here("figs", "figs_prayer", "standardised")),
   width = 16,
   height = 12,
   units = "in",
