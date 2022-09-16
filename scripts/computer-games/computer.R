@@ -295,6 +295,27 @@ df_cr$EthCat
 
 hist(df_cr$Hours.CompGames, breaks =100)
 
+hours_hist <- ggplot2::ggplot(df_cr, aes(Hours.CompGames)) +  geom_histogram(binwidth = 1) +
+  geom_vline(xintercept = 21, colour = "red") +
+  labs(x = "Weekly Hours of Computer Games",
+       y = "Counts",
+       title = "Histogram of Computer Game Frequency: NZAVS Time 10, N = 33,148",
+       subtitle = "Responses above 21 hours grouped with 21 hours")
+hours_hist
+ggsave(
+  hours_hist,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "hours_hist.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
 hist(df_cr$Hours.CompGames)
 
 hist((df_cr$Hours.CompGames/10),breaks = 20)
@@ -3849,18 +3870,18 @@ reflective_plots
 
 # save
 
-# ggsave(
-#   reflective_plots,
-#   path = here::here(here::here("figs", "figs_games", "standardised")),
-#   width = 16,
-#   height = 12,
-#   units = "in",
-#   filename = "reflective_plots_all.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-#
+ggsave(
+  reflective_plots,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "reflective_plots_all.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
 # # GRAPHS SOCIAL WELL-BEING ------------------------------------------------
 #
 social_plots <- belong_p +
@@ -3889,28 +3910,28 @@ social_plots
 #
 # ### GRAPHS ECONOMIC_SUCCESS GRAPHS ------------------------------------------------
 #
-# econ_plots <- charity_p +
-#   nzsei_p +
-#   standardliving_p +
-#   volunteers_p +  worklife_p +
-#   plot_annotation(title = "Causal effects of religious service on economic wellbeing") +
-#   plot_layout(guides = 'collect') + plot_layout(ncol = 2)
-#
-# # view
-# econ_plots
-#
-# ggsave(
-#   econ_plots,
-#   path = here::here(here::here("figs", "figs_games", "standardised")),
-#   width = 16,
-#   height = 12,
-#   units = "in",
-#   filename = "econ_plots_all.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-#
+econ_plots <- charity_p +
+  nzsei_p +
+  standardliving_p +
+  volunteers_p +  worklife_p +
+  plot_annotation(title = "Causal effects of religious service on economic wellbeing") +
+  plot_layout(guides = 'collect') + plot_layout(ncol = 2)
+
+# view
+econ_plots
+
+ggsave(
+  econ_plots,
+  path = here::here(here::here("figs", "figs_games", "standardised")),
+  width = 16,
+  height = 12,
+  units = "in",
+  filename = "econ_plots_all.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
 # dev.off()
 #
 #
