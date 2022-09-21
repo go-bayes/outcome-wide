@@ -239,7 +239,7 @@ df_a <- tab_in %>%
   dplyr::select(
     -c(
       Religion.Church,
-      HoursCharity,
+     # HoursCharity,
       Respect.Self_lead2,  # not there
       Emp.WorkLifeBalance, # not at baseline
       YearMeasured    )
