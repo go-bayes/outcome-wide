@@ -314,6 +314,7 @@ ml <- ml %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(income_log = log(Household.INC + 1)) |>
   dplyr::mutate(income_log_lead2 = log(Household.INC_lead2 + 1)) |>
+  dplyr::mutate(income_log_lead1 = log(Household.INC_lead1 + 1)) |>
   dplyr::mutate(NZSEI13_lead1_10 = NZSEI13_lead1/10) |>
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
@@ -366,11 +367,12 @@ ml <- ml %>%
 ml <- ml %>% mutate_if(is.matrix, as.vector)
 ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = TRUE)
-
+mf$Hours.Work_z
 #save
 saveh(ml,"ml_amy")
 saveh(mf,"mf_amy")
 
+mf$income_log_lead1
 
 
 #########################################
