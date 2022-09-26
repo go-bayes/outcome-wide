@@ -1,4 +1,4 @@
-# options(future.globals.maxSize = 8000 * 1024 ^ 2)  # needed
+  # options(future.globals.maxSize = 8000 * 1024 ^ 2)  # needed
 # Amy Income NZSEI STAND LIVIING
 # set science digits
 options(scipen = 999)
@@ -6,15 +6,29 @@ options(scipen = 999)
 # Does congregation size cause changes in well-being
 # set science digits
 # read libraries
+#libraries and functions
+# read libraries
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
 
 # read functions
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+conflict_prefer("pool", "mice")
+conflict_prefer("cbind", "base")
 # for saving models
 push_mods <-
   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
 push_figs <-
   fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+
+
+# read data
+pull_path <-
+  fs::path_expand(
+    "~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5"
+  )
+
+dat <- readRDS(pull_path)
 
 
 
@@ -24,8 +38,24 @@ push_figs <-
 
 # table for participant N
 tab_in <- dat %>%
-  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
-  dplyr::mutate(Male = ifelse(GendAll == 1, 1, 0)) %>%
+  dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0),
+                SexualOrientation = as.factor(if_else(SexualOrientationL1 == 1,
+                                                      "Heterosexual",
+                                                      if_else(SexualOrientationL1==2, "Homosexual", "OtherSexuality" )))) %>%
+  dplyr::mutate(Gender3 = as.factor(ifelse(GendAll == 0, "Female", if_else(GendAll == 1, "Male", "GenderDiverse")))) %>%
+  dplyr::rename(
+    kessler_hopeless = SWB.Kessler01,
+    # …  you feel hopeless?
+    kessler_depressed = SWB.Kessler02,
+    #…  you feel so depressed that nothing could cheer you up?
+    kessler_restless  = SWB.Kessler03,
+    #…  you feel restless or fidgety?
+    kessler_effort = SWB.Kessler04,
+    #…  you feel that everything was an effort?
+    kessler_worthless = SWB.Kessler05,
+    #…  you feel worthless?
+    kessler_nervous = SWB.Kessler06 #…  you feel nervous?
+  ) |>
   dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
                   (Wave == 2019  &
                      YearMeasured  == 1) |
@@ -44,6 +74,8 @@ tab_in <- dat %>%
   ungroup() %>%
   droplevels() %>%
   arrange(Id, Wave)
+
+
 
 # Check ids
 length(unique(tab_in$Id)) # 34783
@@ -69,10 +101,10 @@ df_a <- tab_in %>%
     Id,
     YearMeasured,
     Wave,
+    Gender3,
     Partner,
-    Euro,
+    EthCat,
     Age,
-    Male,
     NZSEI13,
     CONSCIENTIOUSNESS,
     OPENNESS,
@@ -143,6 +175,7 @@ df_a <- tab_in %>%
     began_relationship,
     Alcohol.Intensity,
     Alcohol.Frequency,
+    SexualOrientation,
     SexualSatisfaction,
     POWERDEPENDENCE1,
     POWERDEPENDENCE2,
@@ -160,22 +193,22 @@ df_a <- tab_in %>%
   dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of
   arrange(Id, Wave) %>%
   dplyr::mutate(
-    Volunteers = if_else(HoursCharity == 1, 1, 0),
+  #  Volunteers = if_else(HoursCharity == 1, 1, 0),
     Church = ifelse(Religion.Church > 8, 8, Religion.Church),
   ) %>%
   arrange(Id, Wave)  %>% # dplyr::mutate(Hours.Work_lead1 = lead(Hours.Work, n = 1)) %>%
   dplyr::mutate(across(
-    c(
+    c(Standard.Living,
       NZSEI13,
-      Standard.Living,
       Household.INC,
     ),
     ~ lead(.x, n = 1),
     .names = "{col}_lead1"
   )) %>% # make leads
   dplyr::mutate(across(
-    c(
-      NZSEI13,
+    c(NZSEI13,
+      Household.INC,
+      Standard.Living,
       NZdep,
       Employed,
       Household.INC,
@@ -221,7 +254,7 @@ df_a <- tab_in %>%
       Your.Future.Security,
       Your.Personal.Relationships,
       Your.Health,
-      Standard.Living,
+    #  Standard.Living,
       PERFECTIONISM,
       PermeabilityIndividual,
       ImpermeabilityGroup
@@ -260,7 +293,6 @@ N  # 27025
 # inspect data, with eye to large missingness
 skim(df_a) |>
   arrange(n_missing)
-
 # save data
 saveh(df_a, "df_a")
 
@@ -270,7 +302,7 @@ df_a <- readh("df_a")
 
 # mice model  -------------------------------------------------------------
 library(mice)
-
+str(mice_a)
 mice_a <- df_a %>%
   dplyr::select(-c(Wave, Id))  # won't otherwise run
 
@@ -310,11 +342,13 @@ skimr::skim(ml)
 N <- length(1:nrow(a_mice$data))
 N
 # create variables in z score
+
 ml <- ml %>%
   # dplyr::mutate(newkids = ChildrenNum_lead2 - ChildrenNum) %>%
   dplyr::mutate(income_log = log(Household.INC + 1)) |>
   dplyr::mutate(income_log_lead2 = log(Household.INC_lead2 + 1)) |>
   dplyr::mutate(income_log_lead1 = log(Household.INC_lead1 + 1)) |>
+  dplyr::mutate(Volunteers_lead2 = if_else(Household.INC_lead2 > 0, 1, 0)) |>
   dplyr::mutate(NZSEI13_lead1_10 = NZSEI13_lead1/10) |>
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
@@ -358,21 +392,31 @@ ml <- ml %>%
     ),
     na.rm = TRUE
   )) |>
+  dplyr::group_by(id) |> mutate(PWI_lead2 = mean(
+    c(
+      Your.Future.Security_lead2,
+      Your.Personal.Relationships_lead2,
+      Your.Health_lead2,
+      Standard.Living_lead2
+    ),
+    na.rm = TRUE
+  )) |>
   dplyr::ungroup() |>
   droplevels() |>
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
-  select(-c(.imp_z, .id_z))
+  select(-c(.imp_z, .id_z)) |>
+dplyr::mutate(EthCat = as.factor(EthCat),
+              Gender3  = as.factor(Gender3),
+              SexualOrientation  = as.factor(SexualOrientation))
 
 # Get data into shape
 ml <- ml %>% mutate_if(is.matrix, as.vector)
 ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = TRUE)
-mf$Hours.Work_z
 #save
 saveh(ml,"ml_amy")
 saveh(mf,"mf_amy")
 
-mf$income_log_lead1
 
 
 #########################################
@@ -381,27 +425,6 @@ mf$income_log_lead1
 
 
 # READ DATA IN HERE -------------------------------------------------------
-
-# 1. Create a folder called "scripts" in your home directory.
-
-# 2. create a folder called "data" in your home directory.
-
-# 3. download these files and place them in the "scripts" folder
-https://www.dropbox.com/s/xq0jiz9xmsd8qbl/funs.R?dl=0
-https://www.dropbox.com/s/iyv3o9xbku4o4s8/libs.R?dl=0
-
-
-# then download these data and place them in your data folder
-https://www.dropbox.com/s/651tj641plmvz28/mf_amy?dl=0
-https://www.dropbox.com/s/t9ff5qylhhn5vmo/ml_amy?dl=0
-
-# Read the "libs.R" file and make sure you have installed all packages.
-
-# Then run these commands to load your library and your files
-source(here::here("scripts", "libs.R"))
-source(here::here("scripts", "funs.R"))
-
-
 # imputed data
 ml <- readh("ml_amy")
 mf <- readh("mf_amy")
@@ -444,7 +467,8 @@ cvars = c(
   "EmotionRegulation1_z",
   "EmotionRegulation2_z",
   "EmotionRegulation3_z",
-  "Euro_z",
+  "EthCat",
+  "Gender3",
   "GRATITUDE_z",
   "HomeOwner_z",
   "Hours.Exercise_log_z",
@@ -459,7 +483,6 @@ cvars = c(
   "LIFEMEANING_z",
   "LIFESAT_z",
   "lost_job_z",
-  "Male_z",
   "NZdep_z",
   "NWI_z",
   "NZSEI13_z",
@@ -477,6 +500,7 @@ cvars = c(
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
   "semiretired",
+  "SexualOrientation_z",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -504,18 +528,33 @@ m = 10
 ylim_contrast <- c(.5,1.5)
 
 
+min(mf$income_log_lead2_z, na.rm=TRUE)
+min(mf$income_log_lead2,na.rm=TRUE)
+min(mf$income_log_lead2_z, na.rm=TRUE)
+max(mf$income_log_lead2_z, na.rm=TRUE)
+max(mf$income_log_lead2, na.rm=TRUE)
+
+exp(mean(mf$income_log_lead2,na.rm=TRUE) ) + 1 #  inc = 110,522.3
+
+exp(mean(mf$income_log_lead2,na.rm=TRUE) - sd(mf$income_log_lead2,na.rm=TRUE)) + 1  #  58406.1
+
+exp( mean(mf$income_log_lead2,na.rm=TRUE) + sd(mf$income_log_lead2,na.rm=TRUE)) + 1 # 209142.9
+
+
+
 
 
 # Scripture set up ---------------------------------------------------------------
 #How many times did you pray in the last week?
 X = "income_log_lead1_z"
 xlab = "Log Annual Income (SD)"
-min= -2
+min= - 2
 max = 2
+
 # baseline
 r = -1
 # focal contrast
-f = 2
+f = 1
 # for model functions
 c = c(r,f)
 # range of estimates
@@ -526,8 +565,8 @@ p = 2
 # functions ---------------------------------------------------------------
 
 ## Also use
-round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
-round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
+# round( EValue::evalues.OLS( , se = , sd = 1, delta = 2, true = 0), 3)
+# round( EValue::evalues.RR( , lo =  , hi =, true = 1), 4)
 
 # sd(df_a$Household.INC_lead1)
 # mean(mf$income_log_lead1)
