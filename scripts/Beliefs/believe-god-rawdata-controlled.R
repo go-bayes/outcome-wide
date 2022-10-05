@@ -24,11 +24,10 @@ pull_path <-
   )
 
 
-mf$LIFEMEANING
 
 ###### READ THIS DATA IN   #########
 # ml <- readh("outcomewide-god-all")
- mf <- readh("outcomewide-god-all-mf")
+mf <- readh("outcomewide-god-all-mf")
 cor(mf$Believe.God, mf$PWI)
 cor(mf$Believe.Spirit, mf$PWI)
 cor(mf$Believe.Spirit, mf$LIFEMEANING)
@@ -103,24 +102,24 @@ sd = 1
 ##### BASELINE VARIABLES
 
 cvars = c(
-  # "AGREEABLENESS_z",
-  # "CONSCIENTIOUSNESS_z",
-  # "EXTRAVERSION_z",
-  # "HONESTY_HUMILITY_z",
-  # "NEUROTICISM_z",
-  # "OPENNESS_z",
+  "AGREEABLENESS_z",
+  "CONSCIENTIOUSNESS_z",
+  "EXTRAVERSION_z",
+  "HONESTY_HUMILITY_z",
+  "NEUROTICISM_z",
+  "OPENNESS_z",
   "Age_z",
- # "Alcohol.Frequency_z",
-  #"Alcohol.Intensity_log_z",
-#  "Bodysat_z",
-#  "BornNZ_z",
-#  "Believe.God_z",
-#  "Believe.Spirit_z",
-#  "BELONG_z",
-#  "CharityDonate_log_z",
-#  "ChildrenNum_z",
+  "Alcohol.Frequency_z",
+  "Alcohol.Intensity_log_z",
+  "Bodysat_z",
+  "BornNZ_z",
+  "Believe.God_z",
+  "Believe.Spirit_z",
+  "BELONG_z",
+  "CharityDonate_log_z",
+  "ChildrenNum_z",
   "Church_z",
-  #"community",
+  "community",
   "Edu_z",
   "Employed_z",
   #"Emp.JobSecure_z",
@@ -130,93 +129,171 @@ cvars = c(
   #"Euro_z",
   "EthCat",
   "Gender3",
- # "GRATITUDE_z",
-#  "HomeOwner_z",
-#  "Hours.Exercise_log_z",
-#  "Hours.Work_10_z",
-#  "HLTH.BMI_z",
-#  "HLTH.Disability_z",
-#  "HLTH.Fatigue_z",
- # "HLTH.SleepHours_z",
-#  "ImpermeabilityGroup_z",
+  "GRATITUDE_z",
+  "HomeOwner_z",
+  "Hours.Exercise_log_z",
+  "Hours.Work_10_z",
+  "HLTH.BMI_z",
+  "HLTH.Disability_z",
+  "HLTH.Fatigue_z",
+  "HLTH.SleepHours_z",
+  "ImpermeabilityGroup_z",
   #  "income_log_z",
- # "KESSLER6sum_z",
-#  "LIFEMEANING_z",
- # "LIFESAT_z",
-  #"lost_job_z",
+  "KESSLER6sum_z",
+  "LIFEMEANING_z",
+  "LIFESAT_z",
+  "lost_job_z",
   # "Male_z",
   "NZdep_z",
- # "NWI_z",
-#  "NZSEI13_z",
+  "NWI_z",
+  "NZSEI13_z",
   "Parent_z",
   "Partner_z",
-#  "PERFECTIONISM_z",
-#  "PermeabilityIndividual_z",
+  "PERFECTIONISM_z",
+  "PermeabilityIndividual_z",
   "Pol.Orient_z",
-#  "POWERDEPENDENCE1_z",
-#  "POWERDEPENDENCE2_z",
-#  "Relid_z",
-#  "Respect.Self_z",
-#  "Retiredp_z",
-#  "Rumination_z",
-#  "SELF.CONTROL_z",
-#  "SELF.ESTEEM_z",
+  "POWERDEPENDENCE1_z",
+  "POWERDEPENDENCE2_z",
+  "Relid_z",
+  "Respect.Self_z",
+  "Retiredp_z",
+  "Rumination_z",
+  "SELF.CONTROL_z",
+  "SELF.ESTEEM_z",
   # "SexualOrientation",
-#  "SexualSatisfaction_z",
-#  "SFHEALTH_z",
-#  "Smoker_z",
-#  "Spiritual.Identification_z",
-#  "Standard.Living_z",
-#  "SUPPORT_z",
-  "Urban_z"
-#  "VENGEFUL.RUMIN_z",
-#  "Volunteers_z",
-#  "Your.Health_z",
-#  "Your.Future.Security_z",
-#  "Your.Personal.Relationships_z"
+  "SexualSatisfaction_z",
+  "SFHEALTH_z",
+  "Smoker_z",
+  "Spiritual.Identification_z",
+  "Standard.Living_z",
+  "SUPPORT_z",
+  "Urban_z",
+  "VENGEFUL.RUMIN_z",
+  "Volunteers_z",
+  "Your.Health_z",
+  "Your.Future.Security_z",
+  "Your.Personal.Relationships_z"
 )
+
 
 family = "gaussian"
 
 
+# functions ---------------------------------------------------------------
 
-ggplot_stglm_nomi <-
-  function(out_ct, ylim, main, xlab, ylab, min, p, sub) {
-    require(ggplot2)
-    out <-  out_ct
-    out$row <- 1:nrow(out)
-    out <- out |> dplyr::rename(est = "Estimate",
-                                li = "lower.0.95",
-                                ui = "upper.0.95",
-                                se = "Std..Error")
-    g1 <- out[match(p, x), ]
-    g1
-    ggplot2::ggplot(out, aes(x = row, y = est)) +
-      geom_point() +
-      geom_pointrange(aes(ymin =  li, ymax = ui), colour = "darkgray")  +
-      scale_y_continuous(limits = ylim) +
-      labs(
-        title = main,
-        subtitle = sub,
-        x = xlab,
-        y = ylab
-      ) +
-      geom_pointrange(data = g1, aes(ymin = li, ymax = ui), colour = "red") +  # highlight contrast
-      theme_classic()
-  }
+#
+#
+# ggplot_stglm_nomi <-
+#   function(out_ct, ylim, main, xlab, ylab, min, p, sub) {
+#     require(ggplot2)
+#     out <-  out_ct
+#     out$row <- 1:nrow(out)
+#     out <- out |> dplyr::rename(est = "Estimate",
+#                                 li = "lower.0.95",
+#                                 ui = "upper.0.95",
+#                                 se = "Std..Error")
+#     g1 <- out[match(p, x), ]
+#     g1
+#     ggplot2::ggplot(out, aes(x = row, y = est)) +
+#       geom_point() +
+#       geom_pointrange(aes(ymin =  li, ymax = ui), colour = "darkgray")  +
+#       scale_y_continuous(limits = ylim) +
+#       labs(
+#         title = main,
+#         subtitle = sub,
+#         x = xlab,
+#         y = ylab
+#       ) +
+#       geom_pointrange(data = g1, aes(ymin = li, ymax = ui), colour = "red") +  # highlight contrast
+#       theme_classic()
+#   }
+#
+#
+#
+# glm_nomi_lin = function(X,Y,df, cvars, family = family) {
+#   # requires that a MATCH THEM dataset is converted to a mice object
+#   # weights must be called "weights)
+#   out_m <- glm(
+#     as.formula(paste(
+#       paste(Y, "~ (", X , ")+"),
+#       paste(cvars, collapse = "+")
+#     )), family = family, data = df)
+#   return(out_m)
+# }
+#
+# glm_nomi = function(X, Y, df, cvars, family = family) {
+#   # requires that a MATCH THEM dataset is converted to a mice object
+#   # weights must be called "weights)
+#   require("splines")
+#   out_m <- glm(as.formula(paste(
+#     paste(Y, "~ bs(", X , ")+"),
+#     paste(cvars, collapse = "+")
+#   )), family = family, data = df)
+#   return(out_m)
+# }
+#
+# vanderweelevalue_ols_nomi = function(out_ct, f, delta, sd) {
+#   coef <- round(out_ct, 3)  |>  slice(f + 1)
+#   evalout <-
+#     as.data.frame(round(
+#       EValue::evalues.OLS(
+#         coef[1, 1],
+#         se = coef[1, 2],
+#         sd = 1,
+#         delta = delta,
+#         true = 0
+#       ),
+#       3
+#     ))
+#   evalout2 <- subset(evalout[2, ])
+#   evalout2
+#   evalout3 <- evalout2 |>
+#     select_if( ~ !any(is.na(.)))
+#   evalout3
+#   colnames(evalout3) <- c("E-value", "threshold")
+#   evalout3
+#   tab <- round(cbind.data.frame(coef, evalout3), 3)
+#   rownames(tab) <- main
+#   return(tab)
+# }
+#
+# vanderweelevalue_rr_nomi = function(out_ct, f) {
+#   require("EValue")
+#   coef <- round(out_ct, 3)  |>  slice(f + 1)
+#   evalout <-
+#     as.data.frame(round(EValue::evalues.RR(
+#       coef[1, 1] ,
+#       lo =  coef[1, 4],
+#       hi = coef[1, 3],
+#       true = 1
+#     ), 3))
+#   evalout2 <- subset(evalout[2, ])
+#   evalout3 <- evalout2 |>
+#     select_if( ~ !any(is.na(.)))
+#   colnames(evalout3) <- c("E-value", "threshold")
+#   tab <- cbind.data.frame(coef, evalout3)
+#   rownames(tab) <- c(main)
+#   return(tab)
+# }
 
+# plots
+  #      se = "Std..Error")
+  #   g1 <- out[match(p, x), ]
+  #   g1
+  #   ggplot2::ggplot(out, aes(x = row, y = est)) +
+  #     geom_point() +
+  #     geom_pointrange(aes(ymin =  li, ymax = ui), colour = "darkgray")  +
+  #     scale_y_continuous(limits = ylim) +
+  #     labs(
+  #       title = main,
+  #       subtitle = sub,
+  #       x = xlab,
+  #       y = ylab
+  #     ) +
+  #     geom_pointrange(data = g1, aes(ymin = li, ymax = ui), colour = "red") +  # highlight contrast
+  #     theme_classic()
+  # }
 
-
-glm_nomi_lin = function(X,Y,df, cvars, family = family) {
-  # requires that a MATCH THEM dataset is converted to a mice object
-  # weights must be called "weights)
-  out_m <- glm(
-    as.formula(paste(
-      paste(Y, "~ (", X , ")+"),
-      paste(cvars, collapse = "+")
-    )), family = family, data = df)
-  return(out_m)
-}
 # HEALTH  INDICATORS ------------------------------------------------------------------
 # alcohol freq ------------------------------------------------------------
 #How often do you have a drink containing alcohol?
@@ -238,7 +315,7 @@ out_m <-
     Y = Y,
     family = "gaussian",
     cvars = cvars
-  )
+)
 
 out_c <- stdGlm(out_m, df, X, x)
 out_ct <-
@@ -358,7 +435,7 @@ sub = "What is your height? (metres)\nWhat is your weight? (kg)\nKg *1/(m*m)"
 
 
 out_m <-
- glm_nomi_lin
+ glm_nomi_lin(
     df = df,
     X = X,
     Y = Y,
@@ -396,7 +473,7 @@ sub = "Hours spent … exercising/physical activity"
 
 
 out_m <-
- glm_nomi_lin
+ glm_nomi_lin(
     df = df,
     X = X,
     Y = Y,
@@ -409,8 +486,8 @@ out_ct <-
     out_c, reference = r, contrast = "difference"
   )))
 
-excercise_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
-excercise_p <-
+exercise_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
+exercise_p <-
   ggplot_stglm_nomi(
     out_ct,
     ylim = ylim,
@@ -422,8 +499,8 @@ excercise_p <-
     sub = sub
   )
 
-excercise_p
-excercise_c
+exercise_p
+exercise_c
 
 # sf-health ---------------------------------------------------------------
 # Short-Form Subjective Health Scale (General Health Perception Subscale)
@@ -531,9 +608,12 @@ out_ct <-
   )))
 
 
-smoker_c <- vanderweelevalue_rr_nomi(out_ct, f)
-smoker_c
 
+
+
+
+smoker_c <- vanderweelevalue_rr_nomi_lo(out_ct, f)
+smoker_c
 
 # graph
 smoker_p <-
@@ -1321,7 +1401,7 @@ ylab = "Social Belonging (SD)"
 sub = " Know that people in my life accept and value me.\nFeel like an outsider.\nKnow that people around me share my attitudes and beliefs."
 
 out_m <-
- glm_nomi_lin
+ glm_nomi_lin(
     df = df,
     X = X,
     Y = Y,

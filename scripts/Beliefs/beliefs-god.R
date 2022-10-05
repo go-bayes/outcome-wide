@@ -760,6 +760,9 @@ sd = 1
 
 ##### BASELINE VARIABLES
 
+
+##### BASELINE VARIABLES
+
 cvars = c(
   "AGREEABLENESS_z",
   "CONSCIENTIOUSNESS_z",
@@ -819,11 +822,11 @@ cvars = c(
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
- # "SexualOrientation",
+  # "SexualOrientation",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
-  "Spiritual.Identification_z",
+  "Spiritual.Identification",
   "Standard.Living_z",
   "SUPPORT_z",
   "Urban_z",
@@ -835,6 +838,7 @@ cvars = c(
 )
 
 family = "gaussian"
+
 
 #
 # ### BASELINE for ML models
@@ -1516,6 +1520,13 @@ out_ct %>%
 distress_c <- vanderweelevalue_ols(out_ct, f - min, delta, sd)
 distress_c
 
+# est    se    ui     li E-value threshold
+# Kessler 6 Distress -0.033 0.012 -0.01 -0.056   1.208     1.102
+
+# > distress_c
+# est    se    ui     li E-value threshold
+# Kessler 6 Distress 0.008 0.016 0.039 -0.022   1.093         1
+
 
 distress_t <- out_ct %>%
   #slice(1:max) |>
@@ -1560,7 +1571,7 @@ Y = "HLTH.Fatigue_lead2_z"
 main = "Fatigue"
 ylab = "Fatigue (SD)"
 sub = "During the last 30 days, how often did....\nyou feel exhausted?"
-
+family = "gaussian"
 
 # regression
 out_m <- mice_generalised_lin(
