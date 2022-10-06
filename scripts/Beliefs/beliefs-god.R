@@ -25,6 +25,14 @@ pull_path <-
   )
 
 dat <- readRDS(pull_path)
+dat$years
+dat |>
+  select(c(Wave,Id,KESSLER6,Employed,Religion.Church, YearMeasured, GendAll,years)) |>
+  filter(Wave != "2009") |>
+  filter(Wave == 2013 & YearMeasured == 1) |>
+  mutate(C = lead(YearMeasured, n = 1)) |>
+  arrange(desc(years)) |>
+  print(n=40)
 
 # table for participant N
 
