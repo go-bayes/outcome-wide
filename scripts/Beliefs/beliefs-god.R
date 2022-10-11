@@ -24,12 +24,16 @@ pull_path <-
     "~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5"
   )
 
+C_time_vary = c("Pol.Oriernt", "Religion.Church", "SDO")
+
+C_base = c(GendAll, EthAll, GenCohort)
+
 dat <- readRDS(pull_path)
 dat$years
 dat |>
-  select(c(Wave,Id,KESSLER6,Employed,Religion.Church, YearMeasured, GendAll,years)) |>
+  select(c(Wave,Id,KESSLER6,Employed,Relid, YearMeasured, GendAll,years)) |>
   filter(Wave != "2009") |>
-  filter(Wave == 2013 & YearMeasured == 1) |>
+  filter(Wave == 2018 | YearMeasured == 1) |>
   mutate(C = lead(YearMeasured, n = 1)) |>
   arrange(desc(years)) |>
   print(n=40)
