@@ -29,6 +29,17 @@ C_time_vary = c("Pol.Oriernt", "Religion.Church", "SDO")
 C_base = c(GendAll, EthAll, GenCohort)
 
 dat <- readRDS(pull_path)
+
+dm<- dat |>
+  filter(YearMeasured== 1 & Wave == 2020)
+length(unique(dm$Id))
+
+dm<- dat |>
+  filter(YearMeasured== 1)
+length(unique(dm$Id))
+
+table(dm$GenCohort)
+
 dat$years
 dat |>
   select(c(Wave,Id,KESSLER6,Employed,Relid, YearMeasured, GendAll,years)) |>

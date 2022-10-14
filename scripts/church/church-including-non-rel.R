@@ -3586,16 +3586,16 @@ h_tab <- rbind(alcoholfreq_c,
 h_tab |>
   kbl(caption = main,
       digits = 3,
-      "html") |>
+      "markdown") |>
   #kable_styling() %>%
-  row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold") |>
-  row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           color = "blue",
-           background = "bold") |>
+  # row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  #          bold = T,
+  #          # color = "black",
+  #          background = "bold") |>
+  # row_spec(c(2),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  #          bold = T,
+  #          color = "black",
+  #          background = "bold") #|>
   kable_minimal(full_width = F)
 
 
@@ -3616,7 +3616,7 @@ embody_tab <- rbind(
 embody_tab |>
   kbl(caption = main,
       digits = 3,
-      "html") |>
+      "markdown") |>
  # kable_styling() %>%
   row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
@@ -3647,7 +3647,7 @@ reflect_tab <- rbind(
 reflect_tab |>
   kbl(caption = main,
       digits = 3,
-      "html") |>
+      "markdown") |>
   # kable_styling() %>%
   row_spec(c(5, 7,  11),
            bold = T,

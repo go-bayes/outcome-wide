@@ -31,7 +31,10 @@ source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
 
-df <- readRDS(here::here("data", "outcomewide", "amy", "no_miss_model"))
+#df <- readRDS(here::here("data", "outcomewide", "amy", "no_miss_model"))
+
+# Westreich approach
+df <- readRDS(here::here("data", "outcomewide", "amy", "data_long"))
 
 
 ############### SET YOUR EXPOSURE VARIABLE, ###############  ###############  ###############
