@@ -14,7 +14,7 @@ conflict_prefer("cbind", "base")
 # for saving models
 push_mods <-
   fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
-push_figs <-
+  push_figs <-
   fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
 
 # read data
