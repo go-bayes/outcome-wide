@@ -338,8 +338,7 @@ table1::table1(
 
 
 
-
-# Filtering retirement -- consistency and positivity assumptions
+x# Filtering retirement -- consistency and positivity assumptions
 # number of ids
 N <- length(unique(df_cr$Id))
 N  #32450
@@ -494,7 +493,6 @@ table1::table1(~ BELONG +
 
 
 # save raw data -----------------------------------------------------------
-
 raw_data_use <- df_cr %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Believe.God = Believe.God - 1) |>
@@ -567,6 +565,34 @@ raw_data_use <- df_cr %>%
   )
 
 saveh(raw_data_use, "outcomewide-beliefs-raw-data-use.rds")
+
+parameters::model_parameters(
+  glm(LIFEMEANING_z ~ Believe.God, data = raw_data_use)
+)
+
+
+parameters::model_parameters(
+  glm(LIFESAT_z ~ Believe.God, data = raw_data_use)
+)
+
+
+parameters::model_parameters(
+  glm(KESSLER6sum_z ~ Believe.God, data = raw_data_use)
+)
+
+
+parameters::model_parameters(
+  glm(Rumination_z ~ Believe.God, data = raw_data_use)
+)
+
+
+parameters::model_parameters(
+  glm(Fatigue_z ~ Believe.God, data = raw_data_use)
+)
+
+
+
+
 
 
 # mice model  -------------------------------------------------------------
@@ -2979,7 +3005,6 @@ nwi_p
 ## fit
 
 
-table(mf$BELONG_lead2 == mf$SUPPORT_lead2_z)
 
 
 Y = "SUPPORT_lead2_z"
@@ -3870,7 +3895,7 @@ social_tab |>
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(1, 4),
+  row_spec(c(0),
            bold = T,
            color = "black",
            background = "bold") |>
