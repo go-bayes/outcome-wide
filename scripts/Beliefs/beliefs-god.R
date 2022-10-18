@@ -555,6 +555,24 @@ raw_data_use <- df_cr %>%
     ),
     na.rm = TRUE
   )) |>
+  dplyr::group_by(Id) |> mutate(PWI = mean(
+    c(
+      Your.Future.Security,
+      Your.Personal.Relationships,
+      Your.Health,
+      Standard.Living
+    ),
+    na.rm = TRUE
+  )) |>
+  dplyr::group_by(Id) |> mutate(PWI_lead2 = mean(
+    c(
+      Your.Future.Security_lead2,
+      Your.Personal.Relationships_lead2,
+      Your.Health_lead2,
+      Standard.Living_lead2
+    ),
+    na.rm = TRUE
+  )) |>
   dplyr::ungroup() |>
   droplevels() |>
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
