@@ -3827,7 +3827,6 @@ gcomp_forestplot_rr(out_tt, title = "Outcomewide Foregiveness RR",
                  ylim = c(.5,1.5))
 
 
-
 # INGNORE
 
 # h1 <- prepare_forestplot_object(alcoholfreq_p, f, r)
