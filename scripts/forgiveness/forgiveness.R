@@ -977,8 +977,7 @@ out_ct <-
     x = x,
     r = r
   )
-r
-x
+
 # coef + estimate
 alcoholintensity_c <-
   vanderweelevalue_ols(out_ct, f - min, delta, sd)
@@ -3814,236 +3813,61 @@ ggsave(
 
 # graph all ---------------------------------------------------------------
 
-# nzsei_ptemp <- as.data.frame(nzsei_p$data)
-# nzsei_ptemp$id <- rep(nzsei_p$labels$y, nrow(nzsei_ptemp))
-#
-# nzsei_ptemp <- as.data.frame(nzsei_p$data)
-# nzsei_ptemp$id <- rep(nzsei_p$labels$y, nrow(nzsei_ptemp))
-# nzsei_ptemp
-#
-# charity_ptemp <- as.data.frame(charity_p$data)
-# charity_ptemp$id <- rep(charity_p$labels$y, nrow(charity_ptemp))
-# charity_ptemp$id
 
+out_t <- bind_forestplot(list(alcoholfreq_p, alcoholintensity_p, bmi_p,exercise_p, sfhealth_p))
 
-#
-# prepare_forestplot_object = function(x) { # ggplot_stglm output
-#   x_ptemp <- as.data.frame(x$data)
-#   x_ptemp$id <- rep(x$labels$y, nrow(x_ptemp))
-#   x_ptemp
-# }
-#
-# bind_forestplot_objects = function(x){
-#    ls_output  <- lapply(x, prepare_forestplot_object)
-#    df_output <- do.call( rbind, ls_output)
-#    df_output
-# }
-#
-# dt_new <- bind_forestplot_objects(list(alcoholfreq_p,alcoholintensity_p, bmi_p))
-#
-
-bind_forestplot = function(x){
-  ls_output  <- lapply(x, function(zed) {
-    dt_zed <- as.data.frame(zed$data)
-    dt_zed$id <- rep(zed$labels$y, nrow(dt_zed))
-    dt_zed
-  })
-  df_output <- do.call( rbind, ls_output)
-  df_output
-}
-
-dt_new <- bind_forestplot(list(alcoholfreq_p,alcoholintensity_p, bmi_p))
-
-dt_new
-# prepare objects (write function later)
-
-h1 <- prepare_forestplot_object(alcoholfreq_p)
-h2 <- prepare_forestplot_object(alcoholintensity_p)
-h3 <- prepare_forestplot_object(bmi_p)
-h4 <- prepare_forestplot_object(exercise_p)
-h5 <- prepare_forestplot_object(sfhealth_p)
-
-#e1 <- prepare_forestplot_object(smoker_p)
-
-e2 <- prepare_forestplot_object(fatigue_p)
-e3 <- prepare_forestplot_object(rumination_p)
-e4 <- prepare_forestplot_object(selfcontrol_p)
-e5 <- prepare_forestplot_object(sleep_p)
-e6 <- prepare_forestplot_object(sexualsat_p)
-
-
-s1 <- prepare_forestplot_object(belong_p)
-s2 <- prepare_forestplot_object(community_p)
-s3 <- prepare_forestplot_object(nwi_p)
-s4 <- prepare_forestplot_object(support_p)
-
-r1 <- prepare_forestplot_object(gratitude_p)
-r2 <- prepare_forestplot_object(groupimperm_p)
-r3 <- prepare_forestplot_object(selfperm_p)
-r4 <- prepare_forestplot_object(lifesat_p)
-r5 <- prepare_forestplot_object(meaning_p)
-r6 <- prepare_forestplot_object(perfect_p)
-r7<- prepare_forestplot_object(powerdependence_p)
-r8 <- prepare_forestplot_object(selfesteem_p)
-r9 <- prepare_forestplot_object(yourpersonalrelationships_p)
-r10 <- prepare_forestplot_object(yourhealth_p)
-r11 <- prepare_forestplot_object(standardliving_p)
-r12 <- prepare_forestplot_object(futuresecurity_p)
-
-
-
-
-
-#<- prepare_forestplot_object(veng_p)
-
-ec1 <- prepare_forestplot_object(charity_p)
-ec2 <- prepare_forestplot_object(nzsei_p)
-ec3 <- prepare_forestplot_object(standardliving_p)
-ec4<- prepare_forestplot_object(worklife_p)
-
-ec4
-
-bind_forest_obj = function(...){
-  forests  <- rbind(...)
-  forests <- forests |>
-    dplyr::arrange(desc(est))
-  forests
-}
-
-out_t <- bind_forest_obj(h1, h2, h3, h4, h5,
-                 e2, e3, e4, e5,  e6,
-                r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12,
-                s1, s2, s3, s4, ec1, ec2, ec3, ec4)
-head(out_t)
-
-put_tt <- out_t |>
-  arrange(desc(est))
-# make forest plot from rbinded objects
-rm(out)
-# gcomp_forestplot= function(out, title, ylim, xlab) { # provisional
-#   require(ggplot2)
-#   require(viridis)
-#   require(see)
-#  # color <- viridis_pal(option = "C")(7)[7]
-#   ggplot(data=out, aes(y=id, x=est, xmin=ui, xmax=li, colour = factor(row))) +
-#     geom_point( position = position_dodge(width = .1)) +
-#     geom_errorbarh(height=.1, position = position_dodge(width = .1)) +
-#     geom_vline(xintercept = 0, linetype="dotted") +
-#     scale_x_continuous(limits = ylim) +
-#    scale_color_viridis_d(name = "change in effect (SD)", direction = -1,
-#   #                        option = "A") +
-#     labs(x = xlab,
-#          y = "",
-#          title = title) +
-#    #theme_blackboard()
-#     theme_classic2()
-# }
-
-dev.off()
 
 gcomp_forestplot(out_t, title = "Outcomewide Foregiveness", ylim = ylim, xlab = "Change in Foregiveness (SD)")
 
-h6 <- prepare_forestplot_object(smoker_p)
-ec5 <- prepare_forestplot_object(volunteers_p)
 
-out_tt <- bind_forest_obj(h6, ec5)
-gcomp_forestplot(out_tt, title = "Outcomewide Foregiveness RR", ylim = c(.5,1.5))
+## Risk ratio plot
+out_tt <- bind_forestplot(list(smoker_p, volunteers_p))
 
-#create forest plot
-
+gcomp_forestplot_rr(out_tt, title = "Outcomewide Foregiveness RR",
+                 ylim = c(.5,1.5))
 
 
-h1 <- prepare_forestplot_object(alcoholfreq_p, f, r)
-h2 <- prepare_forestplot_object(alcoholintensity_p, f, r)
-h3 <- prepare_forestplot_object(bmi_p, f, r)
-h4 <- prepare_forestplot_object(exercise_p, f, r)
-h5 <- prepare_forestplot_object(sfhealth_p, f, r)
 
-#e1 <- prepare_forestplot_object(smoker_p, f, r)
+# INGNORE
 
-e2 <- prepare_forestplot_object(fatigue_p, f, r)
-e3 <- prepare_forestplot_object(rumination_p, f, r)
-e4 <- prepare_forestplot_object(selfcontrol_p, f, r)
-e5 <- prepare_forestplot_object(sleep_p, f, r)
-e6 <- prepare_forestplot_object(sexualsat_p, f, r)
+# h1 <- prepare_forestplot_object(alcoholfreq_p, f, r)
+# h2 <- prepare_forestplot_object(alcoholintensity_p, f, r)
+# h3 <- prepare_forestplot_object(bmi_p, f, r)
+# h4 <- prepare_forestplot_object(exercise_p, f, r)
+# h5 <- prepare_forestplot_object(sfhealth_p, f, r)
+#
+# #e1 <- prepare_forestplot_object(smoker_p, f, r)
+#
+# e2 <- prepare_forestplot_object(fatigue_p, f, r)
+# e3 <- prepare_forestplot_object(rumination_p, f, r)
+# e4 <- prepare_forestplot_object(selfcontrol_p, f, r)
+# e5 <- prepare_forestplot_object(sleep_p, f, r)
+# e6 <- prepare_forestplot_object(sexualsat_p, f, r)
+#
+# s1 <- prepare_forestplot_object(belong_p, f, r)
+# s2 <- prepare_forestplot_object(community_p, f, r)
+# s3 <- prepare_forestplot_object(nwi_p, f, r)
+# s4 <- prepare_forestplot_object(support_p, f, r)
+#
+# r1 <- prepare_forestplot_object(gratitude_p, f, r)
+# r2 <- prepare_forestplot_object(groupimperm_p, f, r)
+# r3 <- prepare_forestplot_object(selfperm_p, f, r)
+# r4 <- prepare_forestplot_object(lifesat_p, f, r)
+# r5 <- prepare_forestplot_object(meaning_p, f, r)
+# r6 <- prepare_forestplot_object(perfect_p, f, r)
+# r7<- prepare_forestplot_object(powerdependence_p, f, r)
+# r8 <- prepare_forestplot_object(selfesteem_p, f, r)
+# r9 <- prepare_forestplot_object(yourpersonalrelationships_p, f, r)
+# r10 <- prepare_forestplot_object(yourhealth_p, f, r)
+# r11 <- prepare_forestplot_object(standardliving_p, f, r)
+# r12 <- prepare_forestplot_object(futuresecurity_p)
+#
+#
+# #<- prepare_forestplot_object(veng_p)
+#
+# ec1 <- prepare_forestplot_object(charity_p, f, r)
+# ec2 <- prepare_forestplot_object(nzsei_p, f, r)
+# ec3 <- prepare_forestplot_object(standardliving_p, f, r)
+# ec4<- prepare_forestplot_object(worklife_p, f, r)
 
-s1 <- prepare_forestplot_object(belong_p, f, r)
-s2 <- prepare_forestplot_object(community_p, f, r)
-s3 <- prepare_forestplot_object(nwi_p, f, r)
-s4 <- prepare_forestplot_object(support_p, f, r)
 
-r1 <- prepare_forestplot_object(gratitude_p, f, r)
-r2 <- prepare_forestplot_object(groupimperm_p, f, r)
-r3 <- prepare_forestplot_object(selfperm_p, f, r)
-r4 <- prepare_forestplot_object(lifesat_p, f, r)
-r5 <- prepare_forestplot_object(meaning_p, f, r)
-r6 <- prepare_forestplot_object(perfect_p, f, r)
-r7<- prepare_forestplot_object(powerdependence_p, f, r)
-r8 <- prepare_forestplot_object(selfesteem_p, f, r)
-r9 <- prepare_forestplot_object(yourpersonalrelationships_p, f, r)
-r10 <- prepare_forestplot_object(yourhealth_p, f, r)
-r11 <- prepare_forestplot_object(standardliving_p, f, r)
-r12 <- prepare_forestplot_object(futuresecurity_p)
-
-
-#<- prepare_forestplot_object(veng_p)
-
-ec1 <- prepare_forestplot_object(charity_p, f, r)
-ec2 <- prepare_forestplot_object(nzsei_p, f, r)
-ec3 <- prepare_forestplot_object(standardliving_p, f, r)
-ec4<- prepare_forestplot_object(worklife_p, f, r)
-
-ec4
-
-bind_forest_obj = function(...){
-  forests  <- rbind(...)
-  forests <- forests |>
-    dplyr::arrange(desc(est))
-  forests
-}
-e5
-out_t <- bind_forest_obj(h1, h2, h3, h4, h5,
-                         e2, e3, e4, e5,  e6,
-                         r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12,
-                         s1, s2, s3, s4, ec1, ec2, ec3, ec4)
-
-head(out_t)
-
-put_tt <- out_t |>
-  arrange(desc(est))
-# make forest plot from rbinded objects
-rm(out)
-
-gcomp_forestplot= function(out, title, ylim, xlab) { # provisional
-  require(ggplot2)
-  # require(ggthemes)
-  # require(ggforestplot) # https://nightingalehealth.github.io/ggforestplot/index.html
-  # devtools::install_github("NightingaleHealth/ggforestplot", build_vignettes = TRUE)
-  ggplot(data=out, aes(y=id, x=est, xmin=ui, xmax=li, colour = factor(row))) +
-    geom_point( position = position_dodge(width = 0.1)) +
-    geom_errorbarh(height=.1, position = position_dodge(width = 0.1)) +
-    geom_vline(xintercept = 0, linetype="solid") +
-    geom_vline(xintercept = c(-.5, -.25,.25, .5), linetype="twodash", alpha = .5) + # experimental
-    scale_x_continuous(limits = ylim) +
-   # theme_forest() +
-   theme_classic(base_size = 10) +
-   theme(panel.border=element_blank(),
-         axis.line=element_blank(),
-   panel.background=element_blank(),
-   panel.grid.major = element_blank(),
-   panel.grid.minor = element_blank()) +
-  #  scale_color_discrete(name = "Change in exposure from baseline (SD)", direction = -1) +
-    scale_color_viridis_d(name = "Change in exposure\nfrom baseline (SD)", direction = -1, option = "D") +
-    labs(x = "Change in outcome (SD)",
-         y = "Many Outcomes",
-         title = title)
-}
-
-gcomp_forestplot(out_t, title = "Counterfactual outcomes plot: Forgiveness", ylim = c(-.5, .5),
-                 xlab = "Causal effect of SD change in Forgiveness")
-
-h6 <- prepare_forestplot_object(smoker_p, f, r)
-ec5 <- prepare_forestplot_object(volunteers_p, f, r)
-
-out_tt <- bind_forest_obj(h6, ec5)
-gcomp_forestplot(out_tt, title = "Outcomewide Foregiveness RR", ylim = c(.5,1.5))
