@@ -3811,62 +3811,155 @@ ggsave(
 
 
 
+# tab all ---------------------------------------------------------------
+main = "Forgiveness on wellbeing estimands / Evalues"
+forgiveness <- rbind(
+  alcoholfreq_c,
+  alcoholintensity_c,
+  bmi_c,
+  exercise_c,
+  sfhealth_c,
+  fatigue_c,
+  sleep_c,
+  rumination_c,
+  distress_c,
+  bodysat_c,
+  sexualsat_c,
+  selfcontrol_c,
+  gratitude_c,
+  groupimperm_c,
+  selfperm_c,
+  lifesat_c,
+  meaning_c,
+  perfect_c,
+  powerdependence_c,
+  selfesteem_c,
+  belong_c,
+  nwi_c,
+  support_c,
+  yourpersonalrelationships_c,
+  yourhealth_c,
+  standardliving_c,
+  futuresecurity_c,
+  veng_c,
+  charity_c,
+  standardliving_c,
+  nzsei_c,
+  worklife_c,
+  charity_c)
+
+
+forgiveness_tab <- forgiveness |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  # kable_styling() %>%
+  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold")|>
+  kable_minimal(full_width = F)
+
+forgiveness_tab
+
+#save
+saveh(forgiveness_tab, "outcomewide-forgiveness-tab")
+
+# read
+forgiveness_tab <- readh("outcomewide-forgiveness-tab")
+
 # graph all ---------------------------------------------------------------
 
+list_outcomes <- c(list(alcoholfreq_p,
+     alcoholintensity_p,
+     bmi_p,
+     exercise_p,
+     sfhealth_p,
+     fatigue_p,
+     sleep_p,
+     rumination_p,
+     distress_p,
+     bodysat_p,
+     sexualsat_p,
+     selfcontrol_p,
+     gratitude_p,
+     groupimperm_p,
+     selfperm_p,
+     lifesat_p,
+     meaning_p,
+     perfect_p,
+     powerdependence_p,
+     selfesteem_p,
+     belong_p,
+     nwi_p,
+     support_p,
+     yourpersonalrelationships_p,
+     yourhealth_p,
+     standardliving_p,
+     futuresecurity_p,
+    # veng_p,
+    charity_p,
+    standardliving_p,
+    nzsei_p,
+    worklife_p,
+    charity_p))
 
-out_t <- bind_forestplot(list(alcoholfreq_p, alcoholintensity_p, bmi_p,exercise_p, sfhealth_p))
+
+out_foregiveness <- bind_forestplot(list_outcomes)
+
+# save
+saveh("outcomewide_out_foregiveness")
 
 
-gcomp_forestplot(out_t, title = "Outcomewide Foregiveness", ylim = ylim, xlab = "Change in Foregiveness (SD)")
+gcomp_forestplot_forgiveness <- gcomp_forestplot(out_t, title = "Outcomewide Foregiveness", ylim = ylim, xlab = "Incidence Effect Foregiveness (SD)")
+
+
+ggsave(
+  gcomp_forestplot_forgiveness,
+  path = here::here(here::here("figs", "figs_forgiveness")),
+  width = 9,
+  height = 16,
+  units = "in",
+  filename = "gcomp_forestplot_forgiveness_long.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
+
+ggsave(
+  gcomp_forestplot_forgiveness,
+  path = here::here(here::here("figs", "figs_forgiveness")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_forgiveness_short.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
 
 
 ## Risk ratio plot
 out_tt <- bind_forestplot(list(smoker_p, volunteers_p))
 
-gcomp_forestplot_rr(out_tt, title = "Outcomewide Foregiveness RR",
-                 ylim = c(.5,1.5))
+gcomp_forestplot_forgiveness_rr <-
+  gcomp_forestplot_rr(out_tt,title = "Outcomewide Foregiveness RR",
+                      xlab = "Incidence Effect Foregiveness (SD)",
+                 ylim = c(.5,1.5), )
+
+gcomp_forestplot_forgiveness_rr
+ggsave(
+  gcomp_forestplot_forgiveness_rr,
+  path = here::here(here::here("figs", "figs_forgiveness")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_forgiveness_rr_short.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
 
 
-# INGNORE
-
-# h1 <- prepare_forestplot_object(alcoholfreq_p, f, r)
-# h2 <- prepare_forestplot_object(alcoholintensity_p, f, r)
-# h3 <- prepare_forestplot_object(bmi_p, f, r)
-# h4 <- prepare_forestplot_object(exercise_p, f, r)
-# h5 <- prepare_forestplot_object(sfhealth_p, f, r)
-#
-# #e1 <- prepare_forestplot_object(smoker_p, f, r)
-#
-# e2 <- prepare_forestplot_object(fatigue_p, f, r)
-# e3 <- prepare_forestplot_object(rumination_p, f, r)
-# e4 <- prepare_forestplot_object(selfcontrol_p, f, r)
-# e5 <- prepare_forestplot_object(sleep_p, f, r)
-# e6 <- prepare_forestplot_object(sexualsat_p, f, r)
-#
-# s1 <- prepare_forestplot_object(belong_p, f, r)
-# s2 <- prepare_forestplot_object(community_p, f, r)
-# s3 <- prepare_forestplot_object(nwi_p, f, r)
-# s4 <- prepare_forestplot_object(support_p, f, r)
-#
-# r1 <- prepare_forestplot_object(gratitude_p, f, r)
-# r2 <- prepare_forestplot_object(groupimperm_p, f, r)
-# r3 <- prepare_forestplot_object(selfperm_p, f, r)
-# r4 <- prepare_forestplot_object(lifesat_p, f, r)
-# r5 <- prepare_forestplot_object(meaning_p, f, r)
-# r6 <- prepare_forestplot_object(perfect_p, f, r)
-# r7<- prepare_forestplot_object(powerdependence_p, f, r)
-# r8 <- prepare_forestplot_object(selfesteem_p, f, r)
-# r9 <- prepare_forestplot_object(yourpersonalrelationships_p, f, r)
-# r10 <- prepare_forestplot_object(yourhealth_p, f, r)
-# r11 <- prepare_forestplot_object(standardliving_p, f, r)
-# r12 <- prepare_forestplot_object(futuresecurity_p)
-#
-#
-# #<- prepare_forestplot_object(veng_p)
-#
-# ec1 <- prepare_forestplot_object(charity_p, f, r)
-# ec2 <- prepare_forestplot_object(nzsei_p, f, r)
-# ec3 <- prepare_forestplot_object(standardliving_p, f, r)
-# ec4<- prepare_forestplot_object(worklife_p, f, r)
 
 

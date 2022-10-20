@@ -1,5 +1,41 @@
 #iptw-god
 
+options(scipen = 999)
+
+#libraries and functions
+# read libraries
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
+
+# read functions
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+#conflict_prefer("pool", "mice")
+#conflict_prefer("cbind", "base")
+# for saving models
+push_mods <-
+  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
+push_figs <-
+  fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+
+# read data
+pull_path <-
+  fs::path_expand(
+    "~/The\ Virtues\ Project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/2021/DATA/ldf.5"
+  )
+
+
+
+###### READ THIS DATA IN   #########
+
+mff <- readh("outcomewide-god-all-mf")
+
+###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
+###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
+
+dff <- readh("outcomewide-god-all-ml")
+
+
+
 
 #  IPTW ----------------------------------------------------------------
 # functions
@@ -50,18 +86,6 @@ library(cobalt)
 # set digits = 3
 options(scipen = 999)
 
-#libraries and functions
-# read libraries
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
-
-# read functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-# for saving models
-push_mods <-
-  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
-push_figs <-
-  fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
 
 
 # Pull mids data
@@ -124,7 +148,7 @@ cvars = c(
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
-  # "SexualOrientation",
+  "SexualOrientation",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
@@ -141,11 +165,11 @@ cvars = c(
 
 # WEIGHTS
 
-models_st <- weightthem(as.formula(paste(
+models_st_spirit <- weightthem(as.formula(paste(
   as.formula(paste(
     paste("Believe.Spirit_lead1", "~",
           paste(cvars, collapse = "+")))))),
-  ml,
+  dff,
   approach = "within",
   estimand = "ATE",
   stabilize = TRUE,
@@ -153,29 +177,31 @@ models_st <- weightthem(as.formula(paste(
 )
 
 
-saveh(models_st, "outcomewide-believe-weights-spirit.rds")
+saveh(models_st_spirit, "outcomewide-believe-weights-spirit.rds")
+models_st_spirit <- readh("outcomewide-believe-weights-spirit.rds")
 
-
-sum <- summary(models_st)
+sum <- summary(models_st_spirit)
 plot(sum)
 sum
-bal.tab(models_st)
+bal.tab(models_st_spirit)
 
 # no confounder imbalanced by more than .05
-# ctrim_st <- trim(models_st, at = .999)
+# ctrim_st <- trim(models_st_spirit, at = .999)
 # bal.tab(ctrim_st)
 # summary(ctrim_st)
 # class(models_st)
 
 
+## USE UNTRIMMED DATA
+
 # make into mids
 #Extracting the original dataset with missing value
-maindataset <- complete(models_st, action = 0)
+maindataset <- complete(models_st_spirit, action = 0)
 #Some spit-and-polish
 maindataset <- data.frame(.imp = 0, .id = seq_len(nrow(maindataset)), maindataset)
 
 #Extracting imputed-weighted datasets in the long format
-alldataset  <- complete(models_st, action = "long")
+alldataset  <- complete(models_st_spirit, action = "long")
 
 #Binding them together
 alldataset  <- rbind(maindataset, alldataset)
@@ -184,6 +210,8 @@ alldataset  <- rbind(maindataset, alldataset)
 newmids <- as.mids(alldataset)
 
 ## SET UP
+saveh(newmids, "outcomewide-spirit-newmids")
+newmids <- readh("outcomewide-spirit-newmids")
 
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
@@ -203,10 +231,10 @@ X = "Believe.Spirit_lead1"
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
 
-xlab = "Believe.Spirit"  ## Monthly Church
+xlab = "Do you believe in a spirit or life force?"
 
 
-# SET THE RANGE OF WORK HOURS FROM ZERO TO 80
+# SET THE RANGE
 min = 0
 max = 1
 
@@ -214,7 +242,7 @@ max = 1
 # set full range of X
 x =  min:max
 
-
+x
 # range for some graphs
 minmax <- paste(c(x), sep = ",")
 
@@ -250,12 +278,21 @@ m = 10
 sd = 1
 
 
+mice_iptw_lin = function(X,Y,df, family = "gaussian") {
+  # requires that a MATCH THEM dataset is converted to a mice object
+  # weights must be called "weights)
+  require("mice")
+  out_m <- with(df, glm(
+    as.formula(paste(Y, "~ (", X , ")")),    weights = weights,
+    family = family
+  ))
+  return(out_m)
+}
 
 ##### BASELINE VARIABLES
 
 
-# read functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
 # Models with IPTW WEIGHTS ------------------------------------------------
 # HEALTH  INDICATORS ------------------------------------------------------------------
 # alcohol freq ------------------------------------------------------------
@@ -267,16 +304,6 @@ sub = "How often do you have a drink containing alcohol?"
 # regression
 
 
-mice_iptw_lin = function(X,Y,df, family = "gaussian") {
-  # requires that a MATCH THEM dataset is converted to a mice object
-  # weights must be called "weights)
-  require("mice")
-  out_m <- with(df, glm(
-    as.formula(paste(Y, "~ (", X , ")")),    weights = weights,
-    family = family
-  ))
-  return(out_m)
-}
 
 out_m <- mice_iptw_lin(df=df, X=X, Y=Y, family = "gaussian")
 
@@ -768,7 +795,7 @@ Y = "Bodysat_lead2_z"
 main = "Body Satisfaction"
 ylab = "Body Satisfaction (SD)"
 sub = "Am satisfied with the appearance,\nsize and shape of my body."
-
+family = "gaussian"
 # regression
 out_m <- mice_iptw_lin(df=df, X=X, Y=Y, family = "gaussian")
 
@@ -865,7 +892,7 @@ out_ct %>%
 # coef + estimate
 distress_c <- vanderweelevalue_ols(out_ct, f - min, delta, sd)
 distress_c
-distress_p
+
 
 distress_t <- out_ct %>%
   #slice(1:max) |>
@@ -1644,12 +1671,11 @@ pwi_p
 
 
 
-# power dependence 1 ------------------------------------------------------
 # I do not have enough power or control over\nimportant parts of my life.
-Y = "POWERDEPENDENCE1_lead2_z"
-main = "Power Dependence 1"
-ylab = "Power Dependence 1(SD)"
-sub = "I do not have enough power or control\nover important parts of my life."
+Y = "POWERDEPENDENCE_lead2_z"
+main = "Power Dependence"
+ylab = "Power Dependence(SD)"
+sub = "I do not have enough power or control\nover important parts of my life.\nOther people have too much power or control over\nimportant parts of my life."
 
 
 
@@ -1671,11 +1697,11 @@ out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
 
-powerdependence1_c <-
+powerdependence_c <-
   vanderweelevalue_ols(out_ct, f - min, delta, sd)
-powerdependence1_c
+powerdependence_c
 
-powerdependence1_t <- out_ct %>%
+powerdependence_t <- out_ct %>%
   #slice(1:max) |>
   tibble() |>
   rename(
@@ -1695,9 +1721,9 @@ powerdependence1_t <- out_ct %>%
            background = "dodgerblue") |>
   kable_minimal(full_width = F)
 # show table
-powerdependence1_t
+powerdependence_t
 # graph
-powerdependence1_p <-
+powerdependence_p <-
   ggplot_stglm(
     out_ct,
     ylim = ylim,
@@ -1708,74 +1734,9 @@ powerdependence1_p <-
     p = p,
     sub = sub
   )
-powerdependence1_p
+powerdependence_p
 
 
-
-# power dependence 2 ------------------------------------------------------
-#Other people have too much power or control over\nimportant parts of my life.
-
-Y = "POWERDEPENDENCE2_lead2_z"
-main = "Power Dependence 2"
-ylab = "Power Dependence 2(SD)"
-sub = "Other people have too much power or control\nover important parts of my life."
-
-# regression
-out_m <- mice_iptw_lin(df=df, X=X, Y=Y, family = "gaussian")
-
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-powerdependence2_c <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-powerdependence2_c
-
-powerdependence2_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-powerdependence2_t
-# graph
-powerdependence2_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  )
-powerdependence2_p
 
 # self esteem -------------------------------------------------------------
 # Self-esteem
@@ -2416,31 +2377,24 @@ sub = "Hours spent … voluntary/charitable work"
 # clean oven
 rm(out_m)
 rm(out_ct)
-# fit regression model
-out_m <- mice_generalised(
-  df = df,
-  X = X,
-  Y = Y,
-  cvars = cvars,
-  family = family
-)
-# g-computation - contrasts
+
+min(mff$Volunteers_lead2)
+
+out_m <- mice_iptw_lin(df=df, X=X, Y=Y, family = "poisson")
+
+
+## contrasts
 out_ct <-
   pool_stglm_contrast_ratio(
     out_m,
     df = df,
-    m = 10,
+    m = m,
     X = X,
     x = x,
     r = r
   )
+# g-computation - contrasts
 #table
-
-# coef + estimate
-volunteers_c <- vanderweelevalue_rr(out_ct, f)
-volunteers_c
-
-
 volunteers_t <- out_ct %>%
   #slice(1:max) |>
   tibble() |>
@@ -2471,142 +2425,12 @@ volunteers_p <-
     min = min,
     p = p,
     sub = sub
-  ) +  expand_limits(x = 0, y = 0)
-volunteers_p
+  ) + expand_limits(x = 0, y = 0)
 
+# coef + estimate
+volunteers_c <- vanderweelevalue_rr(out_ct, f)
+volunteers_c
 
-#
-# # log household income --------------------------------------------------------------
-# # Please estimate your total household income (before tax) for the last year.
-# Y = "income_lead2_log_z"
-# main = "Log Income"
-# ylab = "Log Income (SD)"
-# sub = "Please estimate your total household income (before tax) for the last year."
-# # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
-#
-# ## g-computation
-# out_ct <-
-#   pool_stglm_contrast(
-#     out_m,
-#     df = df,
-#     m = 10,
-#     X = X,
-#     x = x,
-#     r = r
-#   )
-# out_ct %>%
-#   slice(f + 1 - min) |>
-#   kbl(digits = 3, "markdown")
-#
-# income_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-# income_c
-#
-#
-# income_t <- out_ct %>%
-#   #slice(1:max) |>
-#   tibble() |>
-#   rename(
-#     Contrast = row,
-#     Estimate = est,
-#     Std_error = se,
-#     CI_hi = ui,
-#     CI_lo = li
-#   ) |>
-#   kbl(caption = main,
-#       digits = 3,
-#       "html") |>
-#   kable_styling() %>%
-#   row_spec(c(f + 1 - min),
-#            bold = T,
-#            color = "white",
-#            background = "dodgerblue") |>
-#   kable_minimal(full_width = F)
-# # show table
-# income_t
-# # graph
-# income_p <-
-#   ggplot_stglm(
-#     out_ct,
-#     ylim = ylim,
-#     main,
-#     xlab,
-#     ylab,
-#     min = min,
-#     p = p,
-#     sub = sub
-#   )
-# income_p
-
-
-#
-# # HOME OWNER --------------------------------------------------------------
-# #Do you own your own home? (either partly or fully owned)
-#
-# Y = "HomeOwner_lead2"
-# main = "Home Owner (RR)"
-# ylab = "Home Owner (Risk Ratio)"
-# family = "poisson" # binary outcome not rare
-# sub = "Do you own your own home? (either partly or fully owned)"
-# # clean oven
-# rm(out_m)
-# rm(out_ct)
-# # fit regression model
-# out_m <- mice_generalised(df = df,
-#                           X = X,
-#                           Y = Y,
-#                           cvars = cvars,
-#                           family = family)
-# # g-computation - contrasts
-# out_ct <-
-#   pool_stglm_contrast_ratio(
-#     out_m,
-#     df = df,
-#     m = 10,
-#     X = X,
-#     x = x,
-#     r = r
-#   )
-# #table
-#
-# # coef + estimate
-# homeowner_c <- vanderweelevalue_rr(out_ct, f)
-# homeowner_c
-#
-#
-# homeowner_t <- out_ct %>%
-#   #slice(1:max) |>
-#   tibble() |>
-#   rename(
-#     Contrast = row,
-#     Estimate = est,
-#     std_error = se,
-#     CI_hi = ui,
-#     CI_lo = li
-#   ) |>
-#   kbl(caption = main,
-#       digits = 3,
-#       "html") |>
-#   kable_styling() %>%
-#   row_spec(c(f + 1 - min),
-#            bold = T,
-#            color = "white",
-#            background = "dodgerblue") |>
-#   kable_minimal(full_width = F)
-# homeowner_t
-# homeowner_p <-
-#   ggplot_stglm(
-#     out_ct,
-#     ylim = ylim_contrast,
-#     main,
-#     xlab,
-#     ylab,
-#     min = min,
-#     p = p,
-#     sub = sub
-#   )
-# homeowner_p
-#
 
 # Promotion NZSEI ---------------------------------------------------------------
 #Occupational prestige/status
@@ -2747,6 +2571,187 @@ standardliving_p
 
 ## TABLE HEALTH
 
+
+
+# PWI -- Your.Future.Security_lead2_z -----------------------------------------------
+
+
+Y = "Your.Future.Security_lead2_z"
+main = "Future Security"
+ylab = "FutureSecurity (SD)"
+sub  = "Satisfied with ...Your future security."
+# regression
+out_m <- mice_iptw_lin(df = df, X = X, Y = Y)
+
+## g-computation
+out_ct <-
+  pool_stglm_contrast(
+    out_m,
+    df = df,
+    m = 10,
+    X = X,
+    x = x,
+    r = r
+  )
+out_ct %>%
+  slice(f + 1 - min) |>
+  kbl(digits = 3, "markdown")
+
+futuresecurity_c <-
+  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+futuresecurity_c
+
+# graph
+futuresecurity_p <-
+  ggplot_stglm(
+    out_ct,
+    ylim = ylim,
+    main,
+    xlab,
+    ylab,
+    min = min,
+    p = p,
+    sub = sub
+  )
+futuresecurity_p
+
+
+
+# PWI -- Your personal relationships --------------------------------------
+
+Y = "Your.Personal.Relationships_lead2_z"
+main = "Personal Relationships"
+ylab = "Personal Relationships (SD)"
+sub  = "Satisfied with ...Your personal relationships."
+# regression
+out_m <- mice_iptw_lin(df = df, X = X, Y = Y)
+
+## g-computation
+out_ct <-
+  pool_stglm_contrast(
+    out_m,
+    df = df,
+    m = 10,
+    X = X,
+    x = x,
+    r = r
+  )
+out_ct %>%
+  slice(f + 1 - min) |>
+  kbl(digits = 3, "markdown")
+
+yourpersonalrelationships_c <-
+  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+yourpersonalrelationships_c
+
+# graph
+yourpersonalrelationships_p <-
+  ggplot_stglm(
+    out_ct,
+    ylim = ylim,
+    main,
+    xlab,
+    ylab,
+    min = min,
+    p = p,
+    sub = sub
+  )
+yourpersonalrelationships_p
+
+
+
+# Your Health -------------------------------------------------------------
+Y = "Your.Health_lead2_z"
+main = "Your Health"
+ylab = "Your Health (SD)"
+sub  = "Satisfied with ...your health."
+# regression
+out_m <- mice_iptw_lin(df = df, X = X, Y = Y)
+
+## g-computation
+out_ct <-
+  pool_stglm_contrast(
+    out_m,
+    df = df,
+    m = 10,
+    X = X,
+    x = x,
+    r = r
+  )
+out_ct %>%
+  slice(f + 1 - min) |>
+  kbl(digits = 3, "markdown")
+
+yourhealth_c <-
+  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+yourhealth_c
+
+# graph
+yourhealth_p <-
+  ggplot_stglm(
+    out_ct,
+    ylim = ylim,
+    main,
+    xlab,
+    ylab,
+    min = min,
+    p = p,
+    sub = sub
+  )
+yourhealth_p
+
+
+
+
+## TABLE HEALTH
+
+# TABLE  HEALTH  -----------------------------------------------
+main = "Health outcome estimands / Evalues"
+h_tab <- rbind(alcoholfreq_c,
+               alcoholintensity_c,
+               bmi_c,
+               exercise_c,
+               sfhealth_c,
+               sleep_c,
+               smoker_c)
+
+h_tab |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  # kable_styling() %>%
+  row_spec(c(1,5),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold")|>
+  kable_minimal(full_width = F)
+
+
+# TABLE EMBODIED ----------------------------------------------------------
+
+main = "Embodied wellbeing estimands / Evalues"
+embody_tab <- rbind(
+  bodysat_c,
+  distress_c,
+  exercise_c,
+  fatigue_c,
+  rumination_c,
+  selfcontrol_c,
+  sexualsat_c
+)
+#
+embody_tab |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  kable_styling() %>%
+  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold") |>
+  kable_minimal(full_width = F)
+
+
 # TABLE  HEALTH  -----------------------------------------------
 main = "Health outcome estimands / Evalues"
 h_tab <- rbind(alcoholfreq_c,
@@ -2819,7 +2824,7 @@ reflect_tab |>
       digits = 3,
       "html") |>
   kable_styling() %>%
-  row_spec(c(1),
+  row_spec(c(0),
            bold = T,
            color = "black",
            background = "bold") |>
@@ -2886,7 +2891,7 @@ embody_plots_iptw
 
 ggsave(
   embody_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit", "standardised")),
+  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -2914,7 +2919,7 @@ health_plots_iptw
 
 ggsave(
   health_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit", "standardised")),
+  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -2951,7 +2956,7 @@ reflective_plots_iptw
 
 ggsave(
   reflective_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit", "standardised")),
+  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -2973,7 +2978,7 @@ social_plots_iptw
 
 ggsave(
   social_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit", "standardised")),
+  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -3000,7 +3005,7 @@ econ_plots_iptw
 
 ggsave(
   econ_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit", "standardised")),
+  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
   width = 16,
   height = 12,
   units = "in",
@@ -3011,4 +3016,148 @@ ggsave(
 )
 
 dev.off()
+
+
+# tab all ---------------------------------------------------------------
+main = "Belief in Spirit wellbeing estimands / Evalues"
+spirit <- rbind(
+alcoholfreq_c,
+alcoholintensity_c,
+bmi_c,
+exercise_c,
+sfhealth_c,
+fatigue_c,
+sleep_c,
+rumination_c,
+distress_c,
+bodysat_c,
+sexualsat_c,
+selfcontrol_c,
+gratitude_c,
+groupimperm_c,
+selfperm_c,
+lifesat_c,
+meaning_c,
+perfect_c,
+powerdependence_c,
+selfesteem_c,
+belong_c,
+nwi_c,
+support_c,
+yourpersonalrelationships_c,
+yourhealth_c,
+standardliving_c,
+futuresecurity_c,
+veng_c,
+charity_c,
+standardliving_c,
+nzsei_c,
+worklife_c,
+charity_c)
+
+
+spirit_tab <- spirit |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  # kable_styling() %>%
+  row_spec(c(7,13,15,19,32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold")|>
+  kable_minimal(full_width = F)
+
+spirit_tab
+
+#save
+saveh(spirit_tab, "outcomewide-spirit-tab")
+
+# read
+spirit_tab <- readh("outcomewide-spirit-tab")
+
+
+# forestplots -------------------------------------------------------------
+
+
+list_outcomes_spirit <- c(list(alcoholfreq_p,
+                         alcoholintensity_p,
+                         bmi_p,
+                         exercise_p,
+                         sfhealth_p,
+                         fatigue_p,
+                         sleep_p,
+                         rumination_p,
+                         distress_p,
+                         bodysat_p,
+                         sexualsat_p,
+                         selfcontrol_p,
+                         gratitude_p,
+                         groupimperm_p,
+                         selfperm_p,
+                         lifesat_p,
+                         meaning_p,
+                         perfect_p,
+                         powerdependence_p,
+                         selfesteem_p,
+                         belong_p,
+                         nwi_p,
+                         support_p,
+                         yourpersonalrelationships_p,
+                         yourhealth_p,
+                         standardliving_p,
+                         futuresecurity_p,
+                         veng_p,
+                         charity_p,
+                         standardliving_p,
+                         nzsei_p,
+                         worklife_p,
+                         charity_p))
+
+
+out_spirit <- bind_forestplot(list_outcomes_spirit)
+out_spirit
+
+saveh(out_spirit, "outcomewide-belief-out_iptw-spirit")
+
+gcomp_forestplot_believe_spirit <- gcomp_forestplot(out_spirit, title = "Outcomewide Belief in Spirit", ylim = c(-.5,.5), xlab = "Incidence Belief in Spirit (SD)")
+
+gcomp_forestplot_believe_spirit
+
+
+ggsave(
+  gcomp_forestplot_believe_spirit,
+  path = here::here(here::here("figs", "figs_belief_iptw_spirit")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_believe_spirit_short.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
+
+
+## Risk ratio plot
+out_spirit_rr <- bind_forestplot(list(smoker_p, volunteers_p))
+
+# save for future use
+saveh(out_spirit_rr, "outcomewide-belief-out_iptw-spirit_rr")
+
+# plot
+gcomp_forestplot_spirit_rr <-
+  gcomp_forestplot_rr(out_spirit_rr,title = "Outcomewide Belief in Spirit RR",
+                      ylim = c(.5,1.5))
+
+gcomp_forestplot_spirit_rr <-
+ggsave(
+  gcomp_forestplot_forgiveness_rr,
+  path = here::here(here::here("figs", "figs_belief_iptw_spirit")),  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_forgiveness_rr_short.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
+
 
