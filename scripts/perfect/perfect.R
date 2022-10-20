@@ -43,6 +43,7 @@ X = "PERFECTIONISM_lead1_z"
 hist(mf$PERFECTIONISM_lead1_z)
 max(mf$PERFECTIONISM_lead1_z)
 min(mf$PERFECTIONISM_lead1_z)
+table(mf$PERFECTIONISM_lead1_z)
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
@@ -56,6 +57,9 @@ max =  2.5
 
 # set full range of X
 x =  min:max
+x
+
+table()
 
 
 # range for some graphs
@@ -674,9 +678,9 @@ smoker_p <-
   ) + expand_limits(x = 0, y = 0)
 smoker_p
 
-
+f
 # coef + estimate
-smoker_c <- vanderweelevalue_rr(out_ct, f)
+smoker_c <- vanderweelevalue_rr(out_ct, 2)
 smoker_c
 
 
@@ -2314,7 +2318,6 @@ sub = "Hours spent … voluntary/charitable work"
 # clean oven
 rm(out_m)
 rm(out_ct)
-data_long$Vol
 # fit regression model
 out_m <- mice_generalised(df = df,
                           X = X,
@@ -2336,7 +2339,7 @@ out_ct
 
 # coef + estimate
 out_ct<- as.data.frame(out_ct)
-volunteers_c <- vanderweelevalue_rr(out_ct, f)
+volunteers_c <- vanderweelevalue_rr(out_ct, 2)
 volunteers_c
 
 
@@ -3389,6 +3392,153 @@ gcomp_point_est
 
 # Compare much less distress in the ML model predicted for income.
 k_ml_tab
+
+
+
+
+
+
+# tables ------------------------------------------------------------------
+
+main = "Perfectionism estimands / Evalues"
+perfect <- rbind(
+  alcoholfreq_c,
+  alcoholintensity_c,
+  bmi_c,
+  smoker_c,
+  exercise_c,
+  sfhealth_c,
+  fatigue_c,
+  sleep_c,
+  rumination_c,
+  distress_c,
+  bodysat_c,
+  sexualsat_c,
+  selfcontrol_c,
+  gratitude_c,
+  veng_c,
+  groupimperm_c,
+  selfperm_c,
+  lifesat_c,
+  meaning_c,
+ # perfect_c,
+  powerdependence_c,
+  selfesteem_c,
+  belong_c,
+  nwi_c,
+  support_c,
+  yourpersonalrelationships_c,
+  yourhealth_c,
+  standardliving_c,
+  futuresecurity_c,
+  charity_c,
+  volunteers_c,
+  nzsei_c,
+  worklife_c)
+
+
+perfect_tab <- perfect |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  # kable_styling() %>%
+  row_spec(c(6:29,32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+           bold = T,
+           # color = "black",
+           background = "bold")|>
+  kable_minimal(full_width = F)
+
+perfect_tab
+
+#save
+saveh(perfect_tab, "outcomewide-perfect-tab")
+
+# read
+perfect_tab <- readh("outcomewide-perfect-tab")
+
+perfect_tab
+# forestplots -------------------------------------------------------------
+
+
+list_outcomes_perfect <- c(list(alcoholfreq_p,
+                               alcoholintensity_p,
+                               bmi_p,
+                               exercise_p,
+                               sfhealth_p,
+                               fatigue_p,
+                               sleep_p,
+                               rumination_p,
+                               distress_p,
+                               bodysat_p,
+                               sexualsat_p,
+                               selfcontrol_p,
+                               gratitude_p,
+                               veng_p,
+                               groupimperm_p,
+                               selfperm_p,
+                               lifesat_p,
+                               meaning_p,
+                               perfect_p,
+                               powerdependence_p,
+                               selfesteem_p,
+                               belong_p,
+                               nwi_p,
+                               support_p,
+                               yourpersonalrelationships_p,
+                               yourhealth_p,
+                               standardliving_p,
+                               futuresecurity_p,
+                               charity_p,
+                               #  volunteers_p,
+                               nzsei_p,
+                               worklife_p))
+
+
+out_perfect <- bind_forestplot(list_outcomes_perfect)
+out_perfect
+
+saveh(out_perfect, "outcomewide-belief-out_perfect")
+
+gcomp_forestplot_perfect <- gcomp_forestplot(out_perfect, title = "Outcomewide Perfectionism", ylim = c(-.5,.5), xlab = "Incidence Perfectionism (SD)")
+
+gcomp_forestplot_perfect
+
+
+ggsave(
+  gcomp_forestplot_perfect,
+  path = here::here(here::here("figs", "figs_perfect")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_perfect.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
+)
+
+
+
+
+## Risk ratio plot
+out_perfect_rr <- bind_forestplot(list(smoker_p, volunteers_p))
+
+# save for future use
+saveh(out_perfect_rr, "out_volunteers_rr_iptw")
+
+# plot
+gcomp_perfect_rr <-
+  gcomp_forestplot_rr(out_perfect_rr,title = "Perfectionism RR",
+                      ylim = c(.5,2))
+gcomp_perfect_rr
+ggsave(
+  gcomp_perfect_rr,
+  path = here::here(here::here("figs", "figs_perfect")),  width = 12,
+  height = 8,
+  units = "in",
+  filename = "gcomp_forestplot_rr_perfect.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 1200
 
 
 # STATEMENT OF EVALUE -----------------------------------------------------

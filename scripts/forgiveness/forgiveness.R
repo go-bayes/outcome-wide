@@ -129,7 +129,7 @@ df_cr <- tab_in  |>
     EmotionRegulation2,
     EmotionRegulation3,
     Bodysat,
-  #  VENGEFUL.RUMIN,
+    #  VENGEFUL.RUMIN,
     FOREGIVENESS,
     retired,
     semiretired,
@@ -204,7 +204,8 @@ df_cr <- tab_in  |>
       NZdep,
       Employed,
       Household.INC,
-      community, # neighbourhood connection
+      community,
+      # neighbourhood connection
       Hours.Work,
       HLTH.Disability,
       EmotionRegulation1,
@@ -212,7 +213,7 @@ df_cr <- tab_in  |>
       EmotionRegulation3,
       Bodysat,
       FOREGIVENESS,
-    #  VENGEFUL.RUMIN,
+      #  VENGEFUL.RUMIN,
       KESSLER6sum,
       HLTH.Fatigue,
       Rumination,
@@ -518,7 +519,7 @@ ml <- ml %>%
   dplyr::mutate(Rumination_lead2ord = as.integer(round(Rumination_lead2, digits = 0) + 1)) %>%  # needs to start at 1
   dplyr::mutate(SUPPORT_lead2ord = as.integer(round(SUPPORT_lead2, digits = 0))) %>%
   dplyr::mutate(PERFECTIONISM_lead2ord = as.integer(round(PERFECTIONISM_lead2, digits = 0))) %>%
- # dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
+  # dplyr::mutate(VENGEFUL.RUMIN_lead2ord = as.integer(round(VENGEFUL.RUMIN_lead2, digits = 0))) %>%
   dplyr::mutate(Standard.Living_lead2ord = as.integer(round(Standard.Living_lead2, digits = 0))) %>%
   dplyr::mutate(Your.Personal.Relationships_lead2ord = as.integer(round(
     Your.Personal.Relationships_lead2, digits = 0
@@ -659,8 +660,8 @@ no_miss_model <- df_cr %>%
   na.rm = TRUE)) |>
   ungroup() |>
   dplyr::mutate(across(where(is.numeric), ~ scale(.x), .names = "{col}_z")) %>%
- # select(-c(.imp_z, .id_z)) |>
- # dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp#
+  # select(-c(.imp_z, .id_z)) |>
+  # dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp#
   dplyr::mutate(
     EthCat = as.factor(EthCat),
     Gender3  = as.factor(Gender3),
@@ -668,7 +669,7 @@ no_miss_model <- df_cr %>%
   )
 
 
-saveh(no_miss_model,"outcomewide-forgiveness-no-miss-model")
+saveh(no_miss_model, "outcomewide-forgiveness-no-miss-model")
 
 
 
@@ -681,7 +682,7 @@ saveh(no_miss_model,"outcomewide-forgiveness-no-miss-model")
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
 
 df <- readh("ml-forgive_all")
- # for reviewing variables
+# for reviewing variables
 mf <- readh("mf-forgive_all")
 
 ############### SET YOUR EXPOSURE VARIABLE, ###############  ###############  ###############
@@ -768,7 +769,7 @@ cvars = c(
   "community",
   "Edu_z",
   "Employed_z",
- # "Emp.JobSecure_z",
+  # "Emp.JobSecure_z",
   "EmotionRegulation1_z",
   "EmotionRegulation2_z",
   "EmotionRegulation3_z",
@@ -785,7 +786,7 @@ cvars = c(
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
- # "income_log_z",
+  # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
@@ -805,7 +806,7 @@ cvars = c(
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
- # "semiretired",
+  # "semiretired",
   "SexualOrientation_z",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
@@ -814,7 +815,7 @@ cvars = c(
   "Standard.Living_z",
   "SUPPORT_z",
   "Urban_z",
- # "VENGEFUL.RUMIN_z",
+  # "VENGEFUL.RUMIN_z",
   "Volunteers_z",
   "Your.Health_z",
   "Your.Future.Security_z",
@@ -884,7 +885,10 @@ ylab = "Alcohol Frequency (SD)"
 sub = "How often do you have a drink containing alcohol?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 summary(pool(out_m))
 
 ## g-computation
@@ -965,7 +969,10 @@ sub = "How many drinks containing alcohol do you have on a typical day when drin
 #   out
 # }
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1010,7 +1017,10 @@ sub = " What is your height? (metres)\nWhat is your weight? (kg)\nKg *1/(m*m)"
 
 
 # run model
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 # summary(pool(out_m))
 ## contrasts
 out_ct <-
@@ -1070,7 +1080,10 @@ ylab = "Log Hours Exercise (SD)"
 sub = "Hours spent … exercising/physical activity"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1142,7 +1155,10 @@ main = "SF Health"
 ylab = "SF Health (SD)"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1207,7 +1223,10 @@ ylab = "Hours Sleep (SD)"
 sub = "During the past month, on average, how many hours\nof actual sleep did you get per night?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1275,11 +1294,13 @@ sub = "Do you currently smoke?"
 rm(out_m)
 rm(out_ct)
 # bake
-out_m <- mice_generalised(df = df,
-                          X = X,
-                          Y = Y,
-                          cvars = cvars,
-                          family = family)
+out_m <- mice_generalised(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 out_m
 ## contrasts
 out_ct <-
@@ -1343,7 +1364,10 @@ ylab = "Body Satisfaction (SD)"
 sub = "Am satisfied with the appearance,\nsize and shape of my body."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1416,7 +1440,10 @@ ylab = "Kessler 6 Distress (SD)"
 sub = "During the last 30 days, how often did....\nyou feel hopeless?\nyou feel so depressed that nothing could cheer you up?\nyou feel restless or fidgety?\nyou feel that everything was an effort?\nyou feel worthless?\nyou feel nervous?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 summary(pool(out_m))
 ## g-computation
 out_ct <-
@@ -1483,7 +1510,10 @@ sub = "During the last 30 days, how often did....\nyou feel exhausted?"
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1549,7 +1579,10 @@ ylab = "Rumination (SD)"
 sub = "During the last 30 days, how often did....\nyou have negative thoughts that repeated over and over?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 ## g-computation
 out_ct <-
   pool_stglm_contrast(
@@ -1614,7 +1647,10 @@ ylab = "Self Control (SD)"
 sub = "In general, I have a lot of self-control.\nI wish I had more self-discipline."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1678,7 +1714,10 @@ main = "Sexual Satisfaction"
 ylab = "Sexual Satisfaction (SD)"
 sub = "How satisfied are you with your sex life?"
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1750,7 +1789,10 @@ ylab = "Gratitude (SD)"
 sub = "I have much in my life to be thankful for.\nWhen I look at the world, I don’t see much to be grateful for.\nI am grateful to a wide variety of people."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1817,7 +1859,10 @@ sub = "The current income gap between New Zealand Europeans and\nother ethnic gr
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1882,7 +1927,10 @@ sub = "I believe I am capable, as an individual,\nof improving my status in soci
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -1948,7 +1996,10 @@ ylab = "Life Satisfaction (SD)"
 sub = "I am satisfied with my life.\nIn most ways my life is close to ideal."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2015,7 +2066,10 @@ ylab = "Life Meaning (SD)"
 sub = "My life has a clear sense of purpose.\nI have a good sense of what makes my life meaningful."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2081,7 +2135,10 @@ ylab = "Perfectionism (SD)"
 sub = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2214,7 +2271,10 @@ ylab = "Power Dependence(SD)"
 sub = "I do not have enough power or control\nover important parts of my life.\nOther people have too much power or control\nover important parts of my life."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2348,7 +2408,10 @@ sub = "On the whole am satisfied with myself.\nTake a positive attitude toward m
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2484,7 +2547,10 @@ sub = "I have a good balance between work and\nother important things in my life
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2529,7 +2595,7 @@ worklife_t
 worklife_p <-
   ggplot_stglm(
     out_ct,
-    ylim = c(-1,.3),
+    ylim = c(-1, .3),
     main,
     xlab,
     ylab,
@@ -2557,7 +2623,10 @@ sub = " Know that people in my life accept and value me.\nFeel like an outsider.
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2622,7 +2691,10 @@ ylab = "Community (SD)"
 sub = "I feel a sense of community with others\nin my local neighbourhood."
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2692,7 +2764,10 @@ sub = "Satisfied with ...\nThe economic situation in New Zealand.\nThe social co
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2759,7 +2834,10 @@ sub = 'There are people I can depend on to help me if I really need it.\nThere i
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2898,7 +2976,10 @@ ylab = "Charity Donations (annual)"
 sub = "How much money have you donated to charity in the last year?"
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -2968,11 +3049,13 @@ rm(out_m)
 rm(out_ct)
 
 # fit regression model
-out_m <- mice_generalised(df = df,
-                          X = X,
-                          Y = Y,
-                          cvars = cvars,
-                          family = family)
+out_m <- mice_generalised(
+  df = df,
+  X = X,
+  Y = Y,
+  cvars = cvars,
+  family = family
+)
 # g-computation - contrasts
 out_ct <-
   pool_stglm_contrast_ratio(
@@ -2987,7 +3070,7 @@ out_ct <-
 out_ct
 
 # coef + estimate
-out_ct<- as.data.frame(out_ct)
+out_ct <- as.data.frame(out_ct)
 volunteers_c <- vanderweelevalue_rr(out_ct, f)
 volunteers_c
 
@@ -3175,7 +3258,10 @@ sub = "NZ Socio-economic index 2013: Occupational Prestige"
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 nzsei_t <- out_ct <-
@@ -3249,7 +3335,10 @@ sub  = "Satisfied with ...Your standard of living."
 
 
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -3319,7 +3408,10 @@ main = "Future Security"
 ylab = "FutureSecurity (SD)"
 sub  = "Satisfied with ...Your future security."
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -3362,7 +3454,10 @@ main = "Personal Relationships"
 ylab = "Personal Relationships (SD)"
 sub  = "Satisfied with ...Your personal relationships."
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -3404,7 +3499,10 @@ main = "Your Health"
 ylab = "Your Health (SD)"
 sub  = "Satisfied with ...your health."
 # regression
-out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+out_m <- mice_gaussian(df = df,
+                       X = X,
+                       Y = Y,
+                       cvars = cvars)
 
 ## g-computation
 out_ct <-
@@ -3441,375 +3539,6 @@ yourhealth_p
 
 
 
-## TABLE HEALTH
-
-# TABLE  HEALTH  -----------------------------------------------
-main = "Health outcome estimands / Evalues"
-h_tab <- rbind(alcoholfreq_c,
-               alcoholintensity_c,
-               bmi_c,
-               exercise_c,
-               sfhealth_c,
-               sleep_c,
-               smoker_c)
-
-h_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  # kable_styling() %>%
-  row_spec(c(1,5),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")|>
-  kable_minimal(full_width = F)
-
-
-# TABLE EMBODIED ----------------------------------------------------------
-
-main = "Embodied wellbeing estimands / Evalues"
-embody_tab <- rbind(
-  bodysat_c,
-  distress_c,
-  exercise_c,
-  fatigue_c,
-  rumination_c,
-  selfcontrol_c,
-  sexualsat_c
-)
-#
-embody_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-
-# TABLE REFLECTIVE WELLBEING ----------------------------------------------
-
-
-main = "Reflective wellbeing estimands / Evalues"
-reflect_tab <- rbind(
-  gratitude_c,
-  groupimperm_c,
-  selfperm_c,
-  lifesat_c,
-  meaning_c,
-  perfect_c,
- # pwi_c,
-  powerdependence_c,
-  selfesteem_c#,
- # veng_c
-)
-
-reflect_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-
-# TABLE SOCIAL WELLBEING --------------------------------------------------
-
-main = "Social wellbeing estimands / Evalues"
-social_tab <- rbind(belong_c,
-                    community_c,
-                    nwi_c,
-                    support_c)
-
-social_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(1),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-# TABLE ECONOMIC WELLBEING and Charity ------------------------------------------------
-
-main = "Economic wellbeing estimands / Evalues"
-econ_tab <- rbind(
-  charity_c,
-  #  homeowner_c,
-  nzsei_c,
-  standardliving_c,
-  worklife_c,
-  volunteers_c
-)
-
-econ_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(1,3,4),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-
-# pwi ---------------------------------------------------------
-
-main = "PWI subscales / Evalues"
-pwi_tab <- rbind(
-  yourpersonalrelationships_c,
-  yourhealth_c,
-  standardliving_c,
-  futuresecurity_c
-  #,
-  #  volunteers_c
-)
-
-pwi_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(1,2,3,4),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-
-# GRAPHS EMBODIED --------------------------------------------
-bodysat_p
-distress_p
-fatigue_p
-rumination_p
-selfcontrol_p
-sleep_p
-sexualsat_p
-
-
-embody_plots <-
-  bodysat_p +
-  distress_p +
-  fatigue_p +
-  rumination_p +
-  selfcontrol_p +
-  sleep_p +
-  sexualsat_p + plot_annotation(title = "Causal effects of income on embodied wellbeing", #subtitle = "xyz",
-                                tag_levels = "A") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-embody_plots
-
-ggsave(
-  embody_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "embody_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
-# GRAPHS HEALTH -----------------------------------------------------------
-alcoholfreq_p
-alcoholintensity_p
-bmi_p
-exercise_p
-sfhealth_p
-smoker_p
-
-health_plots <- alcoholfreq_p +
-  alcoholintensity_p +
-  bmi_p +
-  exercise_p +
-  sfhealth_p +
-  smoker_p +
-  plot_annotation(title = "Causal effects of income on health outcomes",
-                  # subtitle = "xyz",
-                  tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-# view
-health_plots
-
-
-
-
-ggsave(
-  health_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "health_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-dev.off()
-
-
-
-
-# GRAPHS REFLECTIVE WELL-BEING ------------------------------------------------
-gratitude_p
-groupimperm_p
-selfperm_p
-lifesat_p
-meaning_p
-#perfect_p
-pwi_p
-powerdependence_p
-selfesteem_p
-veng_p
-
-reflective_plots <- gratitude_p +
-  groupimperm_p +
-  selfperm_p +
-  lifesat_p +
-  meaning_p +
-  perfect_p +
-  # pwi_p +
-  powerdependence_p +
-  selfesteem_p +
-  veng_p +
-  plot_annotation(title = "Causal effects of income on reflective wellbeing") +
-  plot_layout(guides = 'collect')
-
-reflective_plots
-
-# save
-perfect_p
-
-ggsave(
-  reflective_plots,
-    path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "reflective_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-# GRAPHS SOCIAL WELL-BEING ------------------------------------------------
-belong_p
-community_p
-nwi_p
-support_p
-
-social_plots <- belong_p +
-  community_p +
-  nwi_p +
-  support_p + plot_annotation(title = "Causal effects of income on social wellbeing") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-social_plots
-
-ggsave(
-  social_plots,
-    path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "social_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-social_plots
-dev.off()
-
-
-### GRAPHS ECONOMIC_SUCCESS GRAPHS ------------------------------------------------
-charity_p
-nzsei_p
-#nzsei_p
-standardliving_p
-worklife_p
-volunteers_p
-
-econ_plots <-# income_p +
-  charity_p +
-  # nzsei_p +
-  standardliving_p +
-  worklife_p +
-  volunteers_p +
-  plot_annotation(title = "Causal effects of income on economic wellbeing") +
-  plot_layout(guides = 'collect')  # + plot_layout(ncol = 2)
-
-# view
-econ_plots
-
-ggsave(
-  econ_plots,
-    path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "econ_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-dev.off()
-
-
-
-
-
-# GRAPH PWI SUBSCALE ------------------------------------------------------
-yourpersonalrelationships_p
-yourhealth_p
-standardliving_p
-futuresecurity_p
-
-pwi_plots <-
-  yourpersonalrelationships_p+
-  yourhealth_p+
-  standardliving_p+
-  futuresecurity_p+plot_annotation(title = "Causal effects of income on PWI subcales", #subtitle = "xyz",
-                                   tag_levels = "A") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-
-
-# view
-pwi_plots
-
-ggsave(
-  pwi_plots,
-    path = here::here(here::here("figs", "figs_forgiveness")),
-  width = 15,
-  height = 12,
-  units = "in",
-  filename = "pwi_plots.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
 
 # tab all ---------------------------------------------------------------
 main = "Forgiveness on wellbeing estimands / Evalues"
@@ -3817,6 +3546,7 @@ forgiveness <- rbind(
   alcoholfreq_c,
   alcoholintensity_c,
   bmi_c,
+  smoker_c,
   exercise_c,
   sfhealth_c,
   fatigue_c,
@@ -3827,6 +3557,7 @@ forgiveness <- rbind(
   sexualsat_c,
   selfcontrol_c,
   gratitude_c,
+  #  veng_c,
   groupimperm_c,
   selfperm_c,
   lifesat_c,
@@ -3841,77 +3572,89 @@ forgiveness <- rbind(
   yourhealth_c,
   standardliving_c,
   futuresecurity_c,
-  veng_c,
   charity_c,
-  standardliving_c,
+  volunteers_c,
   nzsei_c,
-  worklife_c,
-  charity_c)
+  worklife_c
+)
 
+
+forgiveness
 
 forgiveness_tab <- forgiveness |>
   kbl(caption = main,
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  row_spec(c(1,6:22,24:29,31,32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            # color = "black",
-           background = "bold")|>
+           background = "bold") |>
   kable_minimal(full_width = F)
 
 forgiveness_tab
+
 
 #save
 saveh(forgiveness_tab, "outcomewide-forgiveness-tab")
 
 # read
-forgiveness_tab <- readh("outcomewide-forgiveness-tab")
+forgiveness_tab <-
+  readh("outcomewide-forgiveness-tab")
 
 # graph all ---------------------------------------------------------------
 
-list_outcomes <- c(list(alcoholfreq_p,
-     alcoholintensity_p,
-     bmi_p,
-     exercise_p,
-     sfhealth_p,
-     fatigue_p,
-     sleep_p,
-     rumination_p,
-     distress_p,
-     bodysat_p,
-     sexualsat_p,
-     selfcontrol_p,
-     gratitude_p,
-     groupimperm_p,
-     selfperm_p,
-     lifesat_p,
-     meaning_p,
-     perfect_p,
-     powerdependence_p,
-     selfesteem_p,
-     belong_p,
-     nwi_p,
-     support_p,
-     yourpersonalrelationships_p,
-     yourhealth_p,
-     standardliving_p,
-     futuresecurity_p,
-    # veng_p,
-    charity_p,
-    standardliving_p,
-    nzsei_p,
-    worklife_p,
-    charity_p))
-
+list_outcomes <- c(
+  list(
+    alcoholfreq_c,
+    alcoholintensity_c,
+    bmi_c,
+    smoker_c,
+    exercise_c,
+    sfhealth_c,
+    fatigue_c,
+    sleep_c,
+    rumination_c,
+    distress_c,
+    bodysat_c,
+    sexualsat_c,
+    selfcontrol_c,
+    gratitude_c,
+    # veng_c,
+    groupimperm_c,
+    selfperm_c,
+    lifesat_c,
+    meaning_c,
+    perfect_c,
+    powerdependence_c,
+    selfesteem_c,
+    belong_c,
+    nwi_c,
+    support_c,
+    yourpersonalrelationships_c,
+    yourhealth_c,
+    standardliving_c,
+    futuresecurity_c,
+    charity_c,
+    volunteers_c,
+    nzsei_c,
+    worklife_c
+  )
+)
 
 out_foregiveness <- bind_forestplot(list_outcomes)
 
 # save
-saveh("outcomewide_out_foregiveness")
+saveh(out_foregiveness,"outcomewide_out_foregiveness")
 
 
-gcomp_forestplot_forgiveness <- gcomp_forestplot(out_t, title = "Outcomewide Foregiveness", ylim = ylim, xlab = "Incidence Effect Foregiveness (SD)")
+gcomp_forestplot_forgiveness <-
+  gcomp_forestplot(out_foregiveness,
+                   title = "Outcomewide Foregiveness",
+                   ylim = c(-.5,.5),
+                   xlab = "Incidence Effect Foregiveness (SD)")
+
+gcomp_forestplot_forgiveness
 
 
 ggsave(
@@ -3940,12 +3683,14 @@ ggsave(
 
 
 ## Risk ratio plot
-out_tt <- bind_forestplot(list(smoker_p, volunteers_p))
+out_tt <-
+  bind_forestplot(list(smoker_p, volunteers_p))
 
 gcomp_forestplot_forgiveness_rr <-
-  gcomp_forestplot_rr(out_tt,title = "Outcomewide Foregiveness RR",
+  gcomp_forestplot_rr(out_tt,
+                      title = "Outcomewide Foregiveness RR",
                       xlab = "Incidence Effect Foregiveness (SD)",
-                 ylim = c(.5,1.5), )
+                      ylim = c(.5, 1.5),)
 
 gcomp_forestplot_forgiveness_rr
 ggsave(
@@ -3959,7 +3704,3 @@ ggsave(
   limitsize = FALSE,
   dpi = 1200
 )
-
-
-
-
