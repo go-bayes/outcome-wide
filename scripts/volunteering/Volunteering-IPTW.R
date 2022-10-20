@@ -1,5 +1,3 @@
-#iptw-god
-
 options(scipen = 999)
 
 #libraries and functions
@@ -27,12 +25,11 @@ pull_path <-
 
 ###### READ THIS DATA IN   #########
 
-mff <- readh("outcomewide-god-all-mf")
+dff <- readh( "ml-volunteers_all" )
+mff <- readh( "mf-volunteers_all" )
 
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
-
-dff <- readh("outcomewide-god-all-ml")
 
 
 
@@ -40,33 +37,33 @@ dff <- readh("outcomewide-god-all-ml")
 #  IPTW ----------------------------------------------------------------
 # functions
 
-
-mice_iptw = function(X,Y,df, family = "gaussian") {
-  # requires that a MATCH THEM dataset is converted to a mice object
-  # weights must be called "weights)
-  require("splines")
-  require("mice")
-  out_m <- with(df, glm(
-    as.formula(paste(Y, "~ bs(", X , ")")),
-    weights = weights,
-    family = family
-  ))
-  return(out_m)
-}
-
-mice_iptw_lin = function(X,Y,df, family = "gaussian") {
-  # requires that a MATCH THEM dataset is converted to a mice object
-  # weights must be called "weights)
-  require("mice")
-  out_m <- with(df, glm(
-    as.formula(paste(Y, "(", X , ")")),
-    weights = weights,
-    family = family
-  ))
-  return(out_m)
-}
-
-
+#
+# mice_iptw = function(X,Y,df, family = "gaussian") {
+#   # requires that a MATCH THEM dataset is converted to a mice object
+#   # weights must be called "weights)
+#   require("splines")
+#   require("mice")
+#   out_m <- with(df, glm(
+#     as.formula(paste(Y, "~ bs(", X , ")")),
+#     weights = weights,
+#     family = family
+#   ))
+#   return(out_m)
+# }
+#
+# mice_iptw_lin = function(X,Y,df, family = "gaussian") {
+#   # requires that a MATCH THEM dataset is converted to a mice object
+#   # weights must be called "weights)
+#   require("mice")
+#   out_m <- with(df, glm(
+#     as.formula(paste(Y, "(", X , ")")),
+#     weights = weights,
+#     family = family
+#   ))
+#   return(out_m)
+# }
+#
+#
 
 
 # iptw income  --------------------------------------------------------------------
@@ -110,28 +107,28 @@ cvars = c(
   "community",
   "Edu_z",
   "Employed_z",
-  #"Emp.JobSecure_z",
-  # "EmotionRegulation1_z",
-  # "EmotionRegulation2_z",
-  # "EmotionRegulation3_z",
+  # "Emp.JobSecure_z",
+  "EmotionRegulation1_z",
+  "EmotionRegulation2_z",
+  "EmotionRegulation3_z",
   #"Euro_z",
   "EthCat",
+  "FOREGIVENESS_z",
   "Gender3",
   "GRATITUDE_z",
   "HomeOwner_z",
   "Hours.Exercise_log_z",
-  "Hours.Work_10_z",
+  "Hours.Work_z",
   "HLTH.BMI_z",
   "HLTH.Disability_z",
   "HLTH.Fatigue_z",
   "HLTH.SleepHours_z",
   "ImpermeabilityGroup_z",
-  #  "income_log_z",
+  # "income_log_z",
   "KESSLER6sum_z",
   "LIFEMEANING_z",
   "LIFESAT_z",
   "lost_job_z",
-  # "Male_z",
   "NZdep_z",
   "NWI_z",
   "NZSEI13_z",
@@ -140,23 +137,23 @@ cvars = c(
   "PERFECTIONISM_z",
   "PermeabilityIndividual_z",
   "Pol.Orient_z",
-  "POWERDEPENDENCE1_z",
-  "POWERDEPENDENCE2_z",
-  #"Relid_z",
-  "Respect.Self_z",
+  "POWERDEPENDENCE_z",
+  "Relid_z",
   "Retiredp_z",
+  "Respect.Self_z",
   "Rumination_z",
   "SELF.CONTROL_z",
   "SELF.ESTEEM_z",
-  "SexualOrientation",
+  # "semiretired",
+  "SexualOrientation_z",
   "SexualSatisfaction_z",
   "SFHEALTH_z",
   "Smoker_z",
-  "Spiritual.Identification",
+  "Spiritual.Identification_z",
   "Standard.Living_z",
   "SUPPORT_z",
   "Urban_z",
-  "VENGEFUL.RUMIN_z",
+ # "VENGEFUL.RUMIN_z",
   "Volunteers_z",
   "Your.Health_z",
   "Your.Future.Security_z",
@@ -165,9 +162,9 @@ cvars = c(
 
 # WEIGHTS
 
-models_st_spirit <- weightthem(as.formula(paste(
+models_st_volunteering <- weightthem(as.formula(paste(
   as.formula(paste(
-    paste("Believe.Spirit_lead1", "~",
+    paste("Volunteers_lead1", "~",
           paste(cvars, collapse = "+")))))),
   dff,
   approach = "within",
@@ -177,13 +174,13 @@ models_st_spirit <- weightthem(as.formula(paste(
 )
 
 
-saveh(models_st_spirit, "outcomewide-believe-weights-spirit.rds")
-models_st_spirit <- readh("outcomewide-believe-weights-spirit.rds")
+saveh(models_st_volunteering, "outcomewide-believe-weights-volunteers.rds")
+models_st <- readh("outcomewide-believe-weights-volunteers.rds")
 
-sum <- summary(models_st_spirit)
+sum <- summary(models_st)
 plot(sum)
 sum
-bal.tab(models_st_spirit)
+bal.tab(models_st)
 
 # no confounder imbalanced by more than .05
 # ctrim_st <- trim(models_st_spirit, at = .999)
@@ -196,12 +193,12 @@ bal.tab(models_st_spirit)
 
 # make into mids
 #Extracting the original dataset with missing value
-maindataset <- complete(models_st_spirit, action = 0)
+maindataset <- complete(models_st, action = 0)
 #Some spit-and-polish
 maindataset <- data.frame(.imp = 0, .id = seq_len(nrow(maindataset)), maindataset)
 
 #Extracting imputed-weighted datasets in the long format
-alldataset  <- complete(models_st_spirit, action = "long")
+alldataset  <- complete(models_st, action = "long")
 
 #Binding them together
 alldataset  <- rbind(maindataset, alldataset)
@@ -210,8 +207,8 @@ alldataset  <- rbind(maindataset, alldataset)
 newmids <- as.mids(alldataset)
 
 ## SET UP
-saveh(newmids, "outcomewide-spirit-newmids")
-newmids <- readh("outcomewide-spirit-newmids")
+saveh(newmids, "outcomewide-volunteers-newmids")
+newmids <- readh("outcomewide-volunteers-newmids")
 
 ###############  RENAME YOUR IMPUTED DATASET  'df"  ###############  ###############  ###############
 ###############   IMPORANT DO THIS   ###############  ###############  ###############  ###############
@@ -224,14 +221,14 @@ df <- newmids
 ## HERE WE USE THE EXAMPLE OF HOURS WORK / 10
 ###############   IMPORTANT SET YOUR EXPOSURE VARIABLE
 
-X = "Believe.Spirit_lead1"
+X = "Volunteers_lead1"
 
 
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK
 
-xlab = "Do you believe in a spirit or life force?"
+xlab = "Hours spent … voluntary/charitable work"
 
 
 # SET THE RANGE
@@ -289,6 +286,33 @@ mice_iptw_lin = function(X,Y,df, family = "gaussian") {
   return(out_m)
 }
 
+
+## EXAMPLE TABLE
+# out_ct %>%
+#   slice(f + 1 - min) |>
+#   kbl(digits = 3, "markdown")
+# excercise_t <- out_ct %>%
+#   #slice(1:max) |>
+#   tibble() |>
+#   rename(
+#     Contrast = row,
+#     Estimate = est,
+#     Std_error = se,
+#     CI_hi = ui,
+#     CI_lo = li
+#   ) |>
+#   kbl(caption = main,
+#       digits = 3,
+#       "html") |>
+#   kable_styling() %>%
+#   row_spec(c(f + 1 - min),
+#            bold = T,
+#            color = "white",
+#            background = "dodgerblue") |>
+#   kable_minimal(full_width = F)
+# # show table
+# excercise_t
+
 ##### BASELINE VARIABLES
 
 
@@ -330,30 +354,6 @@ alcoholfreq_c
 
 
 
-## table for all contrasts (exploratory )
-alcoholfreq_t <- out_ct %>%
-  # #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-
-# show table
-alcoholfreq_t
-# graph
 alcoholfreq_p <-
   ggplot_stglm(
     out_ct,
@@ -399,27 +399,6 @@ alcoholintensity_c <-
   vanderweelevalue_ols(out_ct, f - min, delta, sd)
 alcoholintensity_c
 
-alcoholintensity_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-alcoholintensity_t
 # graph
 alcoholintensity_p <-
   ggplot_stglm(
@@ -464,26 +443,6 @@ out_ct <-
   )
 # g-computation - contrasts
 #table
-bmi_t <- out_ct %>%
-  slice(1:8) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-bmi_t
 bmi_p <-
   ggplot_stglm(
     out_ct,
@@ -528,27 +487,7 @@ out_ct <-
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
-excercise_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-excercise_t
+
 # graph
 exercise_p <-
   ggplot_stglm(
@@ -597,46 +536,9 @@ out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
 
-sfhealth_t <- out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-excercise_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-excercise_t
-# graph
-exercise_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  ) #+ expand_limits(x = 0, y = 0)
+sfhealth_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+sfhealth_c
 
-# show table
-sfhealth_t
-# graph
 sfhealth_p <-
   ggplot_stglm(
     out_ct,
@@ -651,8 +553,7 @@ sfhealth_p <-
 sfhealth_p
 
 # coef + estimate
-sfhealth_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-sfhealth_c
+
 
 
 # HLTH.Sleep --------------------------------------------------------------
@@ -680,27 +581,6 @@ out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
 
-sleep_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-sleep_t
 # graph
 sleep_p <-
   ggplot_stglm(
@@ -747,26 +627,7 @@ out_ct <-
   )
 # g-computation - contrasts
 #table
-smoker_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-smoker_t
+
 smoker_p <-
   ggplot_stglm(
     out_ct,
@@ -810,39 +671,16 @@ out_ct <-
     x = x,
     r = r
   )
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
+# out_ct %>%
+#   slice(f + 1 - min) |>
+#   kbl(digits = 3, "markdown")
 
 # coef + estimate
 bodysat_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 bodysat_c
 
 
-bodysat_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-bodysat_t
-# graph
-bodysat_p <-
-  ggplot_stglm(
+bodysat_p <- ggplot_stglm(
     out_ct,
     ylim = ylim,
     main,
@@ -894,27 +732,6 @@ distress_c <- vanderweelevalue_ols(out_ct, f - min, delta, sd)
 distress_c
 
 
-distress_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-distress_t
 # graph
 distress_p <-
   ggplot_stglm(
@@ -962,28 +779,7 @@ fatigue_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 fatigue_c
 
 
-fatigue_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-fatigue_t
-# graph
+
 fatigue_p <-
   ggplot_stglm(
     out_ct,
@@ -1028,27 +824,6 @@ out_ct %>%
 rumination_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 rumination_c
 
-rumination_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-rumination_t
 # graph
 rumination_p <-
   ggplot_stglm(
@@ -1095,27 +870,7 @@ out_ct %>%
 selfcontrol_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 selfcontrol_c
 
-selfcontrol_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-selfcontrol_t
+
 # graph
 selfcontrol_p <-
   ggplot_stglm(
@@ -1159,27 +914,6 @@ out_ct %>%
 sexualsat_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 sexualsat_c
 
-sexualsat_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(f + 1 - min),
-           bold = T,
-           color = "white",
-           background = "dodgerblue") |>
-  kable_minimal(full_width = F)
-# show table
-sexualsat_t
 # graph
 sexualsat_p <-
   ggplot_stglm(
@@ -2705,471 +2439,13 @@ yourhealth_p
 
 ## TABLE HEALTH
 
-# TABLE  HEALTH  -----------------------------------------------
-main = "Health outcome estimands / Evalues"
-h_tab <- rbind(alcoholfreq_c,
-               alcoholintensity_c,
-               bmi_c,
-               exercise_c,
-               sfhealth_c,
-               sleep_c,
-               smoker_c)
-
-h_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  # kable_styling() %>%
-  row_spec(c(1,5),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")|>
-  kable_minimal(full_width = F)
-
-
-# TABLE EMBODIED ----------------------------------------------------------
-
-main = "Embodied wellbeing estimands / Evalues"
-embody_tab <- rbind(
-  bodysat_c,
-  distress_c,
-  exercise_c,
-  fatigue_c,
-  rumination_c,
-  selfcontrol_c,
-  sexualsat_c
-)
-#
-embody_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-# TABLE  HEALTH  -----------------------------------------------
-main = "Health outcome estimands / Evalues"
-h_tab <- rbind(alcoholfreq_c,
-               alcoholintensity_c,
-               bmi_c,
-               exercise_c,
-               sfhealth_c,
-               sleep_c,
-               smoker_c)
-
-h_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(1),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")
-
-
-
-# TABLE EMBODIED ----------------------------------------------------------
-
-main = "Embodied wellbeing estimands / Evalues"
-embody_tab <- rbind(
-  bodysat_c,
-  distress_c,
-  exercise_c,
-  fatigue_c,
-  rumination_c,
-  selfcontrol_c,
-  sleep_c,
-  sexualsat_c
-)
-
-embody_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")
-kable_minimal(full_width = F)
-
-
-
-# TABLE REFLECTIVE WELLBEING ----------------------------------------------
-
-
-main = "Reflective wellbeing estimands / Evalues"
-reflect_tab <- rbind(
-  gratitude_c,
-  groupimperm_c,
-  selfperm_c,
-  lifesat_c,
-  meaning_c,
-  perfect_c,
-  pwi_c,
-  powerdependence1_c,
-  powerdependence2_c,
-  selfesteem_c,
-  veng_c
-)
-
-reflect_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-
-# TABLE SOCIAL WELLBEING --------------------------------------------------
-
-main = "Social wellbeing estimands / Evalues"
-social_tab <- rbind(belong_c,
-                    community_c,
-                    nwi_c,
-                    support_c)
-
-social_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(0),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-# TABLE ECONOMIC WELLBEING and Charity ------------------------------------------------
-
-main = "Economic wellbeing estimands / Evalues"
-econ_tab <- rbind(#  income_c,
-  charity_c,
-  #  homeowner_c,
-  nzsei_c,
-  standardliving_c,
-  worklife_c,
-  volunteers_c)
-
-econ_tab |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(c(5),
-           bold = T,
-           color = "black",
-           background = "bold") |>
-  kable_minimal(full_width = F)
-
-
-# GRAPHS EMBODIED --------------------------------------------
-embody_plots_iptw <-
-  bodysat_p +
-  distress_p +
-  fatigue_p +
-  rumination_p +
-  selfcontrol_p +
-  sleep_p +
-  sexualsat_p + plot_annotation(title = "Causal effects of work hours on embodied wellbeing", #subtitle = "xyz",
-                                tag_levels = "A") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-embody_plots_iptw
-
-ggsave(
-  embody_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "embody_plots_iptw.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
-# GRAPHS HEALTH -----------------------------------------------------------
-
-health_plots_iptw <- alcoholfreq_p +
-  alcoholintensity_p +
-  bmi_p +
-  exercise_p +
-  smoker_p +
-  sfhealth_p +
-  plot_annotation(title = "Causal effects of work hours on health outcomes",
-                  # subtitle = "xyz",
-                  tag_levels = "A") + plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-# view
-health_plots_iptw
-
-ggsave(
-  health_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "health_plots_iptw.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-dev.off()
-
-
-
-
-# GRAPHS REFLECTIVE WELL-BEING ------------------------------------------------
-
-reflective_plots_iptw <- gratitude_p +
-  groupimperm_p +
-  selfperm_p +
-  lifesat_p +
-  meaning_p +
-  perfect_p +
-  pwi_p +
-  powerdependence1_p +
-  powerdependence2_p +
-  selfesteem_p +
-  veng_p +
-  plot_annotation(title = "Causal effects of work hours on reflective wellbeing") +
-  plot_layout(guides = 'collect')
-
-reflective_plots_iptw
-
-# save
-
-ggsave(
-  reflective_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "reflective_plots_iptw.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-# GRAPHS SOCIAL WELL-BEING ------------------------------------------------
-
-social_plots_iptw <- belong_p +
-  community_p +
-  nwi_p +
-  support_p + plot_annotation(title = "Causal effects of work hours on social wellbeing") +
-  plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
-
-social_plots_iptw
-
-ggsave(
-  social_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "social_plots_iptw.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-dev.off()
-
-
-### GRAPHS ECONOMIC_SUCCESS GRAPHS ------------------------------------------------
-
-econ_plots_iptw <- charity_p +
-  nzsei_p +
-  standardliving_p +
-  volunteers_p +  worklife_p +
-  plot_annotation(title = "Causal effects of XX on economic wellbeing") +
-  plot_layout(guides = 'collect') + plot_layout(ncol = 2)
-
-# view
-econ_plots_iptw
-
-ggsave(
-  econ_plots_iptw,
-  path = here::here(here::here("figs", "figs_belief_iptw_god", "standardised")),
-  width = 16,
-  height = 12,
-  units = "in",
-  filename = "econ_plots_iptw.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-dev.off()
-
-
-# tab all ---------------------------------------------------------------
-main = "Belief in Spirit wellbeing estimands / Evalues"
-spirit <- rbind(
-alcoholfreq_c,
-alcoholintensity_c,
-bmi_c,
-exercise_c,
-sfhealth_c,
-fatigue_c,
-sleep_c,
-rumination_c,
-distress_c,
-bodysat_c,
-sexualsat_c,
-selfcontrol_c,
-gratitude_c,
-groupimperm_c,
-selfperm_c,
-lifesat_c,
-meaning_c,
-perfect_c,
-powerdependence_c,
-selfesteem_c,
-belong_c,
-nwi_c,
-support_c,
-yourpersonalrelationships_c,
-yourhealth_c,
-standardliving_c,
-futuresecurity_c,
-veng_c,
-charity_c,
-standardliving_c,
-nzsei_c,
-worklife_c,
-charity_c)
-
-
-spirit_tab <- spirit |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  # kable_styling() %>%
-  row_spec(c(7,13,15,19,32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")|>
-  kable_minimal(full_width = F)
-
-spirit_tab
-
-#save
-saveh(spirit_tab, "outcomewide-spirit-tab")
-
-# read
-spirit_tab <- readh("outcomewide-spirit-tab")
-
-
-# forestplots -------------------------------------------------------------
-
-
-list_outcomes_spirit <- c(list(alcoholfreq_p,
-                         alcoholintensity_p,
-                         bmi_p,
-                         exercise_p,
-                         sfhealth_p,
-                         fatigue_p,
-                         sleep_p,
-                         rumination_p,
-                         distress_p,
-                         bodysat_p,
-                         sexualsat_p,
-                         selfcontrol_p,
-                         gratitude_p,
-                         groupimperm_p,
-                         selfperm_p,
-                         lifesat_p,
-                         meaning_p,
-                         perfect_p,
-                         powerdependence_p,
-                         selfesteem_p,
-                         belong_p,
-                         nwi_p,
-                         support_p,
-                         yourpersonalrelationships_p,
-                         yourhealth_p,
-                         standardliving_p,
-                         futuresecurity_p,
-                         veng_p,
-                         charity_p,
-                         standardliving_p,
-                         nzsei_p,
-                         worklife_p,
-                         charity_p))
-
-
-out_spirit <- bind_forestplot(list_outcomes_spirit)
-out_spirit
-
-saveh(out_spirit, "outcomewide-belief-out_iptw-spirit")
-
-gcomp_forestplot_believe_spirit <- gcomp_forestplot(out_spirit, title = "Outcomewide Belief in Spirit", ylim = c(-.5,.5), xlab = "Incidence Belief in Spirit (SD)")
-
-gcomp_forestplot_believe_spirit
-
-
-ggsave(
-  gcomp_forestplot_believe_spirit,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "gcomp_forestplot_believe_spirit_short.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
-## Risk ratio plot
-out_spirit_rr <- bind_forestplot(list(smoker_p, volunteers_p))
-
-# save for future use
-saveh(out_spirit_rr, "outcomewide-belief-out_iptw-spirit_rr")
-
-# plot
-gcomp_forestplot_spirit_rr <-
-  gcomp_forestplot_rr(out_spirit_rr,title = "Outcomewide Belief in Spirit RR",
-                      ylim = c(.5,1.5))
-
-gcomp_forestplot_spirit_rr <-
-ggsave(
-  gcomp_forestplot_forgiveness_rr,
-  path = here::here(here::here("figs", "figs_belief_iptw_spirit")),  width = 12,
-  height = 8,
-  units = "in",
-  filename = "gcomp_forestplot_forgiveness_rr_short.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
-
-## TABLE HEALTH
-
 # tab all ---------------------------------------------------------------
 main = "Volunteers wellbeing estimands / Evalues"
-Volunteers_gcomp <- rbind(
+Volunteers <- rbind(
   alcoholfreq_c,
   alcoholintensity_c,
   bmi_c,
+  smoker_c,
   exercise_c,
   sfhealth_c,
   fatigue_c,
@@ -3196,35 +2472,35 @@ Volunteers_gcomp <- rbind(
   standardliving_c,
   futuresecurity_c,
   charity_c,
-  standardliving_c,
+  volunteers_c,
   nzsei_c,
   worklife_c)
 
 
-Volunteers_gcomp_tab <- Volunteers_gcomp |>
+Volunteers_tab <- Volunteers |>
   kbl(caption = main,
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(4,6,13,29,32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  row_spec(c(4,6,13,29),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            # color = "black",
            background = "bold")|>
   kable_minimal(full_width = F)
 
-Volunteers_gcomp_tab
+Volunteers_tab
 def.off()
 #save
-saveh(Volunteers_gcomp_tab, "outcomewide-Volunteers_gcomp_tab")
+saveh(Volunteers_tab, "outcomewide-Volunteers-tab")
 
 # read
-Volunteers_gcomp_tab <- readh("outcomewide-Volunteers_gcomp_tab")
-
+Volunteers_tab <- readh("outcomewide-Volunteers-tab")
+Volunteers_tab
 
 # forestplots -------------------------------------------------------------
 
 
-list_outcomes_Volunteers_gcomp <- c(list(alcoholfreq_p,
+list_outcomes_Volunteers <- c(list(alcoholfreq_p,
                                    alcoholintensity_p,
                                    bmi_p,
                                    exercise_p,
@@ -3253,29 +2529,30 @@ list_outcomes_Volunteers_gcomp <- c(list(alcoholfreq_p,
                                    standardliving_p,
                                    futuresecurity_p,
                                    charity_p,
-                                   standardliving_p,
+                                   #  volunteers_p,
                                    nzsei_p,
                                    worklife_p))
 
 
-out_Volunteers_gcomp <- bind_forestplot(list_outcomes_Volunteers_gcomp)
-out_Volunteers_gcomp
+out_Volunteers<- bind_forestplot(list_outcomes_Volunteers)
+out_Volunteers
 
-saveh(out_Volunteers_gcomp, "outcomewide-belief_out_Volunteers_gcomp")
+saveh(out_Volunteers, "outcomewide-belief-out_iptw-Volunteers")
 
-gcomp_forestplot_Volunteers_gcomp <- gcomp_forestplot(out_Volunteers_gcomp,
+gcomp_forestplot_Volunteers <- gcomp_forestplot(out_Volunteers,
                                                 title = "Outcomewide Volunteers",
                                                 ylim = c(-.5,.5), xlab = "Incidence Volunteers (SD)")
 
-gcomp_forestplot_Volunteers_gcomp
+gcomp_forestplot_Volunteers
+
 
 ggsave(
-  gcomp_forestplot_Volunteers_gcomp,
+  gcomp_forestplot_Volunteers,
   path = here::here(here::here("figs", "figs_volunteers")),
   width = 12,
   height = 8,
   units = "in",
-  filename = "gcomp_forestplot_Volunteers-gcomp.jpg",
+  filename = "gcomp_forestplot_Volunteers-iptw.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 1200
@@ -3283,27 +2560,24 @@ ggsave(
 
 
 ## Risk ratio plot
-out_volunteers_rr_gcomp <- bind_forestplot(list(smoker_p))
+out_volunteers_rr <- bind_forestplot(list(smoker_p))
 
 # save for future use
-saveh(out_volunteers_rr_gcomp, "out_volunteers_rr_gcomp")
+saveh(out_volunteers_rr, "out_volunteers_rr_iptw")
 
 # plot
-gcomp_volunteers_rr_gcomp <-
-  gcomp_forestplot_rr(out_volunteers_rr_gcomp,title = "Volunteers RR",
+gcomp_volunteers_rr <-
+  gcomp_forestplot_rr(out_volunteers_rr,title = "Volunteers RR",
                       ylim = c(.5,1.5))
-gcomp_volunteers_rr_gcomp
+gcomp_volunteers_rr
 
 ggsave(
-  gcomp_volunteers_rr_gcomp,
-  path = here::here(here::here("figs", "figs_volunteers")),  width = 12,
-  height = 8,
-  units = "in",
-  filename = "gcomp_volunteers_rr_gcomp.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 1200
-)
-
-
-
+  gcomp_volunteers_rr,
+    path = here::here(here::here("figs", "figs_volunteers")),  width = 12,
+    height = 8,
+    units = "in",
+    filename = "gcomp_volunteers_rr-iptw.jpg",
+    device = 'jpeg',
+    limitsize = FALSE,
+    dpi = 1200
+  )

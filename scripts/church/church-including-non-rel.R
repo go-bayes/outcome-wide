@@ -2443,73 +2443,73 @@ selfesteem_p
 
 #
 # # veng rumination ---------------------------------------------------------
-# # Forgivingness versus Vengeful Rumination
-# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.
-# # I can usually forgive and forget when someone does me wrong.
-# # I find myself regularly thinking about past times that I have been wronged.
-#
-# Y = "VENGEFUL.RUMIN_lead2_z"
-# main = "Vengefulness (anti-Foregiveness)"
-# ylab = "Vengefulness (anti-Foregiveness) (SD)"
-# sub = "Sometimes I can't sleep because of thinking about\npast wrongs I have suffered.\nI can usually forgive and forget when someone does me wrong.\nI find myself regularly thinking about past times that I have been wronged."
-#
-# # regression
-# out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
-#
-# ## g-computation
-# out_ct <-
-#   pool_stglm_contrast(
-#     out_m,
-#     df = df,
-#     m = 10,
-#     X = X,
-#     x = x,
-#     r = r
-#   )
-# out_ct %>%
-#   slice(f + 1 - min) |>
-#   kbl(digits = 3, "markdown")
-#
-# veng_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-# veng_c
-#
-# veng_t <- out_ct %>%
-#   #slice(1:max) |>
-#   tibble() |>
-#   rename(
-#     Contrast = row,
-#     Estimate = est,
-#     Std_error = se,
-#     CI_hi = ui,
-#     CI_lo = li
-#   ) |>
-#   kbl(caption = main,
-#       digits = 3,
-#       "html") |>
-#   kable_styling() %>%
-#   row_spec(c(f + 1 - min),
-#            bold = T,
-#            color = "white",
-#            background = "dodgerblue") |>
-#   kable_minimal(full_width = F)
-# # show table
-# veng_t
-# # graph
-# veng_p <-
-#   ggplot_stglm(
-#     out_ct,
-#     ylim = ylim,
-#     main,
-#     xlab,
-#     ylab,
-#     min = min,
-#     p = p,
-#     sub = sub
-#   )
-# veng_p
-#
-#
-#
+# Forgivingness versus Vengeful Rumination
+# Sometimes I can't sleep because of thinking about past wrongs I have suffered.
+# I can usually forgive and forget when someone does me wrong.
+# I find myself regularly thinking about past times that I have been wronged.
+
+Y = "VENGEFUL.RUMIN_lead2_z"
+main = "Vengefulness (anti-Foregiveness)"
+ylab = "Vengefulness (anti-Foregiveness) (SD)"
+sub = "Sometimes I can't sleep because of thinking about\npast wrongs I have suffered.\nI can usually forgive and forget when someone does me wrong.\nI find myself regularly thinking about past times that I have been wronged."
+
+# regression
+out_m <- mice_gaussian(df = df, X = X, Y = Y, cvars = cvars)
+
+## g-computation
+out_ct <-
+  pool_stglm_contrast(
+    out_m,
+    df = df,
+    m = 10,
+    X = X,
+    x = x,
+    r = r
+  )
+out_ct %>%
+  slice(f + 1 - min) |>
+  kbl(digits = 3, "markdown")
+
+veng_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
+veng_c
+
+veng_t <- out_ct %>%
+  #slice(1:max) |>
+  tibble() |>
+  rename(
+    Contrast = row,
+    Estimate = est,
+    Std_error = se,
+    CI_hi = ui,
+    CI_lo = li
+  ) |>
+  kbl(caption = main,
+      digits = 3,
+      "html") |>
+  kable_styling() %>%
+  row_spec(c(f + 1 - min),
+           bold = T,
+           color = "white",
+           background = "dodgerblue") |>
+  kable_minimal(full_width = F)
+# show table
+veng_t
+# graph
+veng_p <-
+  ggplot_stglm(
+    out_ct,
+    ylim = ylim,
+    main,
+    xlab,
+    ylab,
+    min = min,
+    p = p,
+    sub = sub
+  )
+veng_p
+
+
+
 
 # Work-life balance -------------------------------------------------------
 # note-- we have no measure currently at baseline, so less confoundign control
@@ -3646,7 +3646,7 @@ embody_plots <-
   rumination_p +
   selfcontrol_p +
   sleep_p +
-  sexualsat_p + plot_annotation(title = "Causal effects of income on embodied wellbeing", #subtitle = "xyz",
+  sexualsat_p + plot_annotation(title = "Causal effects of Church on embodied wellbeing", #subtitle = "xyz",
                                 tag_levels = "A") +
   plot_layout(guides = 'collect') #+ plot_layout(nrow = 3, byrow = T)
 
@@ -3654,7 +3654,7 @@ embody_plots
 
 ggsave(
   embody_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3691,7 +3691,7 @@ health_plots
 
 ggsave(
   health_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3738,7 +3738,7 @@ perfect_p
 
 ggsave(
   reflective_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3764,7 +3764,7 @@ social_plots
 
 ggsave(
   social_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3800,7 +3800,7 @@ econ_plots
 
 ggsave(
   econ_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3837,7 +3837,7 @@ pwi_plots
 
 ggsave(
   pwi_plots,
-  path = here::here(here::here("figs", "figs_forgiveness")),
+  path = here::here(here::here("figs", "figs_church")),
   width = 15,
   height = 12,
   units = "in",
@@ -3850,10 +3850,11 @@ ggsave(
 
 # tab all ---------------------------------------------------------------
 main = "Church Attendance estimands / Evalues"
-god <- rbind(
+church <- rbind(
   alcoholfreq_c,
   alcoholintensity_c,
   bmi_c,
+  smoker_c,
   exercise_c,
   sfhealth_c,
   fatigue_c,
@@ -3864,6 +3865,7 @@ god <- rbind(
   sexualsat_c,
   selfcontrol_c,
   gratitude_c,
+  veng_c,
   groupimperm_c,
   selfperm_c,
   lifesat_c,
@@ -3878,26 +3880,24 @@ god <- rbind(
   yourhealth_c,
   standardliving_c,
   futuresecurity_c,
-  veng_c,
   charity_c,
-  standardliving_c,
+  volunteers_c,
   nzsei_c,
-  worklife_c,
-  charity_c)
+  worklife_c)
 
 
-church_tab <- god |>
+church_tab <- church |>
   kbl(caption = main,
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(0),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  row_spec(c(1:2,15,19,22,23,25:26,30,31,33),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            # color = "black",
            background = "bold")|>
   kable_minimal(full_width = F)
 
-god_tab
+church_tab
 
 #save
 saveh(church_tab, "outcomewide-church-tab")
@@ -3905,43 +3905,42 @@ saveh(church_tab, "outcomewide-church-tab")
 # read
 church_tab <- readh("outcomewide-church-tab")
 
-
+church_tab
 # forestplots -------------------------------------------------------------
 
 
 list_outcomes_church <- c(list(alcoholfreq_p,
-                            alcoholintensity_p,
-                            bmi_p,
-                            exercise_p,
-                            sfhealth_p,
-                            fatigue_p,
-                            sleep_p,
-                            rumination_p,
-                            distress_p,
-                            bodysat_p,
-                            sexualsat_p,
-                            selfcontrol_p,
-                            gratitude_p,
-                            groupimperm_p,
-                            selfperm_p,
-                            lifesat_p,
-                            meaning_p,
-                            perfect_p,
-                            powerdependence_p,
-                            selfesteem_p,
-                            belong_p,
-                            nwi_p,
-                            support_p,
-                            yourpersonalrelationships_p,
-                            yourhealth_p,
-                            standardliving_p,
-                            futuresecurity_p,
-                            veng_p,
-                            charity_p,
-                            standardliving_p,
-                            nzsei_p,
-                            worklife_p,
-                            charity_p))
+                               alcoholintensity_p,
+                               bmi_p,
+                               exercise_p,
+                               sfhealth_p,
+                               fatigue_p,
+                               sleep_p,
+                               rumination_p,
+                               distress_p,
+                               bodysat_p,
+                               sexualsat_p,
+                               selfcontrol_p,
+                               gratitude_p,
+                               veng_p,
+                               groupimperm_p,
+                               selfperm_p,
+                               lifesat_p,
+                               meaning_p,
+                               perfect_p,
+                               powerdependence_p,
+                               selfesteem_p,
+                               belong_p,
+                               nwi_p,
+                               support_p,
+                               yourpersonalrelationships_p,
+                               yourhealth_p,
+                               standardliving_p,
+                               futuresecurity_p,
+                               charity_p,
+                             #  volunteers_p,
+                               nzsei_p,
+                               worklife_p))
 
 
 out_church <- bind_forestplot(list_outcomes_church)
@@ -3949,7 +3948,7 @@ out_church
 
 saveh(out_church, "outcomewide-belief-out_church")
 
-gcomp_forestplot_church <- gcomp_forestplot(out_god, title = "Outcomewide Church Attendance", ylim = c(-.5,.5), xlab = "Incidence Church Attendance (0-8)")
+gcomp_forestplot_church <- gcomp_forestplot(out_church, title = "Outcomewide Church Attendance", ylim = c(-.5,.5), xlab = "Incidence Church Attendance (0-8)")
 
 gcomp_forestplot_church
 
@@ -3967,20 +3966,21 @@ ggsave(
 )
 
 
+
+
 ## Risk ratio plot
-out_rr_church <- bind_forestplot(list(smoker_p, volunteers_p))
+out_church_rr <- bind_forestplot(list(smoker_p, volunteers_p))
 
 # save for future use
-saveh(out_rr_church, "outcomewide-belief-out_rr_church")
+saveh(out_church_rr, "out_volunteers_rr_iptw")
 
 # plot
-gcomp_forestplot_rr_church <-
-  gcomp_forestplot_rr(out_rr_church,title = "Outcomewide Church Attendance RR",
-                      ylim = c(.5,1.5))
-gcomp_forestplot_rr_church
-
-  ggsave(
-    gcomp_forestplot_rr_church,
+gcomp_church_rr <-
+  gcomp_forestplot_rr(out_church_rr,title = "Church RR",
+                      ylim = c(.5,2))
+gcomp_church_rr
+ggsave(
+  gcomp_church_rr,
     path = here::here(here::here("figs", "figs_church")),  width = 12,
     height = 8,
     units = "in",
@@ -3994,7 +3994,7 @@ gcomp_forestplot_rr_church
 # individual plots for talk -----------------------------------------------
 collected_wellbeing_talk_CHURCH <- lifesat_p +
   meaning_p +
-  pwi_p +
+#  pwi_p +
   distress_p +
   plot_annotation(title = "Causal effects of Church Attendance on cherry-picked wellbeing outcomes") +
   plot_layout(guides = 'collect') + plot_layout(ncol = 2)
