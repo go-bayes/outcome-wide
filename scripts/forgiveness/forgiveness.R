@@ -3604,43 +3604,38 @@ forgiveness_tab <-
 
 # graph all ---------------------------------------------------------------
 
-list_outcomes <- c(
-  list(
-    alcoholfreq_c,
-    alcoholintensity_c,
-    bmi_c,
-    smoker_c,
-    exercise_c,
-    sfhealth_c,
-    fatigue_c,
-    sleep_c,
-    rumination_c,
-    distress_c,
-    bodysat_c,
-    sexualsat_c,
-    selfcontrol_c,
-    gratitude_c,
-    # veng_c,
-    groupimperm_c,
-    selfperm_c,
-    lifesat_c,
-    meaning_c,
-    perfect_c,
-    powerdependence_c,
-    selfesteem_c,
-    belong_c,
-    nwi_c,
-    support_c,
-    yourpersonalrelationships_c,
-    yourhealth_c,
-    standardliving_c,
-    futuresecurity_c,
-    charity_c,
-    volunteers_c,
-    nzsei_c,
-    worklife_c
-  )
-)
+list_outcomes <-   c(list(alcoholfreq_p,
+         alcoholintensity_p,
+         bmi_p,
+         exercise_p,
+         sfhealth_p,
+         fatigue_p,
+         sleep_p,
+         rumination_p,
+         distress_p,
+         bodysat_p,
+         sexualsat_p,
+         selfcontrol_p,
+         gratitude_p,
+        # veng_p,
+         groupimperm_p,
+         selfperm_p,
+         lifesat_p,
+         meaning_p,
+         perfect_p,
+         powerdependence_p,
+         selfesteem_p,
+         belong_p,
+         nwi_p,
+         support_p,
+         yourpersonalrelationships_p,
+         yourhealth_p,
+         standardliving_p,
+         futuresecurity_p,
+         charity_p,
+         #  volunteers_p,
+         nzsei_p,
+         worklife_p))
 
 out_foregiveness <- bind_forestplot(list_outcomes)
 
@@ -3683,14 +3678,13 @@ ggsave(
 
 
 ## Risk ratio plot
-out_tt <-
-  bind_forestplot(list(smoker_p, volunteers_p))
-
+out_tt <-bind_forestplot(list(smoker_p, volunteers_p))
+out_tt
 gcomp_forestplot_forgiveness_rr <-
   gcomp_forestplot_rr(out_tt,
                       title = "Outcomewide Foregiveness RR",
                       xlab = "Incidence Effect Foregiveness (SD)",
-                      ylim = c(.5, 1.5),)
+                      ylim = c(.5, 1.5))
 
 gcomp_forestplot_forgiveness_rr
 ggsave(

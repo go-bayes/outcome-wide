@@ -3816,6 +3816,7 @@ Gratitude <- rbind(
   alcoholfreq_c,
   alcoholintensity_c,
   bmi_c,
+  smoker_c,
   exercise_c,
   sfhealth_c,
   fatigue_c,
@@ -3825,7 +3826,7 @@ Gratitude <- rbind(
   bodysat_c,
   sexualsat_c,
   selfcontrol_c,
-#  gratitude_c,
+ # gratitude_c,
   veng_c,
   groupimperm_c,
   selfperm_c,
@@ -3839,20 +3840,19 @@ Gratitude <- rbind(
   support_c,
   yourpersonalrelationships_c,
   yourhealth_c,
+  standardliving_c,
   futuresecurity_c,
   charity_c,
-  standardliving_c,
+  volunteers_c,
   nzsei_c,
-  worklife_c,
-  charity_c)
-
+  worklife_c)
 
 Gratitude_tab <- Gratitude |>
   kbl(caption = main,
       digits = 3,
       "html") |>
   # kable_styling() %>%
-  row_spec(c(5:11,13:31),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
+  row_spec(c(6:32),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
            bold = T,
            # color = "black",
            background = "bold")|>
@@ -3869,40 +3869,39 @@ Gratitude_tab <- readh("outcomewide-Gratitude-tab")
 # graph all ---------------------------------------------------------------
 
 list_outcomes_Gratitude<- c(list(alcoholfreq_p,
-                        alcoholintensity_p,
-                        bmi_p,
-                        exercise_p,
-                        sfhealth_p,
-                        fatigue_p,
-                        sleep_p,
-                        rumination_p,
-                        distress_p,
-                        bodysat_p,
-                        sexualsat_p,
-                        selfcontrol_p,
-                       # gratitude_p,
-                        groupimperm_p,
-                        selfperm_p,
-                        lifesat_p,
-                        meaning_p,
-                        perfect_p,
-                        powerdependence_p,
-                        selfesteem_p,
-                        belong_p,
-                        nwi_p,
-                        support_p,
-                        yourpersonalrelationships_p,
-                        yourhealth_p,
-                        standardliving_p,
-                        futuresecurity_p,
-                        veng_p,
-                        charity_p,
-                        standardliving_p,
-                        nzsei_p,
-                        worklife_p,
-                        charity_p))
+                                 alcoholintensity_p,
+                                 bmi_p,
+                                 exercise_p,
+                                 sfhealth_p,
+                                 fatigue_p,
+                                 sleep_p,
+                                 rumination_p,
+                                 distress_p,
+                                 bodysat_p,
+                                 sexualsat_p,
+                                 selfcontrol_p,
+                               #  gratitude_p,
+                                 veng_p,
+                                 groupimperm_p,
+                                 selfperm_p,
+                                 lifesat_p,
+                                 meaning_p,
+                                 perfect_p,
+                                 powerdependence_p,
+                                 selfesteem_p,
+                                 belong_p,
+                                 nwi_p,
+                                 support_p,
+                                 yourpersonalrelationships_p,
+                                 yourhealth_p,
+                                 standardliving_p,
+                                 futuresecurity_p,
+                                 charity_p,
+                                 #  volunteers_p,
+                                 nzsei_p,
+                                 worklife_p))
 
-veng_p
+
 out_Gratitude <- bind_forestplot(list_outcomes_Gratitude)
 out_Gratitude
 # save
@@ -3933,7 +3932,7 @@ out_rr_gratitude <- bind_forestplot(list(smoker_p, volunteers_p))
 saveh(out_rr_gratitude, "out_rr_gratitude")
 
 gcomp_forestplot_Gratitude_rr <-
-  gcomp_forestplot_rr(out_tt,title = "Outcomewide Gratitude RR",
+  gcomp_forestplot_rr(out_rr_gratitude,title = "Outcomewide Gratitude RR",
                       xlab = "Incidence Effect Foregiveness (SD)",
                       ylim = c(.5,1.5) )
 
