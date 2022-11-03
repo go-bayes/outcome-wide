@@ -2,7 +2,7 @@
 options(scipen = 999)
 
 
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs.R")
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
 # read functions
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
@@ -27,6 +27,7 @@ dat <- readRDS(pull_path)
 
 length(unique(dat$Id))
 
+
 # table for participant N
 dat_new <- dat %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0),
@@ -50,7 +51,8 @@ dat_new <- dat %>%
   dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
                   (Wave == 2019  &
                      YearMeasured  == 1) |
-                  (Wave == 2020))  %>% # Eligibility criteria
+                  (Wave == 2020)|
+                  (Wave == 2021)) %>% # Eligibility criteria
   dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
   # dplyr::filter(Id != 9630) %>% # problematic for income
   group_by(Id) %>%
@@ -71,23 +73,25 @@ dat_new <- dat %>%
 # Check ids
 length(unique(dat_new$Id)) # 34783
 
+table(dat_new$Wave)
+
 
 
 ### ELIGIBILITY CRITERIA
-# 2018/ 2019 - Hours Working Reported
-# Not retired baseline?
-# Not semi retired baseline?
-# Employed at baseline and Employed in 2019
-# income above poverty
+# 2018/ 2019 - Participated
+# Loss to follow up after 2019 handled through multiple imputation.
+#
+#
+
 
 
 ## select vars
 dat_prep  <- dat_new %>%
-  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
-                  (Wave == 2019  &
-                     YearMeasured  == 1) |
-                  (Wave == 2020))  %>% # Eligibility criteria
-  dplyr::filter(Id != 9630) %>% # problematic
+  # dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
+  #                 (Wave == 2019  &
+  #                    YearMeasured  == 1) |
+  #                 (Wave == 2020))  %>% # Eligibility criteria
+  dplyr::filter(Id != 9630) %>% # problematic income
   select(
     Id,
     YearMeasured,
@@ -269,8 +273,8 @@ dat_prep  <- dat_new %>%
   arrange(Id)
 
 corr_emo <- cbind.data.frame(dat_prep$EmotionRegulation1,
-dat_prep$EmotionRegulation2,
-dat_prep$EmotionRegulation3)
+                             dat_prep$EmotionRegulation2,
+                             dat_prep$EmotionRegulation3)
 
 corr_emo <- corr_emo |>
   drop_na()
@@ -279,11 +283,11 @@ head(corr_emo)
 
 # does not work
 corr_emo |>
-correlation::correlation()
+  correlation::correlation()
 
 
 corr_powerdep <- cbind.data.frame(dat_prep$POWERDEPENDENCE1,
-                             dat_prep$POWERDEPENDENCE2)
+                                  dat_prep$POWERDEPENDENCE2)
 
 corr_powerdep <- corr_powerdep |>
   drop_na()

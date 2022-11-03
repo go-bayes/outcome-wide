@@ -29,7 +29,30 @@ pull_path <-
 #
 # C_base = c(GendAll, EthAll, GenCohort)
 
+
+head(dat$Age)
+head(dat$Age)
+
+
 dat <- readRDS(pull_path)
+dat$GendAll
+temp_1 <- dat |>
+  filter(Wave == 2021  )
+
+length(unique(temp_1$Id))
+
+
+colnames(dat)
+head(temp_1$Cohort)
+head(temp_1$Warm.Asians)
+tail(temp_1$Age)
+table(is.na(temp_1$Age))
+
+sum(is.na(dat$Age))
+w.GendAgeEthnic.T13
+
+dat |>
+  mutate(YearMeasured_rep = if_else(Wave == 2021 & ))
 
 
 # dat$COVID19.Timeline

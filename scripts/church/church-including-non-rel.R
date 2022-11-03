@@ -3849,8 +3849,7 @@ ggsave(
 
 
 # tab all ---------------------------------------------------------------
-main = "Church Attendance estimands / Evalues"
-church <- rbind(
+foregiveness <- rbind(
   alcoholfreq_c,
   alcoholintensity_c,
   bmi_c,
@@ -3865,7 +3864,7 @@ church <- rbind(
   sexualsat_c,
   selfcontrol_c,
   gratitude_c,
-  veng_c,
+ # veng_c,
   groupimperm_c,
   selfperm_c,
   lifesat_c,
@@ -3884,20 +3883,6 @@ church <- rbind(
   volunteers_c,
   nzsei_c,
   worklife_c)
-
-
-church_tab <- church |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  # kable_styling() %>%
-  row_spec(c(1:2,15,19,22,23,25:26,30,31,33),  # Bold out the lines where EVALUES do not cross zero or for ratios, 1
-           bold = T,
-           # color = "black",
-           background = "bold")|>
-  kable_minimal(full_width = F)
-
-church_tab
 
 #save
 saveh(church_tab, "outcomewide-church-tab")
@@ -3992,11 +3977,9 @@ ggsave(
 
 
 # individual plots for talk -----------------------------------------------
-collected_wellbeing_talk_CHURCH <- lifesat_p +
+collected_wellbeing_talk_CHURCH <-
   meaning_p +
-#  pwi_p +
-  distress_p +
-  plot_annotation(title = "Causal effects of Church Attendance on cherry-picked wellbeing outcomes") +
+  plot_annotation(title = "Causal effects of Church Attendance on Meaning of Life") +
   plot_layout(guides = 'collect') + plot_layout(ncol = 2)
 
 # view
