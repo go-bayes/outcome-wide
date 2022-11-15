@@ -27,6 +27,25 @@ dat <- readRDS(pull_path)
 
 length(unique(dat$Id))
 
+dat |>
+  filter(Wave == 2018 & YearMeasured==1) |>
+  select(PERFECTIONISM, Gender, Id, Wave) |>
+  drop_na() |>
+  summarise(count_distinct = n_distinct(Id))
+
+dat |>
+  filter(Wave == 2018 & YearMeasured==1) |>
+  select(PERFECTIONISM, Gender, Id, Wave) |>
+  mutate(Male = as.factor(Gender)) |>
+  drop_na() |>
+  ggplot(aes(x=as.factor(Gender), y=PERFECTIONISM, colour = factor(Gender))) +
+  geom_boxplot(notch = TRUE) + geom_jitter(shape=16, position=position_jitter(0.2), alpha = .1) + labs(
+    title = "Perfectionism by Gender: NZAVS years 2018-2019, N = 47823",
+    y = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance.",
+    x = "Male coded as 1, other identities coded as 0") + scale_color_viridis_d(option = "D")
+
+length(unique(dat$Id))
+
 # table for participant N
 dat_new <- dat %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0),
@@ -104,7 +123,7 @@ dat_prep  <- dat_new %>%
     NEUROTICISM,
     AGREEABLENESS,
     Edu,
-    NZdep,
+    NZDep.2018,
     Employed,
     HomeOwner,
     Pol.Orient,
@@ -199,7 +218,7 @@ dat_prep  <- dat_new %>%
     c(NZSEI13,
       Household.INC,
       Standard.Living,
-      NZdep,
+      NZDep.2018,
       Employed,
       Household.INC,
       community,
@@ -299,6 +318,10 @@ corr_powerdep |>
 # number of ids
 N <- length(unique(dat_prep$Id))
 N  # 34761
+
+
+
+
 
 
 
@@ -610,7 +633,7 @@ table1::table1(
     Edu +
     Employed +
     EthCat +
-    NZdep +
+    NZDep.2018 +
     NZSEI13 +
     Parent +
     Partner +
@@ -770,7 +793,7 @@ data_ml <- tab_in |>
     NEUROTICISM,
     AGREEABLENESS,
     Edu,
-    NZdep,
+    NZDep.2018,
     Employed,
     HomeOwner,
     Pol.Orient,
