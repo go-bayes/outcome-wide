@@ -109,6 +109,7 @@ dat_prep  <- dat_new %>%
   dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
+    Sample.Frame,
     YearMeasured,
     Wave,
     Gender3,
@@ -122,6 +123,11 @@ dat_prep  <- dat_new %>%
     EXTRAVERSION,
     NEUROTICISM,
     AGREEABLENESS,
+    NARCISSISM,
+    MODESTY,
+   # SuccessfulFail, NA
+   # SuccessfulCriticise,  NA
+    TallPoppy,
     Edu,
     NZDep.2018,
     Employed,
@@ -163,6 +169,8 @@ dat_prep  <- dat_new %>%
     Hours.Exercise,
     LIFEMEANING,
     LIFESAT,
+    SelfControl01,
+    SelfControl02r,
     # PWI,  ##  we use the individual
     NWI,
     SFHEALTH,
@@ -195,12 +203,13 @@ dat_prep  <- dat_new %>%
     Standard.Living,
     PERFECTIONISM,
     PermeabilityIndividual,
-    ImpermeabilityGroup,
-    Emp.JobSecure
+    ImpermeabilityGroup #,
+  #  Emp.JobSecure  # much missingness
   ) %>%
   dplyr::rename(community = SWB.SoC01) %>%
   dplyr::mutate(Edu = as.numeric(Edu)) %>%
-  dplyr::mutate(across(!c(Id, Wave), ~ as.numeric(.x))) %>% # make factors numeric for easy of
+  dplyr::mutate(Sample.Frame = as.factor(Sample.Frame)) %>%
+  dplyr::mutate(across(!c(Id, Wave,Sample.Frame), ~ as.numeric(.x))) %>% # make factors numeric for easy
   arrange(Id, Wave) %>%
   dplyr::mutate(
     #  Volunteers = if_else(HoursCharity == 1, 1, 0),
@@ -266,7 +275,13 @@ dat_prep  <- dat_new %>%
       #  Standard.Living,
       PERFECTIONISM,
       PermeabilityIndividual,
-      ImpermeabilityGroup
+      ImpermeabilityGroup,
+      NARCISSISM,
+      MODESTY,
+      HONESTY_HUMILITY,
+     #  SuccessfulFail, NA
+     #  SuccessfulCriticise, # NA
+      TallPoppy
     ),
     ~ lead(.x, n = 2),
     .names = "{col}_lead2"
@@ -313,16 +328,41 @@ head(corr_powerdep)
 corr_powerdep |>
   correlation::correlation()
 
+
+
+corr_sf <- cbind.data.frame(dat_prep$SuccessfulFail,
+                                  dat_prep$SuccessfulCriticise)
+
+corr_sf <- corr_sf |>
+  drop_na()
+
+head(corr_sf)
+
+# not good
+corr_sf |>
+  correlation::correlation()
+
+
+# SelfControl01.T11	In general, I have a lot of self-control.
+# SelfControl02r.T11	I wish I had more self-discipline.
+
+corr_sf <- cbind.data.frame(dat_prep$SelfControl01,
+                            dat_prep$SelfControl02r)
+
+corr_sf <- corr_sf |>
+  drop_na()
+
+head(corr_sf)
+
+# not good
+corr_sf |>
+  correlation::correlation()
+
 # Filtering retirement -- consistency and positivity assumptions
 
 # number of ids
 N <- length(unique(dat_prep$Id))
 N  # 34761
-
-
-
-
-
 
 
 
@@ -353,9 +393,12 @@ ppm_mice <- mice::mice(mice_a,  seed = 0, m = 10)
 
 # save
 saveh(ppm_mice, "outcomewide-perfect-ppm_mice")
+#saveh(ppm_mice, "outcomewide-perfect-ppm_mice-sample")
 
 # read
 ppm_mice <- readh( "outcomewide-perfect-ppm_mice" )
+
+#ppm_mice <- readh( "outcomewide-perfect-ppm_mice-sample" )
 
 # impute using random forest  (Same results )
 

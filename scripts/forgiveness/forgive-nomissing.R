@@ -1,4 +1,4 @@
-# forgiveness no missing 
+# forgiveness no missing
 
 
 ###### READ THIS DATA IN   #########
@@ -572,7 +572,7 @@ out_ct <-
     out_c, reference = r, contrast = "difference"
   )))
 
-
+dev.off()
 bodysat_c <- vanderweelevalue_ols_nomi(out_ct, f - min, delta, sd)
 bodysat_p <-
   ggplot_stglm_nomi(
