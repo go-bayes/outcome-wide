@@ -14,3 +14,13 @@ figs/*
 hmm_mods/*
 #scripts/*
 
+
+*_cache/
+*models/
+_posts/**/*.html
+_posts/**/*_files/
+#*.DS_Store
+
+
+_freeze/*
+docs/*

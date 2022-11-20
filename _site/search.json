@@ -12,5 +12,12 @@
     "title": "About",
     "section": "",
     "text": "This is a site for NZAVS outcome wide studies."
+  },
+  {
+    "objectID": "manuscripts/perfectionism/ms-perfectionism.html",
+    "href": "manuscripts/perfectionism/ms-perfectionism.html",
+    "title": "Changes in Perceived Risks and Government Attitudes to COVID-19 in New Zealand: years 2021 - 2022",
+    "section": "",
+    "text": "CitationBibTeX citation:@online{g.rice2022,\n  author = {Ken G. Rice and Don E. David and XYXY and Chris G Sibley and\n    Joseph Bulbulia},\n  title = {Changes in {Perceived} {Risks} and {Government} {Attitudes}\n    to {COVID-19} in {New} {Zealand:} Years 2021 - 2022},\n  date = {2022-11-11},\n  url = {https://go-bayes.github.io/b-causal/},\n  langid = {en}\n}\nFor attribution, please cite this work as:\nKen G. Rice, Don E. David, XYXY, Chris G Sibley, and Joseph Bulbulia.\n2022. “Changes in Perceived Risks and Government Attitudes to\nCOVID-19 in New Zealand: Years 2021 - 2022.” November 11, 2022.\nhttps://go-bayes.github.io/b-causal/."
   }
 ]
