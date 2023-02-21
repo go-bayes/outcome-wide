@@ -396,6 +396,11 @@ ylab = "SF Health (SD)"
 
 out_m <- mice_iptw_lin(df = df, X = X, Y = Y, cvars = cvars, family = "gaussian")
 
+summary(out_m)
+
+
+
+
 ## g-computation
 out_ct <-
   pool_stglm_contrast(
@@ -406,9 +411,11 @@ out_ct <-
     x = x,
     r = r
   )
+
 out_ct %>%
   slice(f + 1 - min) |>
   kbl(digits = 3, "markdown")
+
 
 sfhealth_t <- out_ct %>%
   #slice(1:max) |>
