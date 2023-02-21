@@ -578,7 +578,8 @@ length(unique(dat_prep$Id)) # 1367
 table( dat_prep$pets_lead1 )
 
 hist(dat_prep$Hours.Pets_log)
-
+table1::table1( ~  pets_lead1 + Standard.Living + Standard.Living_lead2 ,
+                data = dat_prep)
 # lost <-
 #   dat_new |>   dplyr::filter(!is.na(pets)) %>% # no missingness in intervention
 #   select(
@@ -836,20 +837,19 @@ ml <- ml %>% mutate_if(is.matrix, as.vector)
 ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = TRUE)
 
-mf$KESSLER6_lead2
 #save
 saveRDS(
   ml,
   here::here(
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets",
-    "outcomewide-pets-ml"
+    "outcomewide-pets-ml_lost"
   )
 )
 saveRDS(
   mf,
   here::here(
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets",
-    "outcomewide-pets-mf"
+    "outcomewide-pets-mf_lost"
   )
 )
 
