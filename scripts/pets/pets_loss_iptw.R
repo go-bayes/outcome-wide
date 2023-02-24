@@ -163,33 +163,20 @@ cvars = c(
 #  IPTW ----------------------------------------------------------------
 # functions
 
-
-# mice_iptw = function(X,Y,df, family = "gaussian") {
+# not needed updated Templates
+# mice_iptw_lin = function(X,Y,df, cvars, family = "gaussian") {
 #   # requires that a MATCH THEM dataset is converted to a mice object
 #   # weights must be called "weights)
-#   require("splines")
 #   require("mice")
 #   out_m <- with(df, glm(
-#     as.formula(paste(Y, "~ bs(", X , ")")),
+#     as.formula(paste(
+#     paste(Y, "~", X, "+"),
+#     paste(cvars, collapse = "+"))),
 #     weights = weights,
 #     family = family
 #   ))
 #   return(out_m)
 # }
-
-mice_iptw_lin = function(X,Y,df, cvars, family = "gaussian") {
-  # requires that a MATCH THEM dataset is converted to a mice object
-  # weights must be called "weights)
-  require("mice")
-  out_m <- with(df, glm(
-    as.formula(paste(
-    paste(Y, "~", X, "+"),
-    paste(cvars, collapse = "+"))),
-    weights = weights,
-    family = family
-  ))
-  return(out_m)
-}
 
 
 
@@ -282,6 +269,8 @@ newmids <- as.mids(alldataset)
 
 # noahs way ---------------------------------------------------------------
 
+Y = "SFHEALTH_lead2_z"
+
 fits <- lapply(complete(models_st_petloss, "all"), function(d) {
   glm(
     as.formula(paste(
@@ -312,8 +301,7 @@ summary(pooled.comp, conf.int = TRUE,
 
 
 
-## Another
-Y = "BELONG_lead2_z"
+Y = "SFHEALTH_lead2_z"
 
 
 
@@ -351,7 +339,7 @@ summary(pooled.comp, conf.int = TRUE,
 # clarify workflow --------------------------------------------------------
 
 library("clarify")
-X
+
 
 sim.imp <- misim(fits, n = 1000, vcov = "HC3")
 sim.imp
@@ -455,6 +443,37 @@ sfhealth_p
 # coef + estimate
 sfhealth_c <-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
 sfhealth_c
+
+
+
+# no missing vals ---------------------------------------------------------
+X
+mf_1 <- readRDS(
+  here::here(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets",
+    "outcomewide-pets-mf_1_lost"
+  )
+)
+
+sub = "In general, would you say your health is...\nI seem to get sick a little easier than other people.\nI expect my health to get worse."
+Y = "SFHEALTH_lead2_z"
+main = "SF Health"
+ylab = "SF Health (SD)"
+
+# regression
+weights
+
+out_u <- glm_nomi_lin(df = mf_1, X = X, Y = Y, cvars = cvars,  family = "gaussian")
+summary(out_u)
+
+
+fit.std <- stdGlm(fit=out_u, data=mf_1, X ="pets_lost1", x)
+
+print(summary(fit.std))
+summary(fit.std, contrast = "difference", reference = "0")
+
+plot(fit.std)
+
 
 
 ### EMBODIED WELL BEING ----------------------------------------------------

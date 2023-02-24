@@ -557,7 +557,7 @@ dat_prep  <- dat_new %>%
   dplyr::filter(!is.na(pets)) %>% # no missingness in intervention
   dplyr::filter(!is.na(pets_lead1)) %>% #  no missingness in intervention
   dplyr::filter(pets == 2) |>
-  dplyr::filter(Hours.Pets > 5) |>
+  dplyr::filter(Hours.Pets > 1) |>
   dplyr::select(-c(Religion.Church,
                    # Respect.Self_lead2,
                    # not there
@@ -836,6 +836,15 @@ ml <- ml %>%
 ml <- ml %>% mutate_if(is.matrix, as.vector)
 ml <- mice::as.mids(ml)
 mf <- mice::complete(ml, "long", inc = TRUE)
+length(unique(mf$id))
+np <- N + 1
+
+
+mf_1 <- mf |>
+  slice((1:np))
+
+tail(mf_1)
+skim(mf_1)
 
 #save
 saveRDS(
@@ -852,6 +861,15 @@ saveRDS(
     "outcomewide-pets-mf_lost"
   )
 )
+
+saveRDS(
+  mf_1,
+  here::here(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets",
+    "outcomewide-pets-mf_1_lost"
+  )
+)
+
 
 
 # nrow(data_raw)
