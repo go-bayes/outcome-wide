@@ -1266,17 +1266,20 @@ selfcontrol_p
 sleep_p
 sexualsat_p
 
+community_p
 
-
+community_p
 
 list_outcomes_pets <- c(list(
-  sfhealth_p,
-  fatigue_p,
   distress_p,
-  lifesat_p,
+  fatigue_p,
   belong_p,
+  community_p,
   support_p,
   yourpersonalrelationships_p,
+  lifesat_p,
+  pwi_p,
+  sfhealth_p,
   yourhealth_p,
   standardliving_p,
   futuresecurity_p

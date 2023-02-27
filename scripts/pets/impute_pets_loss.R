@@ -677,6 +677,12 @@ skim(dat_prep) |>
 # dat_prep <- readh("outcomewide-pets-dat_prep")
 
 
+# impute for SFHEALTH ONLY
+
+
+
+
+
 # mice model  -------------------------------------------------------------
 library(mice)
 str(mice_a)

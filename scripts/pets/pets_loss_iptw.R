@@ -346,7 +346,7 @@ sim.imp
 
 
 sim.att <- sim_ame(sim.imp, var = X,
-                   subset = pets_lost1 == 1, cl = 8,
+                  subset = pets_lost1 == 1, cl = 8,
                    verbose = FALSE)
 sim.att
 
@@ -447,7 +447,7 @@ sfhealth_c
 
 
 # no missing vals ---------------------------------------------------------
-X
+
 mf_1 <- readRDS(
   here::here(
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets",
