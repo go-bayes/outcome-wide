@@ -2,6 +2,12 @@
 # set science digits
 # March 2023
 
+# TO DO Self-esteem
+# On the whole am satisfied with myself.
+# Take a positive attitude toward myself.
+# Am inclined to feel that I am a failure.
+
+
 options(scipen = 999)
 
 # You can find more information about the NZAVS:[HERE](https://www.psych.auckland.ac.nz/en/about/new-zealand-attitudes-and-values-study.html)
@@ -1513,7 +1519,6 @@ out_m <-
   )
 
 summary(out_m)
-
 
 
 ## g-computation
