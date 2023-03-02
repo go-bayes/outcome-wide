@@ -427,7 +427,7 @@ dt_wide <- dt_prep |>
 
 colnames(dt_wide)
 
-
+dt_wide|> relocate(starts_with("t0") .before = starts_with("t2") )
 
 
 # wrangle
