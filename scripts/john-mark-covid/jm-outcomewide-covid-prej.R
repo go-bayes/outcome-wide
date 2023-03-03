@@ -24,6 +24,8 @@ push_mods <-
 
 dat <- arrow::read_parquet(pull_path)
 
+
+# CONVENTIONS FOR COVID TIMELINE
 # dat$COVID19.Timeline
 # bels:
 #   value                                                                                              label
@@ -39,45 +41,7 @@ dat <- arrow::read_parquet(pull_path)
 # 2.3                    22.09.2020 -- 07.10.2020 [Auckland Alert Level 2, Rest of Country Alert Level 1
 # 2.4                                                              08.10.2020 -- onwards [Alert Level 1]
 
-# dat$REGC_2018
-
-# labels:
-#   value                     label
-# 1          Northland Region
-# 2           Auckland Region
-# 3            Waikato Region
-# 4      Bay of Plenty Region
-# 5           Gisborne Region
-# 6         Hawkes Bay Region
-# 7           Taranaki Region
-# 8 Manawatu-Whanganui Region
-# 9         Wellington Region
-# 12         West Coast Region
-# 13         Canterbury Region
-# 14              Otago Region
-# 15          Southland Region
-# 16             Tasman Region
-# 17             Nelson Region
-# 18        Marlborough Region
-# 99       Area Outside Region
-
-
-# dat$COVID19.Timeline
-# bels:
-#   value                                                                                              label
-# 0.0                                                                                   The Before Times
-# 1.0                                31.12.2019 -- 27.02.2020 [First cluster of cases in Wuhan reported]
-# 1.1                                      28.02.2020 -- 25.02.2020 [First case recorded in New Zealand]
-# 1.2                                                           26.03.2020 -- 27.04-2020 [Alert Level 4]
-# 1.3                                                           28.04.2020 -- 13.05.2020 [Alert Level 3]
-# 1.4                                                          14.05.2020 -- 08.06.2020 [Alert Level 2].
-# 1.5                                                           09.06.2020 -- 11.08.2020 [Alert Level 1]
-# 2.1 12.08.2020 -- 30.08.2020 [Second Outbreak - Auckland Alert Level 3, Rest of Country Alert Level 2]
-# 2.2                 30.08.2020 -- 21.09.2020 [Auckland Alert Level 2.5, Rest of Country Alert Level 2]
-# 2.3                    22.09.2020 -- 07.10.2020 [Auckland Alert Level 2, Rest of Country Alert Level 1
-# 2.4                                                              08.10.2020 -- onwards [Alert Level 1]
-
-# dat$REGC_2018
+# dat$REGC_2018 -- DON'T USE RATHER USE REGC_2022
 
 # labels:
 #   value                     label
