@@ -24,7 +24,6 @@ push_mods <-
 
 dat <- arrow::read_parquet(pull_path)
 
-
 # CONVENTIONS FOR COVID TIMELINE
 # dat$COVID19.Timeline
 # bels:
@@ -115,6 +114,7 @@ dt_00 <- dat %>%
   #        REGC_2022 = as.factor(REGC_2022))|>
   select(
     Id,
+    w_GendAgeEuro,
     attacks_to_covid,
     post_attacks,
     covid_condition,
@@ -168,7 +168,17 @@ dt_00 <- dat %>%
 
 colnames(dt_00)
 
+
+dt_00$Warm.MentalIllness
+
+table1(~ Warm.MentalIllness |Wave, data = dt_00)
+
+
 table(dt_00$post_attacks)
+
+# save data
+write_parquet(dt_00, here::here(push_mods, "dt_00"))
+
 
 ## Analysis 1, only investigate effects 2019
 table(dt_00$attacks_to_covid)
@@ -185,13 +195,14 @@ table1::table1(~ attacks_to_covid | Wave, data = dt_00)
 
 
 dt_19 <- dt_00 |>
-  dplyr::select(-c(TSCORE, attacks_to_covid)) |>
+  dplyr::select(-c(attacks_to_covid)) |>
   dplyr::filter(covid_condition != "post-lockdown") |>
   droplevels() |>
   dplyr::rename(exposure = covid_condition) |>
   dplyr::mutate(across(
     !c(
       Id,
+      TSCORE,
       Wave,
       EthCat,
       Male,
@@ -240,7 +251,11 @@ dt_19 <- dt_00 |>
 
 dt_19$post_attacks
 
-nrow(dt_19)
+
+table1(~ Warm.MentalIllness |Wave, data = dt_00)
+
+
+nrow(dt_19)x
 # check again
 naniar::gg_miss_var(dt_19)
 # make wide
@@ -260,18 +275,26 @@ dt_wide <- dt_19 |>
 # filter(!is.na(t0_exposure)) |>
 # filter(!is.na(t1_exposure))
 
-
-dim(dt_wide)
 colnames(dt_wide)
 naniar::gg_miss_var(dt_wide)
 
+
+# for time series sensitivity analysis
+dt_wide_t <- dt_wide
+
+write_parquet(dt_wide_t, here::here(push_mods, "dt_wide_t"))
+
+
 # order correctly for imputation
 dt_wide <- dt_wide |>
+  select(-c(t0_TSCORE, t1_TSCORE)) |>  ## remove TSCORE
   relocate(starts_with("t0"), .before = starts_with("t1")) |>
   relocate("t0_exposure", .before = "t0_post_attacks") |>
   relocate("t1_exposure", .before = "t1_Partner") |>
   select(-t1_post_attacks)
 colnames(dt_wide)
+
+table1(~ t1_Warm.MentalIllness + t0_Warm.MentalIllness |t1_exposure, data = dt_wide)
 
 
 
@@ -332,14 +355,15 @@ table1::table1( ~ t1_Warm.MentalIllness |
 
 dt_wide2 <- dt_wide |>
   select(starts_with("t0"), "t1_exposure" , starts_with("t1_Warm.")) |>
-  select(-t0_exposure)
+  select(-t0_exposure) |>
+  mutate()
 
 colnames(dt_wide2)
 
 
 # QUICK CHECK
 model_parameters(lm(data = dt_wide2,
-                    t1_Warm.Muslims ~ t1_exposure + t0_Warm.Muslims))
+                    t1_Warm.Muslims_z ~ t1_exposure + t0_Warm.Muslims))
 
 model_parameters(lm(data = dt_wide2,
                     t1_Warm.Chinese ~ t1_exposure + t0_Warm.Chinese))
