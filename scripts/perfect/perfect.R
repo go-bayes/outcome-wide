@@ -44,6 +44,8 @@ hist(mf$PERFECTIONISM_lead1_z)
 max(mf$PERFECTIONISM_lead1_z)
 min(mf$PERFECTIONISM_lead1_z)
 table(mf$PERFECTIONISM_lead1_z)
+
+
 ############### NEXT SET UP VARIABLES FOR MODELS AND GRAPHS
 
 # You may set your label for your graphs  HERE WE STICK TO THE EXAMPLE OF WORK

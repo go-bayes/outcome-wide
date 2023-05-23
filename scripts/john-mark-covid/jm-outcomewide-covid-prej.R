@@ -255,7 +255,7 @@ dt_19$post_attacks
 table1(~ Warm.MentalIllness |Wave, data = dt_00)
 
 
-nrow(dt_19)x
+nrow(dt_19)
 # check again
 naniar::gg_miss_var(dt_19)
 # make wide
@@ -467,21 +467,21 @@ cvars_full = mf |>
 cvars <- colnames(cvars_full)
 cvars
 
-cvars_sim = mf |>
-  dplyr::select(
-    -c(
-      t0_EthCat_z,
-      t0_SampleFrame_z,
-      t0_REGC_2022_z,
-      t0_Rural_GCH2018_z,
-      t0_post_attacks_z,
-      t0_SampleFrame
-    )
-  ) |> # include?
-  dplyr::select(starts_with("t0_")  &
-                  !ends_with("_z") & !starts_with("t0_Warm"))
-
-cvars_sim
+# cvars_sim = mf |>
+#   dplyr::select(
+#     -c(
+#       t0_EthCat_z,
+#       t0_SampleFrame_z,
+#       t0_REGC_2022_z,
+#       t0_Rural_GCH2018_z,
+#       t0_post_attacks_z,
+#       t0_SampleFrame
+#     )
+#   ) |> # include?
+#   dplyr::select(starts_with("t0_")  &
+#                   !ends_with("_z") & !starts_with("t0_Warm"))
+#
+# cvars_sim
 
 
 
@@ -526,8 +526,6 @@ library(cobalt)
 # set digits = 3
 options(scipen = 999)
 
-cvars_sim
-
 # match_ml <- weightthem(
 #   as.formula(paste(as.formula(paste(
 #     paste("t1_exposure", "~",
@@ -549,7 +547,7 @@ match_ml <- weightthem(
           paste(cvars, collapse = "+"))
   )))),
   ml,
-  estimand = "ATT",
+  estimand = "ATE",
   stabilize = TRUE,
   method = "ps"
 )
@@ -561,6 +559,54 @@ sum <- summary(match_ml)
 plot(sum)
 sum
 bal.tab(match_ml)
+love.plot(match_ml)
+
+
+match_ml_ebal <- weightthem(
+  as.formula(paste(as.formula(paste(
+    paste("t1_exposure", "~",
+          paste(cvars, collapse = "+"))
+  )))),
+  ml,
+  estimand = "ATE",
+  stabilize = TRUE,
+  method = "ebal"
+)
+
+
+saveRDS(match_ml_ebal, here::here(push_mods, "match_ml_ebal"))
+
+sum <- summary(match_ml_ebal)
+plot(sum)
+sum
+bal.tab(match_ml_ebal)
+
+love.plot(match_ml_ebal)
+
+
+
+
+
+match_ml_energy <- weightthem(
+  as.formula(paste(as.formula(paste(
+    paste("t1_exposure", "~",
+          paste(cvars, collapse = "+"))
+  )))),
+  ml,
+  estimand = "ATE",
+  stabilize = TRUE,
+  method = "energy"
+)
+
+
+saveRDS(match_ml_energy, here::here(push_mods, "match_ml_energy"))
+
+sum <- summary(match_ml_energy)
+plot(sum)
+sum
+bal.tab(match_ml_energy)
+
+love.plot(match_ml_energy)
 
 
 
@@ -574,10 +620,10 @@ Y <- "t1_Warm.Muslims_z"
 X <- "t1_exposure"
 
 
-fits <- lapply(complete(match_ml, "all"), function(d) {
+fits_muslim <- lapply(complete(match_ml_ebal, "all"), function(d) {
   glm(
     as.formula(paste(
-      paste(Y, "~", X, "+"),
+      paste(Y, "~", X, "*"),
       paste(cvars, collapse = "+")
     )),
     weights = weights,
@@ -586,416 +632,181 @@ fits <- lapply(complete(match_ml, "all"), function(d) {
   )
 })
 
-mice::pool(fits)
+mice::pool(fits_muslim)
 
-
-library("marginaleffects")
-comp.imp <- lapply(fits, function(fit) {
-  avg_comparisons(
-    fit,
-    newdata = subset(fit$data, a1 == 1),
-    variables = X,
-    wts = "weights",
-    vcov = "HC3"#,
-    #transform_pre = "lnratioavg"
-  )
-})
-comp.imp
-
-mus_tab  <- comp.imp
-
-mus_tab
-
+# library("marginaleffects")
+# comp.imp <- lapply(fits, function(fit) {
+#   avg_comparisons(
+#     fit,
+#     newdata = subset(fit$data, a1 == 1),
+#     variables = X,
+#     wts = "weights",
+#     vcov = "HC3"#,
+#     #transform_pre = "lnratioavg"
+#   )
+# })
+# comp.imp
+#
+# mus_tab  <- comp.imp
+#
+# mus_tab
+#
 
 
 # example sims ------------------------------------------------------------
 
 
 library(clarify)
-sim.imp <- misim(fits, n = 1000, vcov = "HC3")
-sim.imp
-summary(sim.imp)
+sim.imp_muslim <- misim(fits_muslim, n = 1000, vcov = "HC3") # robust standard errors
 
-sim.att <- sim_ame(
-  sim.imp,
+
+sim.att_muslim <- sim_ame(
+  sim.imp_muslim,
   var = "t1_exposure",
   subset = t1_exposure == 1,
   cl = 8,
   # cores
   verbose = FALSE
 )
-sim.att
+
+
 
 # sim.att <- transform(sim.att, RR = `E[Y(1)]` / `E[Y(0)]`)
 #
 # sim.att
 # summary(sim.att, null = c(RR = 1))
-
-sim_est <- transform(sim.att, `RD` = `E[Y(1)]` - `E[Y(0)]`)
-summary(sim_est, null = c(`RD` = 0))
-plot(sim_est)
+plot(sim.att_muslim)
 
 
+sim_est_muslims <- transform(sim.att_muslim, `RD` = `E[Y(1)]` - `E[Y(0)]`)
+summary(sim_est_muslims, null = c(`RD` = 0))
+
+summary(sim_est_muslims)
 
 
-# # buls way - doubly robust ----------------------------------------------
+# We used doubly robust estimation to identify the causal effect of the covid on prejudice.
+
+# The Doubly Robust Estimation method for Subgroup Analysis Estimator is combines features of both IPTW and G-computation methods, providing unbiased estimates if either the propensity score or outcome model is correctly specified. The process involves five main steps:
+#
+#   Step 1 involves the estimation of the propensity score, a measure of the conditional probability of exposure given the covariates and the subgroup indicator. This score is calculated using statistical models such as logistic regression, with the model choice depending on the nature of the data and exposure. Weights for each individual are then calculated using this propensity score. These weights depend on the exposure status and are computed differently for exposed and unexposed individuals.
 
 
-# GET DATA INTO ORDER
-
-# make into mids
-#Extracting the original dataset with missing value
-maindataset <- complete(match_ml, action = 0)
-
-#Some spit-and-polish
-maindataset <-
-  data.frame(.imp = 0, .id = seq_len(nrow(maindataset)), maindataset)
-
-#Extracting imputed-weighted datasets in the long format
-alldataset  <- complete(match_ml, action = "long")
-
-#Binding them together
-alldataset  <- rbind(maindataset, alldataset)
-
-#Converting to .mids
-newmids <- as.mids(alldataset)
-
-# set data
-dff <- newmids
-
-
-# old way setup
-# You may set your label for your graphs
-
-xlab = "Muslim Warmth in SD"
-
-
-# SET THE RANGE OF EXPOSURE FROM ZERO TO 1
-min = 0
-max =  1
-
-# set full range of X
-x =  min:max
-x
-
-
-# range for some graphs
-minmax <- paste(c(x), sep = ",")
-
-# baseline condition
-r = 0
-
-# focal contrast for X
-f = 1
-
-# REQUIRED for certain model model functions
-c = x
-
-# contrast for graphs -- absolute distance from baseline
-p = c(r, f) #
-
-
-# Needed for E-VALUES -- how much do we move on the X scale to obtain our effect?
-
-delta = abs(r - f)
-
-ylim = c(-.5, .5)  # SET AS YOU LIKE -- here, how much movement across a standard deviation unit of the outcome
-ylim_contrast = c(0, 3)  # SET AS YOU LIKE (FOR CONTRASTS )
-
-# mice imputed data
-## THIS IS KEY, NAME THE DATA I GAVE YOU "DF"
-
-# n imputations
-m = 10
-
-# standard deviation of the outcome (for evalues)
-# We have stanadardised the (non-binary) outcomes for comparable effect sizes.
-sd = 1
-
-
-family = "gaussian"
+# Following Greifer 2023, we attempted a variety of balancing methods, chosing the method that acheieves the best balance. Figure x shows a love plot of the entropy balancing approach, which performed best.  As indicated in Appendix X, all Max.Diff.Adj scores were well-below the .05 threshold, meaning that weighting achieved good balance.
 
 
 
-# old-way-purpose ---------------------------------------------------------
-X = "t1_exposure"
+#
+# Step 2 involves  fitting a weighted outcome model, making use of the previously calculated weights from the propensity scores. This model estimates the outcome conditional on exposure, covariates, and subgroup, integrating the weights into the estimation process. Unlike the propensity score model estimation, covariates are included as variables in the outcome model. This inclusion makes the method doubly robust - providing a consistent effect estimate if either the propensity score or the outcome model is correctly specified, thereby reducing the assumption of correct model specification.
 
-sub = "Covid Lockdown Conditions"
-Y = "t1_Warm.Muslims_z"
-main = "Warm Muslims"
-ylab = "Warm Muslims (SD)"
+# Here we used maximum likelihood estimation, modeling the outcome (prejudice) as a linear function of the exposure (A = 0,1), the baseline covariates (pre-exposure values of ....), and the weights obtained by the propensity score model (entropy-balanced)....
 
-# regression
 
-out_m <-
-  mice_iptw_lin(
-    df = dff,
-    X = X,
-    Y = Y,
-    cvars = cvars,
-    family = "gaussian"
+
+#
+# Step 3 entails the simulation of potential outcomes for each individual in each subgroup. These hypothetical scenarios assume universal exposure to the intervention within each subgroup, regardless of actual exposure levels. The expectation of potential outcomes is calculated for each individual in each subgroup, using individual-specific weights. These scenarios are performed for everyone under both counterfactual conditions. One in which, perhaps contrary to fact, they recieved the covid lockdown, and one in which, perhaps contrary to fact, they did not.
+#
+# Step 4, we estimated of the average causal effect for each treatment condition, achieved by comparing the computed expected values of potential outcomes under each of the two intervention levels. The difference represents the average causal effect of changing the exposure across the population.
+#
+# Step 5 involves computing confidence intervals and standard errors for these calculations are determined using simulation-based inference and robust estimation of the error terms. (Greifer et al. 2023). This step recovers appropriate uncertainy for the different exposures.
+
+
+
+## Results
+
+prep_muslims <- summary(sim_est_muslims)
+tab_muslims <- tab_ate(prep_muslims, new_name = "Muslim Warmth")
+
+tab_muslims
+
+
+
+
+## Another
+
+
+# standard deviation
+
+Y <- "t1_Warm.Pacific_z"
+X <- "t1_exposure"
+
+
+fits_pacific <- lapply(complete(match_ml_ebal, "all"), function(d) {
+  glm(
+    as.formula(paste(
+      paste(Y, "~", X, "*"),
+      paste(cvars, collapse = "+")
+    )),
+    weights = weights,
+    family = family,
+    data = d
   )
-
-summary(out_m)
-
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-
-warm_muslims_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(
-    c(f + 1 - min),
-    bold = T,
-    color = "white",
-    background = "dodgerblue"
-  ) |>
-  kable_minimal(full_width = F)
-# show table
-warm_muslims_t
-
-
-
-# compare with above -- VERY CLOSE!!
-mus_tab
-
-
-# graph
-warm_muslims_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  )
-warm_muslims_p
-# coef + estimate
-warm_muslims_e <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-warm_muslims_e
+})
 
 
 
 
-# only iptw ---------------------------------------------------------------
+library(clarify)
+sim.imp_pacific <- misim(fits_pacific, n = 1000, vcov = "HC3") # robust standard errors
 
-X = "t1_exposure"
-
-sub = "Covid Lockdown Conditions"
-Y = "t1_Warm.Muslims_z"
-main = "Warm Muslims"
-ylab = "Warm Muslims (SD)"
-
-# regression
-
-out_m <-
-  mice_iptw_lin(
-    df = dff,
-    X = X,
-    Y = Y,
-    cvars = 1,  # NOTE CHANGE
-    family = "gaussian"
-  )
-
-summary(out_m)
-
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-
-warm_muslims_iptw_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(
-    c(f + 1 - min),
-    bold = T,
-    color = "white",
-    background = "dodgerblue"
-  ) |>
-  kable_minimal(full_width = F)
-# show table
+sim.att_pacific <- sim_ame(
+  sim.imp_pacific,
+  var = "t1_exposure",
+  subset = t1_exposure == 1,
+  cl = 8,
+  # cores
+  verbose = FALSE
+)
 
 
 
 
-# compare with above -- VERY CLOSE!!
-mus_tab
-warm_muslims_t
-warm_muslims_iptw_t
+sim_est_pacific  <- transform(sim.att_pacific, `RD` = `E[Y(1)]` - `E[Y(0)]`)
+summary(sim_est_pacific, null = c(`RD` = 0))
 
-# graph
-warm_muslims_iptw_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  )
-warm_muslims_iptw_p
-# coef + estimate
-warm_muslims_iptw_p <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-warm_muslims_iptw_e
+prep_pacific <- summary(sim_est_pacific)
 
-
-
-# G-computation only -----------------------------------------------------------
-mice_generalised_lin = function(df, X, Y, cvars, family) {
-  require("mice")
-  out <- with(df, glm(as.formula(paste(
-    paste(Y, "~", X, "+"),
-    paste(cvars, collapse = "+")
-  )), family = family))
-  out
-}
-
-
-
-X = "t1_exposure"
-sub = "Covid Lockdown Conditions"
-Y = "t1_Warm.Muslims_z"
-main = "Warm Muslims"
-ylab = "Warm Muslims (SD)"
-family = "gaussian"
-
-# regression
-
-out_m <-
-  mice_generalised_lin(
-    df = dff,
-    X = X,
-    Y = Y,
-    cvars = cvars,  # NOTE CHANGE
-    family = "gaussian"
-  )
-
-summary(out_m)
-
-
-## g-computation
-out_ct <-
-  pool_stglm_contrast(
-    out_m,
-    df = df,
-    m = 10,
-    X = X,
-    x = x,
-    r = r
-  )
-
-out_ct %>%
-  slice(f + 1 - min) |>
-  kbl(digits = 3, "markdown")
-
-
-warm_muslims_gcomp_t <- out_ct %>%
-  #slice(1:max) |>
-  tibble() |>
-  rename(
-    Contrast = row,
-    Estimate = est,
-    Std_error = se,
-    CI_hi = ui,
-    CI_lo = li
-  ) |>
-  kbl(caption = main,
-      digits = 3,
-      "html") |>
-  kable_styling() %>%
-  row_spec(
-    c(f + 1 - min),
-    bold = T,
-    color = "white",
-    background = "dodgerblue"
-  ) |>
-  kable_minimal(full_width = F)
-# show table
+tab_test_pacific <- tab_ate(prep_pacific, new_name = "Pacific Warmth")
 
 
 
 
-# compare with above -- VERY CLOSE!!
-mus_tab
-warm_muslims_t
-warm_muslims_iptw_t
-warm_muslims_gcomp_t
+input_group_tab <- rbind(tab_muslims,
+      tab_test_pacific)
 
-# graph
-warm_muslims_gcomp_p <-
-  ggplot_stglm(
-    out_ct,
-    ylim = ylim,
-    main,
-    xlab,
-    ylab,
-    min = min,
-    p = p,
-    sub = sub
-  )
-warm_muslims_gcomp_p
-# coef + estimate
-warm_muslims_iptw_e <-
-  vanderweelevalue_ols(out_ct, f - min, delta, sd)
-warm_muslims_iptw_e
+
+group_tab_test <- group_tab(input_group_tab, type = "RD")
+
+group_tab_test |>
+  kbl(format = "markdown")
+
+
+# interpret table
+interpret_table(group_tab_test, estimand = "ATE", causal_scale = "risk_difference")
+
+
+# Nice graph
+group_plot_ate(group_tab_test, title = "John Mark is in the best lab", subtitle = "We x0x0 JM",  x_offset = 0,
+               x_lim_lo = -.5,
+               x_lim_hi = .5)
+
+#
+# With an observed risk ratio of RR=1.34, an unmeasured confounder that was associated with both the outcome and the exposure by a risk ratio of 1.34-fold each, above and beyond the measured confounders, could explain away the estimate, but weaker joint confounder associations could not; to move the confidence interval to include the null, an unmeasured confounder that was associated with the outcome and the exposure by a risk ratio of 1.20-fold each could do so, but weaker joint confounder associations could not.
 
 
 
+# Table interpretation:
+#
+#   Average Treatment Effect (ATE) represents the expected difference in outcomes between treatment and control groups for the whole population.
+#
+# For the outcome 'Pacific Warmth', the ATE causal contrast is -0.028. The confidence interval ranges from -0.071 to 0.015. The E-value for this outcome is 1.189, indicating evidence for causality is not conclusive.
+#
+# For the outcome 'Muslim Warmth', the ATE causal contrast i
 
+
+
+
+
+
+
+## Discussion....
 
