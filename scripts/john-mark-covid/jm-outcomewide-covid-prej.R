@@ -24,6 +24,10 @@ push_mods <-
 
 dat <- arrow::read_parquet(pull_path)
 
+
+
+
+
 # CONVENTIONS FOR COVID TIMELINE
 # dat$COVID19.Timeline
 # bels:
@@ -61,6 +65,25 @@ dat <- arrow::read_parquet(pull_path)
 # 17             Nelson Region
 # 18        Marlborough Region
 # 99       Area Outside Region
+
+
+# criteria for inclusion
+
+# nzavs  in wave 10 (baseline )
+# wave 10 - responded before 15 march
+# wave 11 - responded before 27 April (2020)
+# condition 0 -- measured prejudice between start of wave 11 and start of lockdown (condition 0)
+# condiiton 1 -- lockdown
+
+# baseline = wave 10
+# exposure_condition: wave 10 pre lockdown == 0, locdown == 1
+
+## regression is   prejudice  ~ exposure_condition  * ( baseline_prejudice + baseline_covariates) # winston lin 2013
+
+# after regression, use coefficients to predict -- E[Y(1)] -- prejudice if everyone in population from which the study was sampled was  exposed, and E[Y(0)] -- prejudice if not exposed.  Causal contrast is the difference between these two predicted averages, i.e. E[Y(1)]  - E[Y(0)]
+
+#  E[Y(1)| A = 1, l] - E[Y(0)| A = 1, l]  ATT
+
 
 
 # for the pre analsis
@@ -188,12 +211,7 @@ table1::table1(~ attacks_to_covid | Wave, data = dt_00)
 
 
 
-
 ## try without
-
-
-
-
 dt_19 <- dt_00 |>
   dplyr::select(-c(attacks_to_covid)) |>
   dplyr::filter(covid_condition != "post-lockdown") |>
@@ -249,7 +267,7 @@ dt_19 <- dt_00 |>
   arrange(Id, time) |>
   droplevels()
 
-dt_19$post_attacks
+table( dt_19$post_attacks )
 
 
 table1(~ Warm.MentalIllness |Wave, data = dt_00)
@@ -300,6 +318,18 @@ table1(~ t1_Warm.MentalIllness + t0_Warm.MentalIllness |t1_exposure, data = dt_w
 
 # test
 table((dt_wide$t1_exposure))
+
+# total n  in the study
+n_of_sample <- nrow(dt_wide)
+
+# breakdown
+table((dt_wide$t1_exposure))
+
+
+# sum of conditions
+sum_columns_by_condition <- 28679 + 1648
+
+sum_columns_by_condition == n_of_sample
 
 # descriptive tables
 table1::table1( ~ t1_Warm.Muslims |
@@ -634,6 +664,7 @@ fits_muslim <- lapply(complete(match_ml_ebal, "all"), function(d) {
 
 mice::pool(fits_muslim)
 
+
 # library("marginaleffects")
 # comp.imp <- lapply(fits, function(fit) {
 #   avg_comparisons(
@@ -650,7 +681,7 @@ mice::pool(fits_muslim)
 # mus_tab  <- comp.imp
 #
 # mus_tab
-#
+
 
 
 # example sims ------------------------------------------------------------
