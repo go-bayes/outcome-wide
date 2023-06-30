@@ -78,9 +78,13 @@ dat <- arrow::read_parquet(pull_path)
 # baseline = wave 10
 # exposure_condition: wave 10 pre lockdown == 0, locdown == 1
 
-## regression is   prejudice  ~ exposure_condition  * ( baseline_prejudice + baseline_covariates) # winston lin 2013
+## regression is
 
-# after regression, use coefficients to predict -- E[Y(1)] -- prejudice if everyone in population from which the study was sampled was  exposed, and E[Y(0)] -- prejudice if not exposed.  Causal contrast is the difference between these two predicted averages, i.e. E[Y(1)]  - E[Y(0)]
+# prejudice Y  ~ exposure_condition  * ( baseline_prejudice + baseline_covariates) # winston lin 2013
+#
+# model result from regression, we predict the average response for everyone under both exposures 30k Y0 , 30k in Y1
+
+# after we use regression coefficients to predict -- E[Y(1)] -- prejudice if everyone in population from which the study was sampled was  exposed, and E[Y(0)] -- prejudice if not exposed, we take the causal contrast is the difference between these two predicted averages, i.e. E[Y(1)]  - E[Y(0)]
 
 #  E[Y(1)| A = 1, l] - E[Y(0)| A = 1, l]  ATT
 
