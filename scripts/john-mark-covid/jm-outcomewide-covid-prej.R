@@ -38,7 +38,7 @@ dt_cov <- dat |>
   dplyr::mutate(h_18 = mean(k_18, na.rm = TRUE)) |>   # Hack
   dplyr::mutate(k_19 =  ifelse(
     wave == 2019 &
-      year_measured == 1 &  (covid19_timeline ==  2.1 |   covid19_timeline ==  2.2) ,#  Inclusion criteria
+      year_measured == 1 &  (covid19_timeline ==  2.1 |   covid19_timeline ==  2.2 ) ,#  Inclusion criteria
     1,
     0)) |>   # creating an indicator for the first wave; note that we allow people t
   dplyr::mutate(h_19 = mean(k_19, na.rm = TRUE)) |>  # Hack
@@ -47,7 +47,7 @@ dt_cov <- dat |>
   dplyr::ungroup() |>
   droplevels() |>
 #  mutate(exposure =  ifelse(!is.na(covid19_timeline), 1, 0) ) |>
-  select( starts_with("warm_"), regc_2022, id, wave, covid19_timeline,  male, religious, eth_cat) |>  # add other covariates if needed
+  select( starts_with("warm_"), regc_2022, id, wave, covid19_timeline,  male, religious, eth_cat, pol_orient) |>  # add other covariates if needed
   mutate(city_region = as.factor( if_else(regc_2022 == 2, "auckland", "wellington")))
 
 table(dt_cov$city_region)
@@ -55,10 +55,10 @@ table(dt_cov$city_region)
 
 
 summary(
- lm( warm_chinese  ~ wave * city_region, data = dt_cov ) )
+ lm( warm_chinese  ~ wave * ( city_region), data = dt_cov ) )
 
 summary(
-  lm( warm_nz_euro  ~ wave * city_region, data = dt_cov ) )
+  lm( warm_nz_euro  ~ wave * ( city_region ), data = dt_cov ) )
 
 
 # Get the names of variables that end with "warm_"
@@ -67,24 +67,7 @@ names_list <- dt_cov |>
   select(-warm_lgbtq) |>
   colnames()
 
-names_list
-# Create a list of formulas
-formulas_list <- lapply(names_list, function(name) {
-  as.formula(paste0(name, " ~ wave * city_region"))
-})
 
-# Apply lm and summary to each formula
-results <- lapply(formulas_list, function(formula) {
-  dt_subset <- dt_cov[!is.na(dt_cov[[as.character(formula[[2]])]]), ]  # subset the data for each "warm_" variable
-
-  # If city_region has only one level in the subset, return a message
-  if (nlevels(dt_subset$city_region) < 2) {
-    return(paste0("Not enough levels in city_region for the model: ", as.character(formula)))
-  } else {
-    model <- lm(formula, data = dt_subset)
-    return(summary(model))
-  }
-})
 
 #
 # names_list  <- dt_cov |>
