@@ -9,26 +9,35 @@
 #
 
 
-# import libraries
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# # import libraries
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+#
+# # read functions
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+#
+#
 
-# read functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
+
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
 
 options(scipen = 999)
 
 # You can find more information about the NZAVS:[HERE](https://www.psych.auckland.ac.nz/en/about/new-zealand-attitudes-and-values-study.html)
 
-# step one: import libraries:
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
-
-
-# read functions
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-# read data
+# # step one: import libraries:
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+#
+#
+# # read functions
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+#
+# # read data
 
 # set your folder path : unique to each user
 
@@ -200,7 +209,6 @@ dat_new <- dat |>
   mutate(time = as.numeric(Wave)-1) |>
   arrange(Id, time) |>
   droplevels()
-
 
 # # example
 
