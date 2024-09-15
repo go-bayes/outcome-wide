@@ -24,3 +24,4 @@ _posts/**/*_files/
 
 _freeze/*
 docs/*
+.DS_Store

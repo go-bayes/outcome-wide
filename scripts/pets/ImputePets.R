@@ -2,19 +2,24 @@
 options(scipen = 999)
 
 
+# import libraries
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
 # read functions
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
+# set preferences
 conflict_prefer("pool", "mice")
 conflict_prefer("cbind", "base")
 
-# for saving models
+
+
+
+# for saving models -- use paths that work for your computer
 push_mods <-
-  fs::path_expand("~/The\ Virtues\ Project\ Dropbox/outcomewide/mods")
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets")
 push_figs <-
-  fs::path_expand("~/Users/joseph/The\ Virtues\ Project\ Dropbox/outcomewide/figs")
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/outcomewide/pets")
 
 
 # read data
@@ -26,64 +31,89 @@ pull_path <-
 # note that you need use the arrow package
 dat <- arrow::read_parquet(pull_path)
 
-# description of variables
+# check unique ids
+length(unique(dat$Id))
 
 dat |>
-  filter(Wave == 2018 & YearMeasured==1) |>
-  select(Hours.Work, Gender, Id, Wave) |>
+  filter(Wave == 2015 & YearMeasured==1) |>
+  select(Pets, Id, Wave) |>
   drop_na() |>
   summarise(count_distinct = n_distinct(Id))
 
+
 dat |>
-  filter(any(Wave == 2018 & YearMeasured==1)) |>
-  select(PERFECTIONISM, Gender, Id, Wave) |>
-  mutate(Male = as.factor(Gender)) |>
+  filter(Wave == 2015 & YearMeasured==1) |>
+  select(Pets, Id, Wave) |>
   drop_na() |>
-  ggplot(aes(x=as.factor(Gender), y=PERFECTIONISM, colour = factor(Gender))) +
-  geom_boxplot(notch = TRUE) + geom_jitter(shape=16, position=position_jitter(0.2), alpha = .1) + labs(
-    title = "Perfectionism by Gender: NZAVS years 2018-2019, N = 47823",
-    y = "Doing my best never seems to be enough.\nMy performance rarely measures up to my standards.\nI am hardly ever satisfied with my performance.",
-    x = "Male coded as 1, other identities coded as 0") + scale_color_viridis_d(option = "D")
+  summarise(pets_mean = mean(Pets))
+
+
+Pets.coded.catdog_factor
+# plot
+dat |>
+  filter(Wave == 2015 & YearMeasured==1 | Wave == 2019 & YearMeasured==1) |>
+  select(KESSLER6, Pets,Pets.coded.catdog_factor, Id, Wave) |>
+  drop_na() |>
+  ggplot(aes(x= Pets.coded.catdog_factor, y=KESSLER6, colour = Pets.coded.catdog_factor)) +
+  facet_grid(.~Wave) +
+  geom_boxplot(notch = TRUE) +
+  geom_jitter(shape=16, position=position_jitter(0.2), alpha = .1) +
+  labs(
+    title = "Do you have any pets?",
+    y = "KESSLER6",
+    x = "'Do you have any pets? (coded)'") + scale_color_viridis_d(option = "D")
+
+
+
+# create a table summary
+library(gtsummary)
+
+df <- dat |>
+  filter(Wave == 2015 & YearMeasured==1 | Wave == 2019 & YearMeasured==1) |>
+  select(KESSLER6, Pets.coded.catdog_factor, Wave)
+
+# Summarize means of Kessler6 by Pets_coded and wave
+tbl_summary(df,
+            by = Pets.coded.catdog_factor,
+            missing = "no",
+            statistic = list(all_continuous() ~ "{mean} ({sd})")) %>%
+  add_p(by = Wave, p = "none")
+
+
+
+
+
+
+#dev.off()
 
 length(unique(dat$Id))
 
 # table for participant N
-
-
-# create longitudinal
-# cohort, with all participants at baseline and at t = baseline + 1 retained.
-# this is the population for whome we generalise.
-
 dat_new <- dat %>%
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0),
-                SexualOrientation = as.factor(if_else(
-                  SexualOrientationL1 == 1,
-                  "Heterosexual",
-                  if_else(SexualOrientationL1 ==
-                            2, "Homosexual", "OtherSexuality")
-                ))) %>%
-  dplyr::mutate(Gender3 = as.factor(ifelse(
-    GendAll == 0,
-    "Female",
-    if_else(GendAll == 1, "Male", "GenderDiverse")
-  ))) |>
-  dplyr::mutate(Male = as.factor(ifelse(
-    GendAll == 1,
-    "Male", "Not_male"
-  ))) |>
-  dplyr::rename(# use this for some studies
-   # My life has a clear sense of purpose.
-    meaning_purpose= LifeMeaning01,
-   # I have a good sense of what makes my life meaningful.
-    meaning_sense = LifeMeaning02,
+                SexualOrientation = as.factor(if_else(SexualOrientationL1 == 1,
+                                                      "Heterosexual",
+                                                      if_else(SexualOrientationL1==2, "Homosexual", "OtherSexuality" )))) %>%
+  dplyr::mutate(Gender3 = as.factor(ifelse(GendAll == 0, "Female", if_else(GendAll == 1, "Male", "GenderDiverse")))) %>%
+  dplyr::rename(
+    kessler_hopeless = SWB.Kessler01,
+    # …  you feel hopeless?
+    kessler_depressed = SWB.Kessler02,
     #…  you feel so depressed that nothing could cheer you up?
+    kessler_restless  = SWB.Kessler03,
+    #…  you feel restless or fidgety?
+    kessler_effort = SWB.Kessler04,
+    #…  you feel that everything was an effort?
+    kessler_worthless = SWB.Kessler05,
+    #…  you feel worthless?
+    kessler_nervous = SWB.Kessler06 #…  you feel nervous?
   ) |>
   dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
                   (Wave == 2019  &
                      YearMeasured  == 1) |
                   (Wave == 2020))  %>% # Eligibility criteria
-  dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away : competing events
-  dplyr::filter(Id != 9630) %>% # problematic for income/ hours work
+  dplyr::filter(YearMeasured  != -1) %>% # remove people who passed away
+  # dplyr::filter(Id != 9630) %>% # problematic for income
   group_by(Id) %>%
   dplyr::mutate(org2018 =  ifelse(Wave == 2018 &
                                     YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
@@ -93,50 +123,21 @@ dat_new <- dat %>%
                                    YearMeasured == 1, 1, 0)) %>%  # creating an indicator for the first wave
   dplyr::mutate(hold19 = mean(org2019, na.rm = TRUE)) %>%  # Hack0
   dplyr::filter(hold19 > 0) %>% # hack to enable repeat of baseline in 201
-  ungroup() |>
-  dplyr::mutate(work_div10 = Hours.Work/10) |> # create hours work variable
-  dplyr::mutate(work_cat4 = if_else(work_div10 == 0, 0,
-                                    if_else(work_div10 > 0 & work_div10 < 2, 1,
-                                              if_else( work_div10 >= 2 & work_div10 <= 4, 2,
-                                                       3))))|> # create hours work variable
-  dplyr::mutate(work_cat4 = if_else(work_div10 == 0, 0,
-                                    if_else(work_div10 > 0 & work_div10 < 2, 1,
-                                            if_else( work_div10 >= 2 & work_div10 <= 4, 2,
-                                                     3))))|> # create hours work variable
-  dplyr::mutate(work_cat2 = if_else(work_div10 <=2 , 0, 1))|> # create hours work variable
+  ungroup() %>%
   droplevels() %>%
   arrange(Id, Wave)
 
 
-# check data
-hist(dat_new$work_div10)
-
-# check data
-hist(dat_new$work_cat4)
-
-# check data
-hist(dat_new$work_cat2)
+# check change
 
 
+ds<- dat_new |>
+  filter(YearMeasured == 1 & Wave == 2018 | YearMeasured == 1 & Wave == 2019) |>
+  select(Id, PERFECTIONISM)
 
-# count those in this group
-dat_new |>
-  filter(Wave == 2018 & YearMeasured==1) |>
-  select(work_div10, work_cat4, Id, Wave) |>
-  drop_na() |>
-  summarise(count_distinct = n_distinct(Id))
-
-
-#
-msm::statetable.msm(round(work_cat4, 0), Id, data = dat_new) |>
+msm::statetable.msm(round(PERFECTIONISM, 0), Id, data = ds) |>
   kbl() |>
   kable_paper(full_width = F)
-
-# descision = use binary variable.
-msm::statetable.msm(round(work_cat2, 0), Id, data = dat_new) |>
-  kbl() |>
-  kable_paper(full_width = F)
-
 
 
 
@@ -147,17 +148,19 @@ length(unique(dat_new$Id)) # 34783
 
 ### ELIGIBILITY CRITERIA
 # 2018/ 2019 - Hours Working Reported
+# Not retired baseline?
+# Not semi retired baseline?
 # Employed at baseline and Employed in 2019
 # income above poverty
 
-# Not a lot of missingness -- use this one
-table( is.na( dat_new$NZSEI13 ) )
-
-# not a lot of missingness
-table( is.na( dat_new$Rural_GCH2018 ) )
 
 ## select vars
 dat_prep  <- dat_new %>%
+  dplyr::filter((Wave == 2018  & YearMeasured  == 1) |
+                  (Wave == 2019  &
+                     YearMeasured  == 1) |
+                  (Wave == 2020))  %>% # Eligibility criteria
+  dplyr::filter(Id != 9630) %>% # problematic
   select(
     Id,
     YearMeasured,
@@ -166,7 +169,6 @@ dat_prep  <- dat_new %>%
     Partner,
     EthCat,
     Age,
-    Rural_GCH2018,
     NZSEI13,
     CONSCIENTIOUSNESS,
     OPENNESS,

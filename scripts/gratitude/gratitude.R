@@ -500,7 +500,7 @@ ml <- ml %>%
   dplyr::mutate(id = as.factor(rep(1:N, 11))) |> # needed for g-comp
   dplyr::mutate(Euro = if_else(EthCat == 1, 1, 0)) %>%
   dplyr::mutate(Volunteers = if_else(HoursCharity > 0, 1, 0)) |>
-  plyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
+  dplyr::mutate(Alcohol.Intensity = round(Alcohol.Intensity, 0)) %>%
   dplyr::mutate(Volunteers_lead2 = if_else(HoursCharity_lead2 > 0, 1, 0)) |>
   dplyr::mutate(KESSLER6sum_lead2 = round(as.integer(KESSLER6sum_lead2, 0))) %>%
   dplyr::mutate(Alcohol.Intensity_lead2 = round(Alcohol.Intensity_lead2, 0)) %>%
